@@ -368,3 +368,17 @@ export function topByScore(r: Round, n = 10) {
 export function isVerdict(v: unknown): v is Verdict {
   return typeof v === "string" && (VERDICTS as readonly string[]).includes(v)
 }
+
+/**
+ * This repo's store: local/icons/review, the legacy local/icons/reviews.json and feedback in
+ * local/icons/feedback. REVIEW_DATA_DIR moves all three into one directory (tests, other brands).
+ */
+export function repoStore(root: string) {
+  const d = process.env.REVIEW_DATA_DIR
+  return {
+    store: d
+      ? new ReviewStore({ dir: d, legacy: join(d, "reviews.json") })
+      : new ReviewStore({ dir: join(root, "local/icons/review"), legacy: join(root, "local/icons/reviews.json") }),
+    feedbackDir: d ? join(d, "feedback") : join(root, "local/icons/feedback"),
+  }
+}

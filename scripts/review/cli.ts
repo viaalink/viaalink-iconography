@@ -16,16 +16,15 @@ import { chmod, readFile, rename, stat } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { readFeedbackForGeneration, writeFeedback } from "./feedback"
 import { snapshot } from "./snapshot"
-import { ReviewStore } from "./store"
+import { repoStore } from "./store"
 import { ROUND_NAME } from "./types"
 
 const ROOT = resolve(import.meta.dir, "../..")
 const GALLERY = resolve(process.env.REVIEW_GALLERY_DIR ?? join(ROOT, "tools/icon-gallery"))
 const ENV_FILE = join(GALLERY, ".env")
-const FEEDBACK_DIR = join(ROOT, "local/icons/feedback")
+const FEEDBACK_DIR = repoStore(ROOT).feedbackDir
 const LOCAL_URL = `http://127.0.0.1:${process.env.ICON_GALLERY_PORT ?? 5330}`
-export const reviewStore = () =>
-  new ReviewStore({ dir: join(ROOT, "local/icons/review"), legacy: join(ROOT, "local/icons/reviews.json") })
+export const reviewStore = () => repoStore(ROOT).store
 
 /** KEY=value pairs of a .env file (quotes stripped), without ever printing them. */
 export async function readEnv(file = ENV_FILE): Promise<Record<string, string>> {

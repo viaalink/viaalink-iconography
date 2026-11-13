@@ -5,8 +5,15 @@
  *
  * Reads local/icons/rounds/<round>/{light,dark}/*.png, prompts.json and critique.md,
  * and the shipped set in static/assets/icons/<style>/<mode>/ once it exists.
- * Reviews (approve / needs work + note) are stored in local/icons/reviews.json;
- * the design iterations read them as feedback.
+ * Feedback rounds (votes, comments, icon requests, the owner's verdicts) live in
+ * local/icons/review/rounds/<round>.json (scripts/review/store.ts); verdicts are mirrored into
+ * local/icons/reviews.json, which picks the main version of each icon.
+ *
+ * Roles, checked here on every write:
+ *   reviewer  anyone who reached us: through the Relay that means past via's basic auth and the
+ *             random /r/<slug>/ path; a display name in a cookie with a random reviewer id
+ *   owner     the owner key cookie (/owner?key=...), or a direct request from this machine that did
+ *             not come through a proxy (no X-Forwarded-*, Forwarded, X-Real-IP or Via header)
  */
 
 import { randomBytes, timingSafeEqual } from "node:crypto"
@@ -17,16 +24,19 @@ import { fitScale, ICON_SIZE } from "../../scripts/icons/canvas"
 import { ICONS } from "../../scripts/icons/catalog"
 import { FLAT, stampSvg, svgThemeable } from "../../scripts/icons/flat"
 import { THEME } from "../../scripts/icons/theme"
+import { CANON, DOLLS_ROUND, NOT_SHOWN, STYLE_EXT, snapshot, styleOf } from "../../scripts/review/snapshot"
+import { isVerdict, ReviewError, repoStore, summarize, topByScore } from "../../scripts/review/store"
+import { ITEM_KEY, ROUND_NAME } from "../../scripts/review/types"
 
 const ROOT = resolve(import.meta.dir, "../..")
 const ROUNDS = join(ROOT, "local/icons/rounds")
 const SHIPPED = join(ROOT, "static/assets/icons")
-const REVIEWS = join(ROOT, "local/icons/reviews.json")
 const PORT = Number(process.env.ICON_GALLERY_PORT ?? 5330)
 const MODES = ["light", "dark"] as const
 
-const STATUSES = ["approved", "needs-work", "rejected", "regenerate"] as const
-type Review = { status: (typeof STATUSES)[number]; note: string; at: string }
+const STORE = repoStore(ROOT).store
+/** The gallery's .env (written by via from tpl.env): REVIEW_SLUG is the random path a proxied request needs. */
+const GALLERY_ENV = join(resolve(process.env.REVIEW_GALLERY_DIR ?? import.meta.dir), ".env")
 
 /**
  * The owner's key (local/icons/owner.key, gitignored, made on first start).
@@ -46,13 +56,43 @@ async function ownerKey() {
 const OWNER_KEY = await ownerKey()
 const sameKey = (k: string | null | undefined) =>
   !!k && k.length === OWNER_KEY.length && timingSafeEqual(Buffer.from(k), Buffer.from(OWNER_KEY))
-const isOwner = (req: Request) =>
-  sameKey(
-    (req.headers.get("cookie") ?? "")
-      .split(/;\s*/)
-      .find((c) => c.startsWith(`${OWNER_COOKIE}=`))
-      ?.slice(OWNER_COOKIE.length + 1),
-  )
+const cookie = (req: Request, name: string) =>
+  (req.headers.get("cookie") ?? "")
+    .split(/;\s*/)
+    .find((c) => c.startsWith(`${name}=`))
+    ?.slice(name.length + 1)
+const sameSecret = (a: string | null | undefined, b: string) =>
+  !!a && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b))
+
+type Server = { requestIP(req: Request): { address: string } | null }
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"])
+const PROXY_HEADERS = ["x-forwarded-for", "x-forwarded-host", "x-forwarded-proto", "x-real-ip", "forwarded", "via"]
+/**
+ * A request is local only when it comes straight from this machine: loopback peer, loopback Host,
+ * and no proxy header at all. Caddy and the Relay always add X-Forwarded-* (via's routing rule), so
+ * anything that came through them is never local, whatever IP the headers claim.
+ */
+function isDirectLocal(req: Request, server: Server): boolean {
+  if (PROXY_HEADERS.some((h) => req.headers.has(h))) return false
+  const host = (req.headers.get("host") ?? "").replace(/:\d+$/, "")
+  if (host !== "127.0.0.1" && host !== "localhost" && host !== "[::1]") return false
+  return LOOPBACK.has(server.requestIP(req)?.address ?? "")
+}
+const isOwner = (req: Request, server: Server) => sameKey(cookie(req, OWNER_COOKIE)) || isDirectLocal(req, server)
+
+/** REVIEW_SLUG from the gallery's .env, re-read when the file changes (a rotation needs no restart). */
+let slugCache = { mtime: -1, slug: "" }
+async function currentSlug(): Promise<string> {
+  const st = await stat(GALLERY_ENV).catch(() => null)
+  if (!st) return process.env.REVIEW_SLUG ?? ""
+  if (st.mtimeMs !== slugCache.mtime) {
+    const m = (await readFile(GALLERY_ENV, "utf8")).match(/^\s*REVIEW_SLUG\s*=\s*["']?([\w-]+)/m)
+    slugCache = { mtime: st.mtimeMs, slug: m?.[1] ?? "" }
+  }
+  return slugCache.slug
+}
+const SLUG_COOKIE = "via_icon_round"
+const REVIEWER_COOKIE = "via_icon_reviewer"
 
 async function exists(p: string) {
   return stat(p).then(
@@ -114,9 +154,7 @@ async function icons(base: string) {
   return out
 }
 
-async function loadReviews(): Promise<Record<string, Review>> {
-  return (await exists(REVIEWS)) ? JSON.parse(await readFile(REVIEWS, "utf8")) : {}
-}
+const loadReviews = () => STORE.legacyReviews()
 
 /** Resolve /img/<round|shipped>/<id>/<mode>/<file> inside its root, refusing traversal. */
 function imagePath(parts: string[]): string | null {
@@ -126,17 +164,6 @@ function imagePath(parts: string[]): string | null {
   if (!root) return null
   const p = resolve(root, id, mode, file)
   return p.startsWith(root + sep) ? p : null
-}
-
-/**
- * Reviews may only be written from this machine. The public tunnel
- * (icons.<your relay domain>) reaches us through the local proxy, which sets
- * X-Forwarded-* headers and a public Host, so those requests are read-only.
- */
-function canWrite(req: Request): boolean {
-  const host = (req.headers.get("host") ?? "").split(":")[0]
-  const forwarded = ["x-forwarded-for", "x-forwarded-host", "x-real-ip", "forwarded"].some((h) => req.headers.has(h))
-  return (!forwarded && (host === "127.0.0.1" || host === "localhost")) || isOwner(req)
 }
 
 /** Round directory a resolved icon path came from (null for the shipped set). */
@@ -224,11 +251,8 @@ const page = async (f: string) =>
  * 25d-b7, dolls in 25d-b8-dolls) or still an AI render to convert, and does a flat twin exist?
  * Rejected AI variants and superseded experiments are left out.
  */
-const BLENDER_ROUND = "25d-b7"
-const DOLLS_ROUND = "25d-b8-dolls"
-const FLAT_ROUND = "flat-r9"
-// apple is an alias of os-macos (same model): shown once
-const NOT_SHOWN = new Set(["ai-b", "ai-c", "mcp-b", "mcp-c", "calib", "apple"])
+const BLENDER_ROUND = CANON["25d"]
+const FLAT_ROUND = CANON.flat
 async function overview() {
   const pngs = async (round: string) =>
     new Set(
@@ -328,14 +352,186 @@ ${cards.join("\n") || "<p>No animations yet.</p>"}</div></body></html>`,
   )
 }
 
+// ---------------------------------------------------------------- feedback rounds
+
+const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { "cache-control": "no-store" } })
+const fail = (status: number, message: string) => json({ error: message }, status)
+
+/**
+ * Writes must be same-origin JSON: a cross-site form cannot send application/json, and a browser
+ * that says where the request came from must say it came from this page.
+ */
+function writeGuard(req: Request): Response | null {
+  if (!req.headers.get("content-type")?.startsWith("application/json")) return fail(415, "json only")
+  if (Number(req.headers.get("content-length") ?? 0) > 32_000) return fail(413, "too large")
+  if (req.headers.get("sec-fetch-site") === "cross-site") return fail(403, "cross-site")
+  const origin = req.headers.get("origin")
+  if (origin) {
+    const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host")
+    let ok = false
+    try {
+      ok = new URL(origin).host === host
+    } catch {}
+    if (!ok) return fail(403, "cross-origin")
+  }
+  return null
+}
+
+type Who = { id: string; name: string; owner: boolean }
+async function whoIs(req: Request, server: Server): Promise<{ owner: boolean; who: Who | null }> {
+  const owner = isOwner(req, server)
+  const rid = cookie(req, REVIEWER_COOKIE)
+  const name = await STORE.reviewerName(rid)
+  if (rid && name) return { owner, who: { id: rid, name, owner } }
+  return { owner, who: owner ? { id: "owner", name: "Owner", owner: true } : null }
+}
+
+/** One round as the page needs it; reviewer ids never leave the server (only "mine" flags). */
+async function roundView(name: string | null, me: { owner: boolean; who: Who | null }) {
+  const all = await STORE.list()
+  const r = name ? await STORE.get(name) : await STORE.current()
+  const rounds = all.map((x) => ({ name: x.name, status: x.status, feed: x.feed, createdAt: x.createdAt }))
+  const meOut = { name: me.who && me.who.id !== "owner" ? me.who.name : null, owner: me.owner }
+  if (!r) return { round: null, rounds, me: meOut }
+  const legacy = await STORE.legacyReviews()
+  const mine = me.who?.id
+  const icons = r.icons.map((i) => ({
+    name: i.name,
+    images: Object.entries(i.images).flatMap(([style, modes]) =>
+      Object.entries(modes).map(([mode, key]) => {
+        const [, round, , n] = (key ?? "").match(ITEM_KEY) ?? []
+        return {
+          style,
+          mode,
+          key,
+          url: `/img/round/${round}/${mode}/${n}.${STYLE_EXT[styleOf(round)]}`,
+          votes: summarize(r.votes[key ?? ""]),
+          mine: mine ? (r.votes[key ?? ""]?.[mine]?.value ?? 0) : 0,
+          verdict: r.verdicts[key ?? ""] ?? null,
+          earlier: legacy[key ?? ""] ? { verdict: legacy[key ?? ""].status, note: legacy[key ?? ""].note } : null,
+        }
+      }),
+    ),
+  }))
+  return {
+    round: { name: r.name, status: r.status, feed: r.feed, createdAt: r.createdAt, closedAt: r.closedAt ?? null },
+    rounds,
+    me: meOut,
+    icons,
+    comments: r.comments.map(({ reviewer, ...c }) => ({ ...c, mine: !!mine && reviewer === mine })),
+    requests: r.requests.map(({ reviewer, ...q }) => ({ ...q, mine: !!mine && reviewer === mine })),
+    top: topByScore(r, 10),
+  }
+}
+
+async function reviewApi(req: Request, url: URL, server: Server): Promise<Response | null> {
+  if (!url.pathname.startsWith("/api/review/")) return null
+  const me = await whoIs(req, server)
+  const route = url.pathname.slice("/api/review/".length)
+  try {
+    if (req.method === "GET" && route === "round") return json(await roundView(url.searchParams.get("round"), me))
+    if (req.method !== "POST") return fail(405, "method not allowed")
+    const guard = writeGuard(req)
+    if (guard) return guard
+    const body = (await req.json().catch(() => null)) as Record<string, unknown> | null
+    if (!body || typeof body !== "object") return fail(400, "bad json")
+    const str = (k: string) => (typeof body[k] === "string" ? (body[k] as string) : "")
+    if (route === "me") {
+      const r = await STORE.setReviewer(cookie(req, REVIEWER_COOKIE), str("name"))
+      const secure = PROXY_HEADERS.some((h) => req.headers.has(h)) ? "; Secure" : ""
+      return new Response(JSON.stringify({ name: r.name }), {
+        headers: {
+          "content-type": "application/json",
+          "set-cookie": `${REVIEWER_COOKIE}=${r.id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure}`,
+        },
+      })
+    }
+    // ---- owner only
+    if (route === "verdict" || route === "round-state") {
+      if (!me.owner) return fail(403, "only the owner can do this")
+      if (route === "verdict") {
+        const v = body.verdict === null ? null : body.verdict
+        if (v !== null && !isVerdict(v)) return fail(400, "bad verdict")
+        await STORE.setVerdict(str("round"), str("key"), v, str("note"))
+        return json({ ok: true })
+      }
+      const name = str("round")
+      if (!ROUND_NAME.test(name)) return fail(400, "bad round name")
+      if (body.action === "close") await STORE.close(name, typeof body.feed === "boolean" ? body.feed : undefined)
+      else if (body.action === "open") await STORE.open(name, await snapshot(ROUNDS), body.feed === true)
+      else return fail(400, "action is open or close")
+      return json({ ok: true })
+    }
+    // ---- reviewers (anyone past basic auth) with a display name
+    if (!me.who) return fail(401, "enter your name first")
+    if (route === "vote") {
+      await STORE.vote(str("round"), str("key"), me.who, Number(body.value), str("comment"))
+      return json({ ok: true })
+    }
+    if (route === "comment") {
+      await STORE.comment(str("round"), me.who, {
+        icon: str("icon"),
+        text: str("text"),
+        parentId: str("parentId") || undefined,
+        item: str("item") || undefined,
+      })
+      return json({ ok: true })
+    }
+    if (route === "comment-delete") {
+      await STORE.deleteComment(str("round"), str("id"), me.who)
+      return json({ ok: true })
+    }
+    if (route === "request") {
+      await STORE.request(str("round"), me.who, { name: str("name"), shows: str("shows") })
+      return json({ ok: true })
+    }
+    return fail(404, "unknown")
+  } catch (e) {
+    if (e instanceof ReviewError) return fail(e.status, e.message)
+    console.error(e)
+    return fail(500, "server error")
+  }
+}
+
+const notFound = () => new Response("not found", { status: 404 })
+
+/**
+ * The share link is random on purpose: through the Relay (any proxied request) the first hit must be
+ * /r/<REVIEW_SLUG>/..., which sets a cookie and redirects to the page; later requests need that
+ * cookie. Without it the gallery answers 404, so a guessed host alone shows nothing. Direct local
+ * requests skip this. A rotated slug invalidates old links and cookies.
+ */
+async function slugGate(req: Request, url: URL, server: Server): Promise<Response | null> {
+  if (isDirectLocal(req, server)) return null
+  const slug = await currentSlug()
+  if (!slug) return notFound()
+  const m = url.pathname.match(/^\/r\/([\w-]+)(\/.*)?$/)
+  if (m) {
+    if (!sameSecret(m[1], slug)) return notFound()
+    return new Response(null, {
+      status: 303,
+      headers: {
+        location: `${m[2] ?? "/approve"}${url.search}`,
+        "set-cookie": `${SLUG_COOKIE}=${slug}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
+      },
+    })
+  }
+  return sameSecret(cookie(req, SLUG_COOKIE), slug) ? null : notFound()
+}
+
 Bun.serve({
   port: PORT,
   hostname: "127.0.0.1",
-  async fetch(req) {
+  async fetch(req, server) {
     const url = new URL(req.url)
+    const gate = await slugGate(req, url, server)
+    if (gate) return gate
+    const review = await reviewApi(req, url, server)
+    if (review) return review
     if (url.pathname === "/") return page("showcase.html")
     if (url.pathname === "/gallery") return page("index.html")
     if (url.pathname === "/approve") return page("approve.html")
+    if (url.pathname === "/versions") return page("versions.html")
     if (url.pathname === "/overview") return page("overview.html")
     if (url.pathname === "/animations") return animationsPage()
     const an = url.pathname.match(/^\/anim\/([\w-]+)\/([\w-]+\.(?:mp4|gif))$/)
@@ -359,6 +555,7 @@ Bun.serve({
         status: 303,
         headers: {
           location: "/approve",
+          "cache-control": "no-store",
           "set-cookie": `${OWNER_COOKIE}=${OWNER_KEY}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000`,
         },
       })
@@ -369,7 +566,7 @@ Bun.serve({
       const p = join(ROOT, "static/fonts", font[1])
       if (await exists(p)) return new Response(Bun.file(p))
     }
-    if (url.pathname === "/api/config") return Response.json({ readonly: !canWrite(req) })
+    if (url.pathname === "/api/config") return Response.json({ readonly: !isOwner(req, server) })
     if (url.pathname === "/api/sets") return Response.json(await listSets())
     // Iconify JSON of the flat set (prefix "via"): Mermaid architecture-beta,
     // Excalidraw/tldraw importers and @iconify/* all read this format.
@@ -384,40 +581,13 @@ Bun.serve({
     }
     if (url.pathname === "/api/reviews" && req.method === "GET") return Response.json(await loadReviews())
     if (url.pathname === "/api/reviews" && req.method === "POST") {
-      if (!canWrite(req)) return new Response("read-only", { status: 403 })
-      // JSON only: a cross-site form post can't set this header (CSRF)
-      if (!req.headers.get("content-type")?.startsWith("application/json"))
-        return new Response("json only", { status: 415 })
-      const body = (await req.json()) as {
-        key: string
-        status?: Review["status"] | null
-        note?: string
-      }
-      if (!body.key || !/^[\w:.-]+\/(light|dark)\/[\w-]+$/.test(body.key))
-        return new Response("bad key", { status: 400 })
-      if (body.status && !STATUSES.includes(body.status)) return new Response("bad status", { status: 400 })
-      const all = await loadReviews()
-      if (body.status === "approved") {
-        const [, round, mode, name] = body.key.match(/^round:([\w.-]+)\/(light|dark)\/([\w-]+)$/) ?? []
-        const style = round?.split("-")[0]
-        for (const [k, r] of Object.entries(all))
-          if (
-            r.status === "approved" &&
-            k !== body.key &&
-            k.startsWith(`round:${style}-`) &&
-            k.endsWith(`/${mode}/${name}`)
-          )
-            delete all[k]
-      }
-      if (!body.status) delete all[body.key]
-      else
-        all[body.key] = {
-          status: body.status,
-          note: (body.note ?? "").slice(0, 2000),
-          at: new Date().toISOString(),
-        }
-      await Bun.write(REVIEWS, JSON.stringify(all, null, 2))
-      return Response.json(all)
+      if (!isOwner(req, server)) return new Response("only the owner can do this", { status: 403 })
+      const guard = writeGuard(req)
+      if (guard) return guard
+      const body = (await req.json()) as { key: string; status?: string | null; note?: string }
+      if (!body.key || !ITEM_KEY.test(body.key)) return new Response("bad key", { status: 400 })
+      if (body.status && !isVerdict(body.status)) return new Response("bad status", { status: 400 })
+      return Response.json(await STORE.writeLegacy(body.key, isVerdict(body.status) ? body.status : null, body.note))
     }
     // /icon/<mode>/<name>.png → 2.5D · /flat/<mode>/<name>.(png|svg) → flat twin
     // /stamp/<name>.svg (one colour, currentColor) · /stamp/<name>-badge.svg (sub-logo badge)
