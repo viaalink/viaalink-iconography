@@ -3,6 +3,12 @@
  * build a contact sheet showing each icon on its real page colour.
  *
  *   bun scripts/icons/render.ts --out local/icons/rounds/25d-r1 --style 25d [--mode light|dark|both] [--probe | name ...]
+ *   bun scripts/icons/render.ts --out local/icons/rounds/25d-r2 --feedback-file local/icons/feedback/<round>.json [--dry-run]
+ *
+ * --feedback-file reads a closed feedback round (just review-feedback): every icon with a regenerate or
+ * needs-work verdict is rendered again with its notes and comments as "IMPORTANT FEEDBACK TO ADDRESS".
+ * Without names it renders exactly those icons. A round closed as a closed circle (--no-feed) is refused.
+ * --dry-run prints the prompts and stops: no model call, nothing written.
  *
  * Output:
  *   <out>/<mode>/<name>.raw.png   model output (chroma background)
@@ -11,6 +17,7 @@
  *   <out>/prompts.json            exact prompts used (for reproducibility)
  */
 import sharp from "sharp"
+import { readFeedbackForGeneration } from "../review/feedback"
 import { squareIcon } from "./canvas"
 import { CONCEPTS, ICONS, type IconSubject, PROBE } from "./catalog"
 import { DEFAULT_IMAGE_MODEL, fileToDataUrl, generateImage } from "./openrouter"
@@ -30,8 +37,18 @@ const anchorArg = opt("anchors", "")
 const refArg = opt("refs", "")
 /** Owner feedback for this run (regeneration): appended to every subject. */
 const feedback = opt("feedback", "")
+/** A feedback round (just review-feedback): per-icon notes and comments for this style. */
+const feedbackFile = opt("feedback-file", "")
+const dryRun = args.includes("--dry-run")
 const probe = args.includes("--probe")
 const names = args.filter((a) => !a.startsWith("--"))
+const roundFeedback = feedbackFile
+  ? await readFeedbackForGeneration(feedbackFile, style).catch((e) => {
+      console.error((e as Error).message)
+      process.exit(1)
+    })
+  : new Map<string, string>()
+if (feedbackFile && !names.length) names.push(...roundFeedback.keys())
 
 const modes: Mode[] = modeArg === "both" ? ["light", "dark"] : [modeArg as Mode]
 const icons: IconSubject[] = probe
@@ -39,7 +56,16 @@ const icons: IconSubject[] = probe
   : names.length
     ? [...ICONS, ...CONCEPTS].filter((i) => names.includes(i.name))
     : ICONS
-if (!icons.length) throw new Error(`no icons matched: ${names.join(", ")}`)
+if (feedbackFile) {
+  const skipped = names.filter((n) => !icons.some((i) => i.name === n))
+  if (skipped.length)
+    console.log(`feedback for icons without an AI subject (Blender or flat only), skipped: ${skipped.join(", ")}`)
+  if (!roundFeedback.size) console.log(`${feedbackFile}: nothing to regenerate for style ${style}`)
+}
+if (!icons.length) {
+  if (feedbackFile) process.exit(0)
+  throw new Error(`no icons matched: ${names.join(", ")}`)
+}
 
 const logo = await fileToDataUrl("static/assets/logo-mark.png")
 
@@ -110,11 +136,25 @@ async function borderReport(input: Buffer): Promise<{ chroma: number; touching: 
   return { chroma: +(hits / total).toFixed(3), touching: +(ringMiss / ring).toFixed(3) }
 }
 
-async function renderOne(icon: IconSubject, mode: Mode) {
-  const subject = feedback
+/** The subject plus any feedback: --feedback for the whole run, the feedback file per icon. */
+function subjectOf(icon: IconSubject) {
+  let subject = feedback
     ? `${icon.subject} OWNER FEEDBACK on the previous version (attached as the last reference image): ${feedback}`
     : icon.subject
-  const prompt = buildPrompt(subject, style, mode)
+  const fromRound = roundFeedback.get(icon.name)
+  if (fromRound) subject += ` IMPORTANT FEEDBACK TO ADDRESS (from the review round): ${fromRound}`
+  return subject
+}
+
+if (dryRun) {
+  for (const mode of modes)
+    for (const icon of icons) console.log(`--- ${mode}/${icon.name}\n${buildPrompt(subjectOf(icon), style, mode)}\n`)
+  console.log(`dry run: ${icons.length * modes.length} prompts, no model call, nothing written`)
+  process.exit(0)
+}
+
+async function renderOne(icon: IconSubject, mode: Mode) {
+  const prompt = buildPrompt(subjectOf(icon), style, mode)
   const dir = `${out}/${mode}`
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -152,6 +192,7 @@ await Bun.write(
       anchors: anchorArg,
       refs: refArg,
       feedback,
+      feedbackFile,
       results,
     },
     null,

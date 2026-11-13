@@ -17,6 +17,8 @@ const styleOf = (round: string) => round.split("-")[0]
 
 export function compileFeedback(r: Round): FeedbackFile {
   const items: FeedbackItem[] = []
+  /** Items with a thumbs down or a comment of their own (general icon remarks do not count). */
+  const talkedAbout = new Set<string>()
   for (const icon of r.icons)
     for (const modes of Object.values(icon.images))
       for (const key of Object.values(modes)) {
@@ -25,6 +27,7 @@ export function compileFeedback(r: Round): FeedbackFile {
         const v = r.verdicts[key]
         // top-level comments about this image, then the rest of the icon's thread (general remarks)
         const thread = r.comments.filter((c) => c.item === key || (c.icon === icon.name && !c.item))
+        if (thread.some((c) => c.item === key)) talkedAbout.add(key)
         const comments = thread.map(
           (c) => `${c.down ? "thumbs down: " : ""}${c.text} (${c.name}${c.owner ? ", owner" : ""})`,
         )
@@ -51,7 +54,7 @@ export function compileFeedback(r: Round): FeedbackFile {
     regenerate: by((i) => i.verdict === "regenerate" || i.verdict === "needs-work"),
     buildInBlender: by((i) => i.verdict === "approved"),
     rejected: by((i) => i.verdict === "rejected"),
-    unjudged: by((i) => i.verdict === null && (i.votes.down > 0 || i.comments.length > 0)),
+    unjudged: by((i) => i.verdict === null && (i.votes.down > 0 || talkedAbout.has(i.key))),
     newIcons: r.requests.map((q) => ({ name: q.name, shows: q.shows, by: q.by, at: q.at })),
   }
 }
