@@ -139,7 +139,9 @@ just icons-blender-gate                                      # GATE: pass
 just icons-pack --r25 local/icons/rounds/25d-b-mine --rflat local/icons/rounds/flat-mine  # packs under your slug
 ```
 
-Icon names and shapes stay the same; the logo inside the Relay and the record phone comes from `logo`.
+Icon names and shapes stay the same; the logo inside the Relay and the record phone comes from `logo`. Not in the
+theme, so change them by hand if they matter to you: the Docker icon's containers spell VIA / LINK, the AI concept
+subjects in `scripts/icons/catalog.ts` name Viaalink products, and the gallery pages keep some UI colours of their own.
 
 **Lint:** `just lint` (ruff for Python, Biome and `tsc` for TypeScript, plus the theme check) exits 1 on any
 problem; `just fmt` fixes what can be fixed. **Refactors:** `just icons-check-dump`, `icons-check-svg` and
