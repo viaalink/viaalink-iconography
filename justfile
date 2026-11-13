@@ -102,3 +102,7 @@ fmt:
 	ruff check --fix .
 	ruff format .
 	bunx biome check --write .
+
+# Live end-to-end test of an open, shared round over the real HTTPS link (needs Playwright: bun add -d @playwright/test && bunx playwright install chromium)
+review-test-live round base:
+	bun test/live-review.ts {{round}} {{base}} && bun test/live-review-ui.ts {{round}} {{base}}

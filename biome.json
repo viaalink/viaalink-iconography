@@ -1,9 +1,23 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "includes": ["scripts/**/*.ts", "tools/**/*.ts", "tools/**/*.js", "theme/*.json", "*.json"]
+    "includes": [
+      "scripts/**/*.ts",
+      "tools/**/*.ts",
+      "test/**/*.ts",
+      "tools/**/*.js",
+      "theme/*.json",
+      "*.json",
+      "!**/.asd",
+      "!**/local",
+      "!**/node_modules"
+    ]
   },
-  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
   "javascript": {
     "formatter": {
       "semicolons": "asNeeded",
@@ -12,6 +26,16 @@
       "arrowParentheses": "always"
     }
   },
-  "linter": { "rules": { "preset": "recommended" } },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } }
+  "linter": {
+    "rules": {
+      "preset": "recommended"
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
 }
