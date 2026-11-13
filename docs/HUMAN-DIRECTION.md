@@ -1,12 +1,26 @@
 # The human in the loop
 
-This set was made by Kelvin Wuite together with AI agents. The agents wrote most of the code, modelled the
-icons in Blender and checked every render by looking at it. But the **ideas, the taste and the decisions** came
-from Kelvin. This page lists them, in the order they happened, so it is clear which parts are human.
+Kelvin Wuite designed this system: the architecture, the infrastructure it runs on, the philosophy behind
+the set, and the agentic way it is built, with several AI agents working in parallel and iterating until
+the result passes his review. The agents work inside that system. They write code, model icons in Blender
+and check every render by looking at it, following the method, rules and gates Kelvin set. This page lists
+his design and his decisions, in the order they happened, so it is clear which parts are human.
 
 Quotes are Kelvin's own words from the working sessions, translated from Dutch where needed.
 
-## 1. The foundation
+## 1. The system design
+
+- **Architecture and infrastructure.** Kelvin designed how the library is put together and where it runs:
+  the pipeline from concept to Blender model to flat twin to published pack, and the self-hosted
+  infrastructure it builds and publishes on.
+- **The philosophy.** Own models instead of pictures, one consistent visual language, open where it helps
+  others and protected where it is the brand.
+- **The agentic method.** The loop of iteration: propose, render, check by vision, review, correct, and
+  only then accept. Kelvin designed this loop and the gates in it; the agents run it.
+- **Multiple agents.** The work is split over several agents with their own lanes (concepts, modelling,
+  checking, publishing), coordinated the way Kelvin set it up.
+
+## 2. The foundation
 
 - **The generator.** Kelvin designed the icon generator in 2025 at ASD Engineering for the ASD Manager. He
   first used OpenAI, and moved the code to OpenRouter after OpenAI blocked his access. Everything here
@@ -16,7 +30,7 @@ Quotes are Kelvin's own words from the working sessions, translated from Dutch w
 - **Own models, not pictures.** He noticed that many icons were still plain AI images and not built from
   our own models. That pushed the whole 2.5D set into Blender, where every icon is a real model.
 
-## 2. The house style came from his eye
+## 3. The house style came from his eye
 
 - **"The icon is the object."** Looking at a Wi-Fi icon sitting on a square tile, he said the icon itself
   should be the object, not a picture on a tile. He picked `sync` as the approved reference. This became
@@ -33,7 +47,7 @@ Quotes are Kelvin's own words from the working sessions, translated from Dutch w
 - **Raspberry Pi with navy leaves** (picked from three options). Also more navy in the set, for example a
   globe caught in the `webhook` hook.
 
-## 3. What to make, and what not
+## 4. What to make, and what not
 
 - **Missing icons.** He named the gaps: NAS, Raspberry Pi, router, modem, Caddy, Let's Encrypt, DNS. Then:
   "keep looking, there are more things", and finally: make the set complete enough for real IT
@@ -50,7 +64,7 @@ Quotes are Kelvin's own words from the working sessions, translated from Dutch w
   Linux, Windows and macOS on a desktop screen.
 - **Caddy's own mark.** He found Caddy's official logo and asked to put it on "the default block we use".
 
-## 4. From icons to a system
+## 5. From icons to a system
 
 - **Diagrams that explain the company.** Flow diagrams of Viaalink now and in the future ("every Viaalink
   app will be able to talk to the next"). A router feeding three NATS-linked Relays for zero downtime. The
@@ -61,7 +75,7 @@ Quotes are Kelvin's own words from the working sessions, translated from Dutch w
 - **Publishing.** A Mermaid icon set and draw.io/Visio stencils: "we're not there yet". Without that, the
   set would not be usable outside the website.
 
-## 5. Strategy and openness
+## 6. Strategy and openness
 
 - **Open source, with boundaries.** Icons, pipeline and process in the open; the Viaalink mark and
   third-party marks protected; the film engine and voice kept private.
@@ -76,9 +90,11 @@ Quotes are Kelvin's own words from the working sessions, translated from Dutch w
 
 | Kelvin (human) | The AI agents |
 |---|---|
-| The original generator and its move to OpenRouter | The Blender pipeline, flat twins, gate, pack, diagrams, animations |
+| The system: architecture, infrastructure and philosophy | Working inside that system, in the lanes he set up |
+| The agentic method: the iteration loop, its gates, and the use of several agents | Running the loop: code, Blender models, flat twins, packs, diagrams, animations |
+| The original generator and its move to OpenRouter | Extending the code under his direction |
 | The vision: a complete, consistent library in Viaalink's style | Modelling every icon from his descriptions and picks |
-| The house rules: the icon is the object, one device family, 2D matches 2.5D | Rules written down (docs/skill) and enforced in every task |
+| The house rules: the icon is the object, one device family, 2D matches 2.5D | Applying the rules in every task |
 | Every approval and rejection, every pick between concepts | Concept sketches, renders, contact sheets, vision QA |
-| What the set must cover, and why | Gap lists and expert reviews, offered as input for his decisions |
-| Publishing, licensing and community strategy | Packaging, docs, the repo and the release |
+| What the set must cover, and why | Gap lists and reviews, offered as input for his decisions |
+| Publishing, licensing and community strategy | Packaging, docs and the release |
