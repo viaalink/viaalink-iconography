@@ -41,3 +41,15 @@ icons-render out *args:
 # The gallery (showcase, overview, approval) on http://127.0.0.1:5330, published via your Viaalink Relay
 icons-gallery:
 	cd tools/icon-gallery && via config validate && via up
+
+# Refactor guard: dump every flat SVG string (light, dark, themeable, mono, badge) → <out>/<kind>/<name>.svg
+icons-check-dump out:
+	bun scripts/icons/check-identical.ts dump {{out}}
+
+# Refactor guard: two SVG dumps must be byte-identical
+icons-check-svg before after:
+	bun scripts/icons/check-identical.ts svg {{before}} {{after}}
+
+# Refactor guard: two renders must match within Cycles noise (per-icon mean abs diff, max channel diff)
+icons-check-png before after *args:
+	bun scripts/icons/check-identical.ts png {{before}} {{after}} {{args}}
