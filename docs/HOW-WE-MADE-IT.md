@@ -45,6 +45,15 @@ Every round of images goes through the same loop, which Kelvin designed:
    colour roles (cream becomes sand, navy and red stay accents), checked side by side on one contact sheet.
 7. **Judge again**: the colour gate, a look at every render, an independent review, and the shared gallery.
 
+![The loop, drawn with the set itself](examples/loop.png)
+
+(Drawn in Mermaid with this set's own icons: [examples/loop.mmd](examples/loop.mmd).)
+
+Drawing the loop with the set was also a test of the set, and it showed gaps for 0.2: there is no icon for
+a **3D model** (Blender) or for **drawing a vector**, so the laptop and the page stand in; **voting** and
+**review** have no icon of their own (a check mark stands in); and the flowchart's icon nodes draw the
+icons lighter than the architecture diagrams do, which needs a look.
+
 **Reproducible.** Both the 3D model and the flat twin are code, so the same commands rebuild every icon
 exactly, in light and dark. The step from 3D to flat is a design step today: the twin is drawn from the
 model, not computed from it. Computing it (an orthographic front render turned into SVG paths per colour

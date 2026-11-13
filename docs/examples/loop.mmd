@@ -1,0 +1,14 @@
+flowchart LR
+  gen@{ icon: "viaalink:ai-a", form: "square", label: "1 Generate a round", pos: "b", h: 64 }
+  share@{ icon: "viaalink:relay", form: "square", label: "2 Share via our own Relay", pos: "b", h: 64 }
+  judge@{ icon: "viaalink:check", form: "square", label: "3 Judge: approve, needs work, regenerate", pos: "b", h: 64 }
+  fb@{ icon: "viaalink:chat", form: "square", label: "4 Notes feed the next round", pos: "b", h: 64 }
+  model@{ icon: "viaalink:cli", form: "square", label: "5 Build the 3D model in Blender", pos: "b", h: 64 }
+  flat@{ icon: "viaalink:page", form: "square", label: "6 Draw the flat twin from it", pos: "b", h: 64 }
+  gate@{ icon: "viaalink:shield", form: "square", label: "7 Gate, review, share again", pos: "b", h: 64 }
+  pub@{ icon: "viaalink:upload", form: "square", label: "Publish the set", pos: "b", h: 64 }
+  gen --> share --> judge
+  judge -- rejected --> fb --> gen
+  judge -- approved --> model --> flat --> gate
+  gate -- not yet --> model
+  gate -- approved --> pub
