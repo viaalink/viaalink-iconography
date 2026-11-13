@@ -70,8 +70,10 @@ honest: every image is judged by people, in the open, until it earns its place. 
    into it.
 4. **Feed back.** The notes go back into the generator as feedback for the next round, so a rejection is
    never lost: it becomes the brief for the next attempt.
-5. **Build in depth.** An approved image becomes the target for a real 3D design. It is modelled in Blender,
-   so from then on it can be rebuilt exactly, in light and dark, flat and in depth.
+5. **Build in depth, then flat.** An approved image becomes the target for a real 3D design, modelled in
+   Blender. From that 3D object its flat twin is drawn as code, with the same parts and colour roles, and
+   checked side by side with it. Both are code, so every icon can be rebuilt exactly, in light and dark,
+   flat and in depth.
 6. **Judge again.** The 3D result goes through the same loop: rendered, measured by a colour gate, reviewed
    by eye, scored by an independent reviewer, shared, approved or sent back.
 
