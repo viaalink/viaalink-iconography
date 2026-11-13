@@ -21,6 +21,8 @@ one, but never matched each other: every icon had its own light, camera and red.
 - `scripts/icons/blender/build.py` models each icon from simple parts (rounded boxes, curves, extruded SVG
   paths) with a role per part: body red, cream secondary, navy only in recesses, glowing details.
 - Light and dark are the same model with a palette swap, so they never drift apart.
+- Colours, fonts, logo, camera, light rig and materials sit in one theme file (`theme/brand.json`), so the
+  same pipeline can make the set for another brand.
 - `scripts/icons/flat.ts` draws the flat twin of each icon as SVG on a 24-unit grid, part by part, with a
   "lip" (the same shape shifted down in a darker shade) as its only depth cue.
 

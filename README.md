@@ -106,6 +106,45 @@ How the set was made, with AI agents as executor and art director: [docs/HOW-WE-
 Which ideas, choices and rejections came from the human: [docs/HUMAN-DIRECTION.md](docs/HUMAN-DIRECTION.md).
 The working rules the agents follow: [docs/skill/SKILL.md](docs/skill/SKILL.md); real task files: [docs/tasks](docs/tasks).
 
+## Make it your brand
+
+Everything that is brand or look lives in **one file**: [`theme/brand.json`](theme/brand.json) (checked against
+[`theme/brand.schema.json`](theme/brand.schema.json)). The models in `build.py` only hold shapes; every script
+reads the theme through one loader per language (`scripts/icons/theme.py`, `scripts/icons/theme.ts`).
+
+| Theme key | What it sets |
+|---|---|
+| `brand` | name, `slug` (Iconify prefix, pack and zip names), `cssPrefix` (`--via-p` …), `cliWord` (the `> via` prompt) |
+| `fonts`, `logo` | font files and logo SVGs (paths relative to the theme file) |
+| `colors25d`, `materials` | 2.5D colours per role and mode, cream albedo, navy lift, glow, roughness |
+| `flat` | flat role colours per mode (`p s n m r c`), the lip depth |
+| `pages`, `gallery` | page colours behind sheets, films and the gallery |
+| `camera`, `lights`, `render` | azimuth, pitch, framing margin; key and rim light; samples, exposure, world |
+| `shape` | default bevels, smoothing, the device family's pipe port |
+| `canvas`, `gate` | icon size, margin, optical size; the gate's thresholds |
+| `diagram`, `animation`, `prompt` | pipes, grid, board, labels; film defaults; the AI concept palette |
+
+To make the set for another brand:
+
+1. Copy `theme/brand.json` somewhere of your own (keep `brand.schema.json` next to it if you want editor hints).
+2. Change the colours, fonts, logo paths and `brand` names. Paths are relative to your copy.
+3. Point the pipeline at it and render:
+
+```sh
+export VIA_ICON_THEME=$PWD/my-brand.json
+just theme-check                                             # validates it (both loaders), names any missing key
+just icons-blender local/icons/rounds/25d-b-mine --samples 48  # 2.5D (the gate checks rounds named 25d-b*)
+just icons-flat local/icons/rounds/flat-mine                 # flat twins
+just icons-blender-gate                                      # GATE: pass
+just icons-pack --r25 local/icons/rounds/25d-b-mine --rflat local/icons/rounds/flat-mine  # packs under your slug
+```
+
+Icon names and shapes stay the same; the logo inside the Relay and the record phone comes from `logo`.
+
+**Lint:** `just lint` (ruff for Python, Biome and `tsc` for TypeScript, plus the theme check) exits 1 on any
+problem; `just fmt` fixes what can be fixed. **Refactors:** `just icons-check-dump`, `icons-check-svg` and
+`icons-check-png` prove that flat SVGs stay byte-identical and renders stay within Cycles noise.
+
 ## Brand
 
 Colours, typography (Space Grotesk, IBM Plex Mono) and logo use: **[viaalink.com/brand](https://viaalink.com/brand)**.
