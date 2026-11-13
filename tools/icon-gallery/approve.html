@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Icon Approval</title>
+    <meta name="description" content="Which Viaalink icons are accepted, and which still wait for the owner." />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      .theme {
+        margin-left: auto;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        border-radius: 999px;
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      :root {
+        --red: #f73f3f;
+        --coral: #ff6b6b;
+        --navy: #13223a;
+        --deep: #0e1626;
+        --slate: #17243a;
+        --cream: #f6f3ee;
+        --ok: #1f8a5b;
+        --wait: #b7791f;
+        --bg: var(--cream);
+        --bg-2: #ffffff;
+        --ink: var(--navy);
+        --muted: #5b6475;
+        --line: #e4ddd2;
+        --accent: var(--red);
+        --sans: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: var(--deep);
+          --bg-2: var(--slate);
+          --ink: var(--cream);
+          --muted: #9aa5b8;
+          --line: #24324b;
+          --accent: var(--coral);
+          --ok: #4cc38a;
+          --wait: #e3a948;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: var(--deep);
+        --bg-2: var(--slate);
+        --ink: var(--cream);
+        --muted: #9aa5b8;
+        --line: #24324b;
+        --accent: var(--coral);
+        --ok: #4cc38a;
+        --wait: #e3a948;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.5 var(--sans);
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 16px 64px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 40px);
+        letter-spacing: -0.02em;
+      }
+      a {
+        color: var(--accent);
+      }
+      .who {
+        font: 13px var(--mono);
+        color: var(--muted);
+      }
+      .counts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 20px 0 24px;
+      }
+      .counts button {
+        font: 14px var(--sans);
+        border: 1px solid var(--line);
+        background: var(--bg-2);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 6px 14px;
+        cursor: pointer;
+      }
+      .counts button[aria-pressed="true"] {
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+      }
+      .card h2 {
+        margin: 0 0 12px;
+        font: 600 15px var(--mono);
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .styles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .style {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .style img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+        padding: 10%;
+        background: var(--deep);
+        border-radius: 12px;
+      }
+      .style .none {
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        border: 1px dashed var(--line);
+        border-radius: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .meta {
+        font: 11px var(--mono);
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font: 600 12px var(--sans);
+        padding: 2px 10px;
+        border-radius: 999px;
+        width: fit-content;
+      }
+      .pill.approved {
+        color: var(--ok);
+        background: color-mix(in srgb, var(--ok) 14%, transparent);
+      }
+      .pill.pending {
+        color: var(--wait);
+        background: color-mix(in srgb, var(--wait) 16%, transparent);
+      }
+      .pill.needs-work {
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+      }
+      .pill.rejected {
+        color: var(--muted);
+        background: color-mix(in srgb, var(--muted) 16%, transparent);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .actions button {
+        font: 13px var(--sans);
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        border-radius: 8px;
+        padding: 4px 10px;
+        cursor: pointer;
+      }
+      .actions button.on {
+        border-color: currentColor;
+        font-weight: 600;
+      }
+      .actions .approved {
+        color: var(--ok);
+      }
+      .actions .needs-work {
+        color: var(--accent);
+      }
+      .actions .rejected {
+        color: var(--muted);
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .hist {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .hist button {
+        position: relative;
+        width: 46px;
+        height: 46px;
+        padding: 3px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        background: var(--deep);
+        cursor: pointer;
+      }
+      .hist button img {
+        background: transparent;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 0;
+        border-radius: 0;
+      }
+      .hist button.light,
+      .style img.light {
+        background: var(--cream);
+        border: 1px solid var(--line);
+      }
+      .hist button b {
+        position: absolute;
+        right: 2px;
+        bottom: 1px;
+        font: 700 9px var(--mono);
+        color: var(--navy);
+      }
+      .hist button.sel {
+        border-color: var(--accent);
+      }
+      .hist button.main::after {
+        content: "★";
+        position: absolute;
+        top: -7px;
+        right: -5px;
+        font-size: 12px;
+        color: var(--ok);
+      }
+      .hist button i {
+        position: absolute;
+        left: 2px;
+        bottom: 2px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .hist i.approved {
+        background: var(--ok);
+      }
+      .hist i.regenerate {
+        background: var(--wait);
+      }
+      .hist i.needs-work {
+        background: var(--accent);
+      }
+      .hist i.pending {
+        display: none;
+      }
+      .regen {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .regen textarea {
+        font: 13px var(--sans);
+        min-height: 54px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      .pill.regenerate,
+      .actions .regenerate {
+        color: var(--wait);
+      }
+      .pill.regenerate {
+        background: color-mix(in srgb, var(--wait) 16%, transparent);
+      }
+      @media (max-width: 400px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Icon approval</h1>
+        <span class="who" id="who"></span>
+        <button class="theme" id="theme" aria-label="Toggle light or dark">◐</button>
+      </header>
+      <p class="note">
+        The big picture is the dark main version unless you click another one. Light versions sit on cream in their own row; the showcase uses the light main on light pages (dark when there is none). Pick any version below an icon to see it; "Make main" freezes it (new renders never replace it), "Regenerate" queues a new render (2.5D) or a redraw (flat) with your note. ★ = main.
+        <a href="/">Showcase</a> · <a href="/gallery">All rounds</a>
+      </p>
+      <div class="counts" id="counts"></div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <script>
+      const LABEL = {
+        approved: "Accepted",
+        pending: "Not yet",
+        "needs-work": "Needs work",
+        rejected: "Rejected",
+        regenerate: "Regenerate queued",
+      }
+      let rows = []
+      let writable = false
+      let filter = "all"
+      const sel = {} // "<name>/<style>" → selected round (defaults to the main version)
+      const draft = {} // "<name>/<style>" → regenerate note being written
+      const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)
+      const st = (v) => v?.review?.status ?? "pending"
+      const mainOf = (s) => s?.history.find((h) => h.main && h.mode === "dark") ?? s?.history[0]
+      const rowState = (r) => {
+        const all = [r["25d"], r.flat].filter(Boolean).map((s) => st(mainOf(s)))
+        const queued = [r["25d"], r.flat].filter(Boolean).some((s) => s.history.some((h) => st(h) === "regenerate"))
+        if (queued) return "regenerate"
+        if (all.every((x) => x === "approved")) return "approved"
+        if (all.every((x) => x === "rejected" || x === "pending") && all.includes("rejected")) return "rejected"
+        return all.includes("needs-work") ? "needs-work" : "pending"
+      }
+
+      function styleCell(r, style) {
+        const s = r[style]
+        const title = style === "25d" ? "2.5D" : "Flat"
+        if (!s) return `<div class="style"><div class="none">no ${title}</div></div>`
+        const id = `${r.name}/${style}`
+        const v = s.history.find((h) => h.key === sel[id]) ?? mainOf(s)
+        const state = st(v)
+        const actions = writable
+          ? draft[id] !== undefined
+            ? `<div class="regen"><textarea data-draft="${esc(id)}" placeholder="What should change? (optional)">${esc(draft[id])}</textarea>
+               <div class="actions"><button class="regenerate on" data-act="regenerate" data-id="${esc(id)}" data-key="${esc(v.key)}">Queue regenerate</button>
+               <button data-act="cancel" data-id="${esc(id)}">Cancel</button></div></div>`
+            : `<div class="actions">
+                <button class="approved ${v.main && state === "approved" ? "on" : ""}" data-act="approved" data-key="${esc(v.key)}">${v.main && state === "approved" ? "★ Main" : "Make main"}</button>
+                <button class="regenerate ${state === "regenerate" ? "on" : ""}" data-act="draft" data-id="${esc(id)}">Regenerate</button>
+                <button class="rejected ${state === "rejected" ? "on" : ""}" data-act="rejected" data-key="${esc(v.key)}">Reject</button>
+              </div>`
+          : ""
+        const thumb = (h) => `<button class="${h.key === v.key ? "sel" : ""} ${h.main ? "main" : ""} ${h.mode}" data-pick="${esc(id)}" data-round="${esc(h.key)}" title="${esc(h.round)} · ${h.mode}${h.main ? " (main)" : ""}">
+              <img src="/img/round/${h.round}/${h.mode}/${r.name}.${h.ext}" alt="" loading="lazy" /><i class="${st(h)}"></i></button>`
+        // dark first (the edition we design in), light below it
+        const hist = ["dark", "light"]
+          .map((m) => [m, s.history.filter((h) => h.mode === m)])
+          .filter(([, hs]) => hs.length)
+          .map(([m, hs]) => `<span class="meta">${m}</span><div class="hist">${hs.map(thumb).join("")}</div>`)
+          .join("")
+        return `<div class="style">
+          <img class="${v.mode}" src="/img/round/${v.round}/${v.mode}/${r.name}.${v.ext}" alt="${esc(r.name)} ${title} ${v.mode}" loading="lazy" />
+          <span class="pill ${state}">${v.main ? "★ " : ""}${LABEL[state]}</span>
+          <span class="meta">${title} · ${esc(v.round)} · ${v.mode}${v.main ? " · main" : ""} · ${s.history.length} version${s.history.length > 1 ? "s" : ""}</span>
+          ${v.review?.note && !/^approved in chat/.test(v.review.note) ? `<span class="note">${esc(v.review.note)}</span>` : ""}
+          ${actions}
+          ${hist}
+        </div>`
+      }
+
+      function render() {
+        const n = { all: rows.length, approved: 0, pending: 0, "needs-work": 0, rejected: 0, regenerate: 0 }
+        for (const r of rows) n[rowState(r)]++
+        document.getElementById("counts").innerHTML = ["all", "pending", "regenerate", "needs-work", "approved", "rejected"]
+          .map((k) => `<button data-f="${k}" aria-pressed="${filter === k}">${k === "all" ? "All" : LABEL[k]} · ${n[k]}</button>`)
+          .join("")
+        document.getElementById("grid").innerHTML = rows
+          .filter((r) => filter === "all" || rowState(r) === filter)
+          .map(
+            (r) => `<article class="card"><h2><span>${esc(r.name)}</span>
+              <span class="pill ${rowState(r)}">${LABEL[rowState(r)]}</span></h2>
+              <div class="styles">${styleCell(r, "25d")}${styleCell(r, "flat")}</div></article>`,
+          )
+          .join("")
+      }
+
+      async function save(key, status, note = "") {
+        const res = await fetch("/api/reviews", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ key, status, note }),
+        })
+        if (res.ok) await load()
+      }
+
+      document.addEventListener("input", (e) => {
+        if (e.target.dataset.draft) draft[e.target.dataset.draft] = e.target.value
+      })
+      document.addEventListener("click", async (e) => {
+        const f = e.target.closest("[data-f]")
+        if (f) return (filter = f.dataset.f), render()
+        const p = e.target.closest("[data-pick]")
+        if (p) return (sel[p.dataset.pick] = p.dataset.round), render()
+        const b = e.target.closest("[data-act]")
+        if (!b) return
+        const act = b.dataset.act
+        if (act === "draft") return (draft[b.dataset.id] = ""), render()
+        if (act === "cancel") return delete draft[b.dataset.id], render()
+        if (act === "regenerate") {
+          const note = draft[b.dataset.id] ?? ""
+          delete draft[b.dataset.id]
+          return save(b.dataset.key, "regenerate", note)
+        }
+        const key = b.dataset.key
+        const cur = rows.flatMap((r) => [r["25d"], r.flat]).filter(Boolean).flatMap((s) => s.history).find((h) => h.key === key)
+        // clicking the active state again clears it
+        const isOn = act === "approved" ? cur.main && st(cur) === "approved" : st(cur) === act
+        await save(key, isOn ? null : act)
+      })
+
+      async function load() {
+        const [a, cfg] = await Promise.all([
+          fetch("/api/approval").then((r) => r.json()),
+          fetch("/api/config").then((r) => r.json()),
+        ])
+        rows = a
+        writable = !cfg.readonly
+        document.getElementById("who").textContent = writable ? "you can accept and queue regenerations" : "read-only"
+        render()
+      }
+      load()
+    </script>
+      <script>
+      // ◐ toggles light/dark (remembered per browser); without it the page follows the system.
+      {
+        const root = document.documentElement
+        try {
+          const t = localStorage.getItem("via-icons-theme")
+          if (t) root.dataset.theme = t
+        } catch {}
+        document.getElementById("theme").addEventListener("click", () => {
+          const dark = root.dataset.theme
+            ? root.dataset.theme === "dark"
+            : matchMedia("(prefers-color-scheme: dark)").matches
+          root.dataset.theme = dark ? "light" : "dark"
+          try {
+            localStorage.setItem("via-icons-theme", root.dataset.theme)
+          } catch {}
+        })
+      }
+    </script>
+</body>

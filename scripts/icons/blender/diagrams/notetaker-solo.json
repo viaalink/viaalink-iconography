@@ -1,0 +1,47 @@
+{
+ "title": "Notetaker, solo",
+ "nodes": [
+  {
+   "id": "you",
+   "doll": "parent",
+   "at": [
+    0.1,
+    0.8
+   ],
+   "label": "You talk"
+  },
+  {
+   "id": "ph",
+   "icon": "transcribe",
+   "at": [
+    1,
+    0.35
+   ],
+   "label": "Records + transcribes",
+   "side": "out",
+   "scale": 0.85
+  },
+  {
+   "id": "lock",
+   "icon": "lock",
+   "at": [
+    1.5,
+    0.7
+   ],
+   "scale": 0.5,
+   "label": "Stays on your phone",
+   "side": "in"
+  }
+ ],
+ "edges": [
+  [
+   "you",
+   "ph",
+   {
+    "style": "speech"
+   }
+  ]
+ ],
+ "grid": 2.7,
+ "board": "hull"
+}

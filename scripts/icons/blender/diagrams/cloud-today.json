@@ -1,0 +1,80 @@
+{
+ "title": "Today: your words go to their cloud",
+ "board": "fit",
+ "nodes": [
+  {
+   "id": "you",
+   "doll": "person-red",
+   "scale": 1.3,
+   "at": [
+    -0.5,
+    0.6
+   ],
+   "label": "You",
+   "side": "out"
+  },
+  {
+   "id": "ph",
+   "icon": "phone",
+   "at": [
+    0.5,
+    0.6
+   ],
+   "scale": 0.85,
+   "label": "Your phone",
+   "side": "out"
+  },
+  {
+   "id": "cloud",
+   "icon": "globe",
+   "at": [
+    1.8,
+    0.6
+   ],
+   "label": "Their cloud",
+   "side": "out"
+  },
+  {
+   "id": "srv",
+   "icon": "server",
+   "at": [
+    3.1,
+    0.6
+   ],
+   "label": "Their servers",
+   "side": "out"
+  },
+  {
+   "id": "pay",
+   "icon": "payment",
+   "at": [
+    3.1,
+    -0.7
+   ],
+   "scale": 0.8,
+   "label": "\u20ac every month",
+   "side": "out"
+  }
+ ],
+ "edges": [
+  [
+   "you",
+   "ph",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "ph",
+   "cloud"
+  ],
+  [
+   "cloud",
+   "srv"
+  ],
+  [
+   "pay",
+   "srv"
+  ]
+ ]
+}

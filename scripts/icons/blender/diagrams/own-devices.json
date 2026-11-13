@@ -1,0 +1,80 @@
+{
+ "title": "Your own devices do the work",
+ "board": "fit",
+ "nodes": [
+  {
+   "id": "you",
+   "doll": "person-red",
+   "scale": 1.3,
+   "at": [
+    -0.5,
+    1.2
+   ],
+   "label": "You",
+   "side": "out"
+  },
+  {
+   "id": "ph",
+   "icon": "phone",
+   "at": [
+    0.6,
+    0.0
+   ],
+   "scale": 0.85,
+   "label": "Your phone",
+   "side": "out"
+  },
+  {
+   "id": "desk",
+   "glyph": "desktop",
+   "at": [
+    0.6,
+    1.2
+   ],
+   "label": "Your computer",
+   "side": "out"
+  },
+  {
+   "id": "nas",
+   "icon": "nas",
+   "at": [
+    0.6,
+    2.4
+   ],
+   "scale": 0.85,
+   "label": "Your NAS",
+   "side": "in"
+  },
+  {
+   "id": "relay",
+   "icon": "relay",
+   "at": [
+    2.0,
+    1.2
+   ],
+   "label": "Your Relay",
+   "side": "out"
+  }
+ ],
+ "edges": [
+  [
+   "you",
+   "desk",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "ph",
+   "relay"
+  ],
+  [
+   "desk",
+   "relay"
+  ],
+  [
+   "nas",
+   "relay"
+  ]
+ ]
+}

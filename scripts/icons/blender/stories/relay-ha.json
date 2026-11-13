@@ -1,0 +1,97 @@
+{
+ "diagram": "relay-ha",
+ "seconds": 10,
+ "period": 1.6,
+ "beats": [
+  {
+   "at": 0.11,
+   "node": "web"
+  },
+  {
+   "at": 0.33,
+   "edge": "web>modem"
+  },
+  {
+   "at": 0.5,
+   "node": "modem"
+  },
+  {
+   "at": 0.72,
+   "edge": "modem>router"
+  },
+  {
+   "at": 0.88,
+   "node": "router"
+  },
+  {
+   "at": 1.32,
+   "node": "r1"
+  },
+  {
+   "at": 1.4,
+   "node": "r2"
+  },
+  {
+   "at": 1.49,
+   "node": "r3"
+  },
+  {
+   "at": 1.59,
+   "edge": "router>r1"
+  },
+  {
+   "at": 1.65,
+   "edge": "router>r2"
+  },
+  {
+   "at": 1.71,
+   "edge": "router>r3"
+  },
+  {
+   "at": 1.98,
+   "edge": "r1>r2"
+  },
+  {
+   "at": 2.06,
+   "edge": "r2>r3"
+  },
+  {
+   "at": 2.25,
+   "node": "srv"
+  },
+  {
+   "at": 2.42,
+   "edge": "r1>srv"
+  },
+  {
+   "at": 2.48,
+   "edge": "r2>srv"
+  },
+  {
+   "at": 2.53,
+   "edge": "r3>srv"
+  },
+  {
+   "at": 3.1,
+   "flow": true
+  },
+  {
+   "at": 5.0,
+   "fail": "r2"
+  }
+ ],
+ "camera": [
+  {
+   "at": 0,
+   "focus": [
+    "web",
+    "modem",
+    "router"
+   ]
+  },
+  {
+   "at": 2.0,
+   "focus": "all"
+  }
+ ]
+}

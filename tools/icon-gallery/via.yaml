@@ -1,0 +1,43 @@
+# via.yaml: the icon gallery, served and shared with Viaalink (https://viaalink.com/cli).
+#
+#   cd tools/icon-gallery && via up      → http://127.0.0.1:5330
+#                                          and, with a Viaalink Relay, a public read-only address:
+#                                          icons.<your relay domain>
+#   via config validate                  (after every change)
+#
+# This is how Viaalink hosts its own gallery: the server runs on our own machine and is
+# published through our own Relay, with no cloud in between. Which Relay and which domain
+# is your own setup (via relay add), so nothing about ours is in this file.
+#
+# Shows local/icons/rounds/* (design rounds) and the packs; reviews are written to
+# local/icons/reviews.json and can only be written from 127.0.0.1.
+version: 1
+project:
+  name: viaalink-icons
+  domain: localhost
+  project_root: gallery
+  tunnel:
+    preferred: true
+    prefix: icons
+features:
+  auto_detect_services: false
+  auto_onboard_detected: false
+  tunnel_mode: automatic
+network:
+  services:
+    gallery:
+      name: Viaalink icon gallery
+      type: web
+      dial: 127.0.0.1:5330
+      paths: ["/"]
+automation:
+  # tail: keep the server running after the steps finish
+  up:
+    name: icon-gallery.up
+    tail: true
+    steps:
+      - run: bun --watch server.ts   # reloads when flat.ts or the catalog change: the showcase always shows the latest icons
+        background: true
+        skipWhen:
+          port: 5330
+      - waitFor: http://127.0.0.1:5330

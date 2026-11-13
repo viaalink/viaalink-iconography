@@ -1,0 +1,108 @@
+{
+ "title": "One Relay connects it all",
+ "board": "fit",
+ "nodes": [
+  {
+   "id": "social",
+   "icon": "social",
+   "at": [
+    0.2,
+    0.0
+   ],
+   "scale": 0.85,
+   "label": "Social",
+   "side": "out"
+  },
+  {
+   "id": "notu",
+   "icon": "notetaker",
+   "at": [
+    0.2,
+    1.2
+   ],
+   "scale": 0.85,
+   "label": "Notetaker",
+   "side": "out"
+  },
+  {
+   "id": "apps",
+   "icon": "cli",
+   "at": [
+    0.2,
+    2.4
+   ],
+   "scale": 0.85,
+   "label": "via apps",
+   "side": "in"
+  },
+  {
+   "id": "relay",
+   "icon": "relay",
+   "at": [
+    1.6,
+    1.2
+   ],
+   "label": "One Relay",
+   "side": "out"
+  },
+  {
+   "id": "auto",
+   "icon": "config",
+   "at": [
+    3.0,
+    0.0
+   ],
+   "scale": 0.85,
+   "label": "Automations",
+   "side": "out"
+  },
+  {
+   "id": "ai",
+   "icon": "ai-a",
+   "at": [
+    3.0,
+    1.2
+   ],
+   "scale": 0.85,
+   "label": "Heyvia",
+   "side": "out"
+  },
+  {
+   "id": "build",
+   "icon": "server",
+   "at": [
+    3.0,
+    2.4
+   ],
+   "scale": 0.85,
+   "label": "What you build",
+   "side": "in"
+  }
+ ],
+ "edges": [
+  [
+   "social",
+   "relay"
+  ],
+  [
+   "notu",
+   "relay"
+  ],
+  [
+   "apps",
+   "relay"
+  ],
+  [
+   "relay",
+   "auto"
+  ],
+  [
+   "relay",
+   "ai"
+  ],
+  [
+   "relay",
+   "build"
+  ]
+ ]
+}

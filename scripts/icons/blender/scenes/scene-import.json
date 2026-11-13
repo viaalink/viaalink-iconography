@@ -1,0 +1,66 @@
+{
+ "kind": "scene",
+ "grid": 1.75,
+ "foot": 1.7,
+ "boardPad": 0.35,
+ "nodes": [
+  {
+   "id": "cam",
+   "doll": "camera",
+   "at": [
+    0,
+    1.25
+   ],
+   "scale": 0.95,
+   "turn": 0,
+   "label": "1 Recordings",
+   "short": "1"
+  },
+  {
+   "id": "f",
+   "doll": "audiofolder",
+   "at": [
+    -0.25,
+    0.15
+   ],
+   "scale": 0.8,
+   "turn": 0
+  },
+  {
+   "id": "tr",
+   "icon": "transcribe",
+   "at": [
+    1.2,
+    1.2
+   ],
+   "scale": 1.05,
+   "label": "2 Phone transcribes",
+   "short": "2"
+  },
+  {
+   "id": "note",
+   "icon": "report",
+   "at": [
+    1.4,
+    -0.15
+   ],
+   "scale": 1.05,
+   "label": "3 Text",
+   "short": "3"
+  }
+ ],
+ "edges": [
+  [
+   "cam",
+   "tr"
+  ],
+  [
+   "f",
+   "tr"
+  ],
+  [
+   "tr",
+   "note"
+  ]
+ ]
+}

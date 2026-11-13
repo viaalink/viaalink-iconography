@@ -1,0 +1,71 @@
+{
+ "title": "Heyvia: the AI on your own phone",
+ "board": "fit",
+ "nodes": [
+  {
+   "id": "you",
+   "doll": "person-red",
+   "scale": 1.3,
+   "at": [
+    -0.5,
+    0.6
+   ],
+   "label": "You",
+   "side": "out"
+  },
+  {
+   "id": "ph",
+   "icon": "phone",
+   "at": [
+    0.6,
+    0.6
+   ],
+   "scale": 0.85,
+   "label": "Your phone",
+   "side": "out"
+  },
+  {
+   "id": "ai",
+   "icon": "ai-a",
+   "at": [
+    1.8,
+    0.6
+   ],
+   "label": "Heyvia AI",
+   "side": "out"
+  },
+  {
+   "id": "notes",
+   "icon": "minutes",
+   "at": [
+    3.0,
+    0.6
+   ],
+   "scale": 0.85,
+   "label": "Your notes",
+   "side": "out"
+  }
+ ],
+ "edges": [
+  [
+   "you",
+   "ph",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "ph",
+   "ai",
+   {
+    "label": "no cloud",
+    "tile": "need",
+    "side": "in"
+   }
+  ],
+  [
+   "ai",
+   "notes"
+  ]
+ ]
+}

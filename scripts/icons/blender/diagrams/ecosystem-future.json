@@ -1,0 +1,26 @@
+{
+ "title": "Viaalink tomorrow: every Viaalink app talks to the next",
+ "board": "fit",
+ "nodes": [
+  {"id": "you", "doll": "person-red", "scale": 1.3, "at": [-0.55, 0.0], "label": "You", "side": "out"},
+  {"id": "ph", "icon": "record", "at": [0.4, 0.0], "scale": 0.85},
+  {"id": "soc", "icon": "social", "at": [0.4, 1.2], "scale": 0.85},
+  {"id": "ra", "icon": "relay", "at": [1.5, 0.6], "label": "Your Relay", "side": "out"},
+  {"id": "rb", "icon": "relay", "at": [3.5, 0.6], "label": "Their Relay", "side": "out"},
+  {"id": "team", "icon": "team", "at": [4.6, 0.6], "label": "Your team", "side": "out"},
+  {"id": "rc", "icon": "relay", "at": [2.5, 2.2], "turn": 90, "label": "Office Relay", "side": "in"},
+  {"id": "srv", "icon": "server", "at": [2.5, 3.3], "label": "Your server", "side": "in"},
+  {"id": "lock", "icon": "lock", "at": [2.5, 0.6], "scale": 0.7, "label": "end to end", "side": "out"}
+ ],
+ "edges": [
+  ["you", "ph", {"style": "speech"}],
+  ["ph", "ra", {"route": "L"}],
+  ["soc", "ra", {"route": "L"}],
+  ["ra", "lock"],
+  ["lock", "rb", {"packet": 0.2, "arrow": 0.4}],
+  ["rb", "team"],
+  ["ra", "rc", {"route": "L", "label": "peer to peer", "tile": "need", "side": "in"}],
+  ["rb", "rc", {"route": "L"}],
+  ["rc", "srv"]
+ ]
+}

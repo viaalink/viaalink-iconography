@@ -1,0 +1,8 @@
+node_modules/
+local/
+out/
+__pycache__/
+*.blend1
+.env
+.env.*
+.asd/

@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Viaalink Icons</title>
+    <style>
+      :root {
+        --red: #f73f3f;
+        --coral: #ff6b6b;
+        --navy: #13223a;
+        --deep: #0e1626;
+        --slate: #17243a;
+        --cream: #f6f3ee;
+        --line: #d9d2c7;
+        --ok: #2f8f5b;
+        --warn: #c77700;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+        background: var(--cream);
+        color: var(--navy);
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--navy);
+        color: var(--cream);
+        padding: 12px 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      header h1 {
+        font-size: 16px;
+        margin: 0 12px 0 0;
+      }
+      header h1 b {
+        color: var(--coral);
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid #ffffff40;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .seg button {
+        background: none;
+        color: inherit;
+        border: 0;
+        padding: 6px 10px;
+        cursor: pointer;
+        font: inherit;
+      }
+      .seg button.on {
+        background: var(--red);
+        color: #fff;
+      }
+      select {
+        font: inherit;
+        padding: 5px 8px;
+        border-radius: 8px;
+      }
+      main {
+        padding: 16px;
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+      .stats {
+        margin: 0 0 12px;
+        color: #556;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--card, 300px), 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .card.approved {
+        border-color: var(--ok);
+        box-shadow: 0 0 0 2px var(--ok) inset;
+      }
+      .card.needs-work {
+        border-color: var(--warn);
+        box-shadow: 0 0 0 2px var(--warn) inset;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .pair.one {
+        grid-template-columns: 1fr;
+      }
+      .tile {
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+      .tile.light {
+        background: var(--cream);
+      }
+      .tile.dark {
+        background: var(--deep);
+      }
+      .tile.white {
+        background: #fff;
+      }
+      .tile.checker {
+        background: repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 0 0 / 16px 16px;
+      }
+      .tile img {
+        width: var(--size);
+        height: var(--size);
+        image-rendering: auto;
+        cursor: zoom-in;
+      }
+      .tile .mini {
+        position: absolute;
+        right: 6px;
+        bottom: 6px;
+        display: flex;
+        gap: 4px;
+        align-items: end;
+      }
+      .tile .mini img {
+        cursor: default;
+      }
+      .meta {
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .meta .row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .meta strong {
+        font-size: 15px;
+        margin-right: auto;
+      }
+      .meta button {
+        font: inherit;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 6px;
+        padding: 3px 8px;
+        cursor: pointer;
+      }
+      .meta button.ok.on {
+        background: var(--ok);
+        color: #fff;
+        border-color: var(--ok);
+      }
+      .meta button.nw.on {
+        background: var(--warn);
+        color: #fff;
+        border-color: var(--warn);
+      }
+      .meta textarea {
+        width: 100%;
+        min-height: 40px;
+        font: inherit;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 6px;
+        resize: vertical;
+      }
+      details {
+        font-size: 12px;
+      }
+      details pre {
+        white-space: pre-wrap;
+        background: var(--cream);
+        padding: 8px;
+        border-radius: 6px;
+        max-height: 260px;
+        overflow: auto;
+      }
+      .critique {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0 14px;
+        margin-bottom: 16px;
+      }
+      .critique pre {
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+      dialog {
+        border: 0;
+        border-radius: 14px;
+        padding: 0;
+        max-width: 92vw;
+      }
+      dialog img {
+        display: block;
+        max-width: 90vw;
+        max-height: 86vh;
+      }
+      .compare-row {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+      }
+      .compare-row figure {
+        margin: 0;
+        flex: 0 0 200px;
+        text-align: center;
+        font-size: 12px;
+      }
+      .compare-row .tile {
+        border-radius: 10px;
+      }
+      @media (max-width: 600px) {
+        header {
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        <a href="/" style="color: inherit; text-decoration: none"><b>&gt;</b>via icons</a>
+      </h1>
+      <select id="set" aria-label="Set"></select>
+      <span class="seg" id="view">
+        <button data-v="grid" class="on">Grid</button
+        ><button data-v="compare">Compare rounds</button>
+      </span>
+      <span class="seg" id="mode">
+        <button data-v="both" class="on">Light + dark</button><button data-v="light">Light</button
+        ><button data-v="dark">Dark</button>
+      </span>
+      <span class="seg" id="bg">
+        <button data-v="page" class="on">Page</button><button data-v="white">White</button
+        ><button data-v="checker">Checker</button>
+      </span>
+      <span class="seg" id="size">
+        <button data-v="256" class="on">256</button><button data-v="128">128</button
+        ><button data-v="64">64</button><button data-v="32">32</button>
+      </span>
+      <span class="seg" id="raw">
+        <button data-v="cut" class="on">Cut-out</button><button data-v="raw">Raw</button>
+      </span>
+    </header>
+    <main>
+      <p class="stats" id="stats"></p>
+      <div id="critique"></div>
+      <div id="out"></div>
+    </main>
+    <dialog id="zoom"><img alt="" /></dialog>
+    <script type="module">
+      const $ = (s) => document.querySelector(s)
+      const state = { view: "grid", mode: "both", bg: "page", size: 256, raw: "cut" }
+      let readonly = true
+      let sets = [],
+        reviews = {}
+
+      for (const id of ["view", "mode", "bg", "size", "raw"])
+        $("#" + id).addEventListener("click", (e) => {
+          const b = e.target.closest("button")
+          if (!b) return
+          for (const x of $("#" + id).children) x.classList.toggle("on", x === b)
+          state[id] = id === "size" ? Number(b.dataset.v) : b.dataset.v
+          try {
+            localStorage.setItem("icon-gallery", JSON.stringify({ ...state, set: $("#set").value }))
+          } catch {}
+          render()
+        })
+      $("#set").addEventListener("change", () => render())
+      $("#zoom").addEventListener("click", () => $("#zoom").close())
+
+      const src = (set, mode, name) => {
+        const [kind, id] = set.id.split(":")
+        const file = state.raw === "raw" && set.icons[name]?.raw ? `${name}.raw.png` : `${name}.png`
+        return `/img/${kind}/${encodeURIComponent(id)}/${mode}/${file}`
+      }
+      const tileClass = (mode) => (state.bg === "page" ? mode : state.bg)
+      const modesShown = () => (state.mode === "both" ? ["light", "dark"] : [state.mode])
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        )
+
+      function tile(set, mode, name) {
+        const s = src(set, mode, name)
+        return `<div class="tile ${tileClass(mode)}" style="--size:${Math.min(state.size, 240)}px">
+          <img src="${s}" alt="${esc(name)} ${mode}" data-zoom="${s}" loading="lazy">
+          <span class="mini"><img src="${s}" width="48" height="48" alt=""><img src="${s}" width="24" height="24" alt=""></span>
+        </div>`
+      }
+
+      function renderGrid(set) {
+        const names = Object.keys(set.icons).sort()
+        const promptOf = (mode, name) =>
+          set.meta?.results?.find((r) => r.name === name && r.mode === mode)?.prompt ?? ""
+        let approved = 0,
+          work = 0
+        const cards = names.map((name) => {
+          const modes = modesShown().filter((m) => set.icons[name].modes.includes(m))
+          const keys = modes.map((m) => `${set.id}/${m}/${name}`)
+          const st = keys.map((k) => reviews[k]?.status)
+          const status = st.includes("needs-work")
+            ? "needs-work"
+            : st.length && st.every((s) => s === "approved")
+              ? "approved"
+              : ""
+          if (status === "approved") approved++
+          if (status === "needs-work") work++
+          const rv = modes
+            .map((m) => {
+              if (readonly) {
+                const r = reviews[`${set.id}/${m}/${name}`]
+                return r
+                  ? `<small>${m}: ${r.status === "approved" ? "✓ approved" : "needs work"}${r.note ? ` — ${esc(r.note)}` : ""}</small>`
+                  : ""
+              }
+              const k = `${set.id}/${m}/${name}`,
+                r = reviews[k] ?? {}
+              return `<div class="row"><small style="width:36px">${m}</small>
+                <button class="ok ${r.status === "approved" ? "on" : ""}" data-key="${k}" data-st="approved">✓ approve</button>
+                <button class="nw ${r.status === "needs-work" ? "on" : ""}" data-key="${k}" data-st="needs-work">needs work</button></div>
+                <textarea data-note="${k}" placeholder="note for the next round (${m})">${esc(r.note ?? "")}</textarea>`
+            })
+            .join("")
+          const prompts = modes
+            .map(
+              (m) =>
+                promptOf(m, name) &&
+                `<details><summary>prompt (${m})</summary><pre>${esc(promptOf(m, name))}</pre></details>`,
+            )
+            .join("")
+          return `<div class="card ${status}">
+            <div class="pair ${modes.length === 1 ? "one" : ""}">${modes.map((m) => tile(set, m, name)).join("")}</div>
+            <div class="meta"><div class="row"><strong>${esc(name)}</strong></div>${rv}${prompts}</div></div>`
+        })
+        $("#stats").textContent =
+          `${set.label} · ${names.length} icons · ${approved} approved · ${work} need work${
+            set.meta?.styleVersion ? ` · style v${set.meta.styleVersion} · ${set.meta.model}` : ""
+          }`
+        $("#critique").innerHTML = set.critique
+          ? `<details class="critique"><summary><b>Art-director critique</b></summary><pre>${esc(set.critique)}</pre></details>`
+          : ""
+        document.documentElement.style.setProperty(
+          "--card",
+          state.mode === "both" ? "440px" : "260px",
+        )
+        $("#out").innerHTML = `<div class="grid">${cards.join("")}</div>`
+      }
+
+      function renderCompare(current) {
+        const pool = sets.filter(
+          (s) =>
+            s.kind === current.kind &&
+            s.id.split(":")[1].replace(/-r\d+$/, "") ===
+              current.id.split(":")[1].replace(/-r\d+$/, ""),
+        )
+        const names = [...new Set(pool.flatMap((s) => Object.keys(s.icons)))].sort()
+        $("#stats").textContent =
+          `Comparing ${pool.length} rounds: ${pool.map((s) => s.label).join(" → ")}`
+        $("#critique").innerHTML = ""
+        $("#out").innerHTML = names
+          .map(
+            (name) =>
+              `<h3>${esc(name)}</h3>` +
+              modesShown()
+                .map(
+                  (m) =>
+                    `<div class="compare-row">${pool
+                      .map((s) =>
+                        s.icons[name]?.modes.includes(m)
+                          ? `<figure>${tile(s, m, name)}<figcaption>${esc(s.label)} · ${m} ${
+                              reviews[`${s.id}/${m}/${name}`]?.status === "approved" ? "✓" : ""
+                            }</figcaption></figure>`
+                          : "",
+                      )
+                      .join("")}</div>`,
+                )
+                .join(""),
+          )
+          .join("")
+      }
+
+      function render() {
+        const set = sets.find((s) => s.id === $("#set").value) ?? sets[sets.length - 1]
+        if (!set) {
+          $("#out").textContent = "No icons yet — render a round first (scripts/icons/render.ts)."
+          return
+        }
+        state.view === "compare" ? renderCompare(set) : renderGrid(set)
+      }
+
+      $("#out").addEventListener("click", async (e) => {
+        const z = e.target.closest("img[data-zoom]")
+        if (z) {
+          $("#zoom img").src = z.dataset.zoom
+          $("#zoom").showModal()
+          return
+        }
+        const b = e.target.closest("button[data-key]")
+        if (!b) return
+        const key = b.dataset.key
+        const status = reviews[key]?.status === b.dataset.st ? null : b.dataset.st
+        await save(key, status)
+      })
+      $("#out").addEventListener("change", async (e) => {
+        const t = e.target.closest("textarea[data-note]")
+        if (!t) return
+        const key = t.dataset.note
+        await save(key, reviews[key]?.status ?? "needs-work", t.value)
+      })
+      async function save(key, status, note) {
+        const res = await fetch("/api/reviews", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ key, status, note: note ?? reviews[key]?.note ?? "" }),
+        })
+        if (res.ok) reviews = await res.json()
+        render()
+      }
+
+      async function load() {
+        let cfg
+        ;[sets, reviews, cfg] = await Promise.all([
+          fetch("/api/sets").then((r) => r.json()),
+          fetch("/api/reviews").then((r) => r.json()),
+          fetch("/api/config").then((r) => r.json()),
+        ])
+        readonly = cfg.readonly
+        if (new URLSearchParams(location.search).get("view") === "compare") {
+          state.view = "compare"
+          for (const x of $("#view").children) x.classList.toggle("on", x.dataset.v === "compare")
+        }
+        let saved = {}
+        try {
+          saved = JSON.parse(localStorage.getItem("icon-gallery") || "{}")
+        } catch {}
+        $("#set").innerHTML = sets
+          .map((s) => `<option value="${esc(s.id)}">${esc(s.label)}</option>`)
+          .join("")
+        $("#set").value = sets.some((s) => s.id === saved.set) ? saved.set : (sets.at(-1)?.id ?? "")
+        render()
+      }
+      load()
+    </script>
+  </body>
+</html>

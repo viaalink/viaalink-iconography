@@ -1,0 +1,9 @@
+{
+  "name": "@viaalink/icons",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Viaalink icons: 2.5D Blender renders + flat SVG twins, and the pipeline that makes them",
+  "license": "SEE LICENSE IN README.md",
+  "type": "module",
+  "dependencies": { "sharp": "^0.34.5" }
+}

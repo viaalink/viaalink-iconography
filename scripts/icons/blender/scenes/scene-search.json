@@ -1,0 +1,49 @@
+{
+ "kind": "scene",
+ "grid": 1.75,
+ "foot": 1.7,
+ "boardPad": 0.35,
+ "nodes": [
+  {
+   "id": "a",
+   "doll": "sessions",
+   "at": [
+    0,
+    0.95
+   ],
+   "scale": 1.0,
+   "turn": 0,
+   "label": "1 All sessions",
+   "short": "1"
+  },
+  {
+   "id": "m",
+   "doll": "magnifier",
+   "at": [
+    1.45,
+    1.05
+   ],
+   "scale": 1.0,
+   "turn": 0,
+   "label": "2 Search",
+   "short": "2"
+  },
+  {
+   "id": "p",
+   "icon": "report",
+   "at": [
+    1.4,
+    -0.15
+   ],
+   "scale": 1.1,
+   "label": "3 The answer",
+   "short": "3"
+  }
+ ],
+ "edges": [
+  [
+   "a",
+   "p"
+  ]
+ ]
+}

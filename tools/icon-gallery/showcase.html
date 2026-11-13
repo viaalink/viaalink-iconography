@@ -1,0 +1,1709 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Viaalink Iconography</title>
+    <meta
+      name="description"
+      content="The Viaalink 2.5D icon family, and how via, via.yaml and the Relay take localhost to the world."
+    />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      :root {
+        --red: #f73f3f;
+        --red-deep: #d62828;
+        --coral: #ff6b6b;
+        --navy: #13223a;
+        --deep: #0e1626;
+        --slate: #17243a;
+        --cream: #f6f3ee;
+        --bg: var(--cream);
+        --bg-2: #ffffff;
+        --ink: var(--navy);
+        --muted: #5b6475;
+        --line: #e4ddd2;
+        --accent: var(--red);
+        --sans: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+        --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: var(--deep);
+          --bg-2: var(--slate);
+          --ink: var(--cream);
+          --muted: #9aa5b8;
+          --line: #24324b;
+          --accent: var(--coral);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: var(--deep);
+        --bg-2: var(--slate);
+        --ink: var(--cream);
+        --muted: #9aa5b8;
+        --line: #24324b;
+        --accent: var(--coral);
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.5 var(--sans);
+        overflow-x: hidden;
+        transition:
+          background 0.4s var(--ease),
+          color 0.4s var(--ease);
+      }
+      a {
+        color: var(--accent);
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 0;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
+      }
+      .brand {
+        font: 600 18px var(--mono);
+        color: var(--ink);
+        text-decoration: none;
+        margin-right: auto;
+      }
+      .brand b {
+        color: var(--accent);
+      }
+      nav a.link {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 14px;
+      }
+      nav a.link:hover {
+        color: var(--ink);
+      }
+      .theme {
+        border: 1px solid var(--line);
+        background: var(--bg-2);
+        color: var(--ink);
+        border-radius: 999px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      /* ---------- hero ---------- */
+      .hero {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        align-items: center;
+        gap: 24px;
+        min-height: min(78vh, 720px);
+      }
+      .hero h1 {
+        font-size: clamp(40px, 7vw, 84px);
+        line-height: 0.98;
+        letter-spacing: -0.03em;
+        margin: 0 0 20px;
+      }
+      .hero h1 em {
+        font-style: normal;
+        color: var(--accent);
+      }
+      .prompt {
+        display: inline-flex;
+        font: 500 clamp(16px, 2.2vw, 22px) var(--mono);
+        background: var(--navy);
+        color: var(--cream);
+        padding: 12px 18px;
+        border-radius: 12px;
+        box-shadow: 0 12px 40px -20px #0e1626;
+      }
+      .prompt b {
+        color: var(--coral);
+        margin-right: 0.6ch;
+      }
+      .typed {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        width: 0;
+        animation: type 7s steps(16) infinite;
+      }
+      .caret {
+        width: 0.6ch;
+        background: var(--cream);
+        margin-left: 2px;
+        animation: blink 1s steps(1) infinite;
+      }
+      @keyframes type {
+        0%,
+        6% {
+          width: 0;
+        }
+        40%,
+        88% {
+          width: 16ch;
+        }
+        100% {
+          width: 0;
+        }
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      .hero-art {
+        position: relative;
+        aspect-ratio: 1;
+        max-width: 520px;
+        justify-self: center;
+        width: 100%;
+      }
+      .lede {
+        font-size: clamp(17px, 1.6vw, 20px);
+        line-height: 1.55;
+        color: var(--muted);
+        max-width: 46ch;
+        margin: 0 0 22px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font: 500 14px var(--mono);
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--bg-2);
+      }
+      .chip .rec {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: blink 1.4s steps(1) infinite;
+      }
+      .hero-art .scene {
+        inset: 0;
+        width: 100%;
+      }
+      .hero-art .scene {
+        opacity: 0;
+        transition: opacity 0.9s var(--ease);
+      }
+      .hero-art .scene.on {
+        opacity: 1;
+      }
+      .who {
+        position: absolute;
+        left: 50%;
+        bottom: 2%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font: 600 13px var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      /* ---------- who it is for / any recording ---------- */
+      .people {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+      .people figure,
+      .sources figure {
+        margin: 0;
+        padding: 18px 18px 22px;
+        border-radius: 24px;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+      }
+      .people img,
+      .sources img {
+        width: 100%;
+        aspect-ratio: 1;
+        display: block;
+        transition: transform 0.5s var(--ease);
+      }
+      .people figure:hover img,
+      .sources figure:hover img {
+        transform: translateY(-8px) rotate(-1deg);
+      }
+      .people figcaption,
+      .sources figcaption {
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+      .people figcaption b,
+      .sources figcaption b {
+        display: block;
+        color: var(--ink);
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      .sources {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .sources figure {
+        display: grid;
+        grid-template-columns: 0.9fr 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .hero-art img {
+        position: absolute;
+        filter: drop-shadow(0 24px 30px rgba(14, 22, 38, 0.18));
+      }
+      .hero-art .main {
+        inset: 12% 10% 10% 8%;
+        width: 82%;
+        animation: float 6s var(--ease) infinite;
+      }
+      .hero-art .orbit {
+        width: 26%;
+        animation: float 6s var(--ease) infinite;
+      }
+      .hero-art .o1 {
+        right: -2%;
+        top: 0;
+        animation-delay: -2s;
+      }
+      .hero-art .o2 {
+        left: -4%;
+        bottom: 2%;
+        animation-delay: -4s;
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0);
+        }
+        50% {
+          transform: translateY(-14px) rotate(-1.5deg);
+        }
+      }
+
+      /* ---------- sections ---------- */
+      section {
+        padding: clamp(56px, 9vw, 110px) 0;
+      }
+      .kicker {
+        font: 600 13px var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 10px;
+      }
+      h2 {
+        font-size: clamp(30px, 4.4vw, 52px);
+        line-height: 1.02;
+        letter-spacing: -0.02em;
+        margin: 0 0 36px;
+        max-width: 18ch;
+      }
+
+      /* ---------- flow ---------- */
+      .flow {
+        --disc: 150px;
+        display: grid;
+        grid-template-columns: var(--cols, repeat(5, 1fr));
+        position: relative;
+        gap: 8px;
+      }
+      /* a pair: two icons that belong together share one stop on the line */
+      .duo {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: start;
+        padding: 10px 6px 14px;
+        border-radius: calc(var(--disc) / 2 + 12px);
+        border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+        background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+      }
+      .flow .duo .disc {
+        width: min(100%, calc(var(--disc) - 10px));
+      }
+      /* singles sit at the same height as discs inside a pair capsule */
+      .flow .step > .disc {
+        margin-top: 11px;
+      }
+      .duo .plus {
+        align-self: start;
+        margin-top: calc(var(--disc) / 2 - 21px);
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        font: 600 18px var(--mono);
+        color: var(--accent);
+        position: relative;
+        z-index: 2;
+      }
+      .flow::before {
+        content: "";
+        position: absolute;
+        left: 8%;
+        right: 8%;
+        top: calc(var(--disc) / 2 + 9px);
+        height: 4px;
+        border-radius: 4px;
+        background: repeating-linear-gradient(90deg, var(--line) 0 12px, transparent 12px 22px);
+      }
+      .packet {
+        position: absolute;
+        top: calc(var(--disc) / 2 + 2px);
+        left: 10%;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent);
+        animation: travel 8s var(--ease) infinite;
+      }
+      .packet.p2 {
+        animation-delay: -4s;
+      }
+      @keyframes travel {
+        0% {
+          left: 10%;
+          opacity: 0;
+        }
+        5% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          left: 90%;
+          opacity: 0;
+        }
+      }
+      .step {
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+      .step .disc {
+        width: min(100%, var(--disc));
+        aspect-ratio: 1;
+        margin: 0 auto 14px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        animation: light 8s var(--ease) infinite;
+        animation-delay: calc(var(--i) * 1.6s - 0.4s);
+      }
+      .step img {
+        width: 78%;
+        animation: pop 8s var(--ease) infinite;
+        animation-delay: calc(var(--i) * 1.6s - 0.4s);
+      }
+      @keyframes light {
+        0%,
+        16%,
+        100% {
+          border-color: var(--line);
+          box-shadow: none;
+        }
+        6% {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 16%, transparent);
+        }
+      }
+      @keyframes pop {
+        0%,
+        16%,
+        100% {
+          transform: none;
+        }
+        6% {
+          transform: translateY(-10px) scale(1.06);
+        }
+      }
+      .step b {
+        display: block;
+        font-size: 18px;
+      }
+      .step code {
+        font: 13px var(--mono);
+        color: var(--muted);
+      }
+
+      /* ---------- via.yaml ---------- */
+      .yaml {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr;
+        gap: 32px;
+        align-items: center;
+      }
+      /* grid items default to min-width: auto; the code block would push the page wide */
+      .yaml > * {
+        min-width: 0;
+      }
+      .yaml-art {
+        position: relative;
+      }
+      .yaml-art img {
+        width: 100%;
+        max-width: 380px;
+        display: block;
+        margin: 0 auto;
+        animation: float 7s var(--ease) infinite;
+      }
+      .code {
+        background: var(--navy);
+        color: var(--cream);
+        border-radius: 16px;
+        margin: 0;
+        padding: 22px 24px;
+        font: 15px/1.75 var(--mono);
+        box-shadow: 0 30px 60px -40px #0e1626;
+        overflow-x: auto;
+      }
+      .code .ln {
+        display: block;
+        white-space: pre;
+        opacity: 0;
+        transform: translateX(-8px);
+        animation: line 9s var(--ease) infinite;
+        animation-delay: calc(var(--l) * 0.35s);
+      }
+      .code .k {
+        color: var(--coral);
+      }
+      .code .c {
+        color: #7f8ba1;
+      }
+      .code .hl {
+        background: color-mix(in srgb, var(--coral) 22%, transparent);
+        border-radius: 4px;
+        padding: 0 4px;
+      }
+      @keyframes line {
+        0% {
+          opacity: 0;
+          transform: translateX(-8px);
+        }
+        6%,
+        88% {
+          opacity: 1;
+          transform: none;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      .result {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 18px;
+        font: 600 15px var(--mono);
+      }
+      .result img {
+        width: 88px;
+      }
+      .url {
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        padding: 10px 14px;
+        border-radius: 999px;
+        overflow: hidden;
+        white-space: nowrap;
+        animation: url 9s var(--ease) infinite;
+      }
+      @keyframes url {
+        0%,
+        30% {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        38%,
+        94% {
+          opacity: 1;
+          transform: none;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      /* ---------- principles ---------- */
+      .versus {
+        display: grid;
+        grid-template-columns: 1fr 1.3fr;
+        gap: 18px;
+      }
+      .versus figure {
+        margin: 0;
+        padding: 22px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: var(--bg-2);
+      }
+      .versus figcaption,
+      .lvl {
+        font: 600 12px var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .versus .plain p {
+        font: 15px/1.7 var(--mono);
+        color: var(--muted);
+        margin: 12px 0 0;
+      }
+      .versus .pictured {
+        border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+      }
+      .versus ol {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 0;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+        counter-reset: s;
+      }
+      .versus li {
+        text-align: center;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .versus li img {
+        width: 100%;
+        display: block;
+      }
+      .note {
+        color: var(--muted);
+        max-width: 60ch;
+        margin: 16px 0 0;
+      }
+      h3.sub {
+        font-size: clamp(20px, 2.4vw, 26px);
+        margin: 56px 0 18px;
+        letter-spacing: -0.01em;
+      }
+      .layers {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .layers article {
+        padding: 18px;
+        border-radius: 22px;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+      }
+      .layers article > img,
+      .layers .mini,
+      .layers .ui {
+        height: 150px;
+        margin: 10px 0;
+      }
+      .layers article > img {
+        width: 150px;
+        align-self: center;
+      }
+      .layers .mini {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .layers .mini img {
+        width: 33%;
+      }
+      .layers .sys i {
+        flex: 0 0 14px;
+        height: 3px;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+      .layers .sys img {
+        width: 28%;
+      }
+      .layers .ui {
+        list-style: none;
+        padding: 10px;
+        border-radius: 14px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        display: grid;
+        align-content: center;
+        gap: 8px;
+        font-size: 14px;
+      }
+      .layers .ui li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .layers .ui img {
+        width: 24px;
+        height: 24px;
+      }
+      .layers h4 {
+        margin: 6px 0 4px;
+        font-size: 17px;
+      }
+      .layers p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+      }
+      .stats div {
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: var(--bg-2);
+      }
+      .stats b {
+        display: block;
+        font-size: clamp(30px, 4vw, 44px);
+        letter-spacing: -0.02em;
+        color: var(--accent);
+      }
+      .stats span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .marks {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .mark {
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: var(--bg-2);
+      }
+      .mark .m3 {
+        width: 100%;
+        aspect-ratio: 1;
+        display: block;
+      }
+      .mark .tbd {
+        display: grid;
+        place-items: center;
+        border: 2px dashed var(--line);
+        border-radius: 18px;
+        color: var(--muted);
+        font: 600 14px var(--mono);
+      }
+      .stamps {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        height: 44px;
+        margin: 8px 0 4px;
+      }
+      .mark {
+        min-width: 0;
+      }
+      .st svg {
+        width: 40px;
+        height: 40px;
+        display: block;
+      }
+      .mark h3 {
+        margin: 8px 0 2px;
+      }
+      .mark p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .principles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        transition:
+          transform 0.3s var(--ease),
+          box-shadow 0.3s var(--ease);
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 24px 40px -30px #0e1626;
+      }
+      .card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .demo {
+        height: 150px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+      .iso {
+        background:
+          repeating-linear-gradient(
+            30deg,
+            color-mix(in srgb, var(--accent) 18%, transparent) 0 1px,
+            transparent 1px 22px
+          ),
+          repeating-linear-gradient(
+            150deg,
+            color-mix(in srgb, var(--accent) 18%, transparent) 0 1px,
+            transparent 1px 22px
+          );
+      }
+      /* Icons are square; never let a box stretch them. */
+      img[data-icon] {
+        aspect-ratio: 1;
+        height: auto;
+        object-fit: contain;
+        flex: none;
+      }
+      .iso img {
+        width: 30%;
+      }
+      .swatches span {
+        width: 22%;
+        height: 70%;
+        border-radius: 12px;
+        animation: rise 4s var(--ease) infinite;
+        animation-delay: calc(var(--s) * 0.2s);
+      }
+      @keyframes rise {
+        0%,
+        100% {
+          transform: none;
+        }
+        20% {
+          transform: translateY(-8px);
+        }
+      }
+      .sizes {
+        align-items: flex-end;
+        padding-bottom: 20px;
+      }
+      .surfaces {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        padding: 0;
+      }
+      .surfaces div {
+        display: grid;
+        place-items: center;
+      }
+      .surfaces img {
+        width: 80%;
+      }
+      .checker {
+        background: repeating-conic-gradient(#d7d7d7 0 25%, #fff 0 50%) 0 0 / 14px 14px;
+      }
+
+      /* ---------- diagrams: the icons inside a real diagram tool (Mermaid) ---------- */
+      .diagrams {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .diagram {
+        margin: 0;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px 16px 12px;
+        min-width: 0;
+      }
+      .diagram .mmd {
+        display: flex;
+        justify-content: center;
+        min-height: 220px;
+        overflow-x: auto;
+      }
+      .diagram .mmd svg {
+        max-width: 100%;
+        height: auto;
+      }
+      .diagram figcaption {
+        margin-top: 8px;
+        font: 12px var(--mono);
+        color: var(--muted);
+        text-align: center;
+      }
+      /* flat icons read their colours from these (light fallback is in the SVG) */
+      :root[data-theme="dark"] .diagram {
+        --via-p: #ff6b6b;
+        --via-s: #e04848;
+        --via-n: #f6f3ee;
+        --via-m: #d8d1c6;
+        --via-r: #17243a;
+        --via-c: #f6f3ee;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) .diagram {
+          --via-p: #ff6b6b;
+          --via-s: #e04848;
+          --via-n: #f6f3ee;
+          --via-m: #d8d1c6;
+          --via-r: #17243a;
+          --via-c: #f6f3ee;
+        }
+      }
+
+      /* ---------- twins: every 2.5D icon has a flat twin ---------- */
+      .twins {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
+        gap: 14px;
+      }
+      .twin {
+        margin: 0;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 14px 12px 12px;
+      }
+      .stage {
+        position: relative;
+        aspect-ratio: 1;
+        perspective: 600px;
+      }
+      .stage img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+      }
+      /* the 2.5D object is pressed flat into its twin, then pops back */
+      .stage .d3 {
+        animation: press3 7s var(--ease) infinite;
+        animation-delay: calc(var(--i) * 0.25s);
+      }
+      .stage .d2 {
+        animation: press2 7s var(--ease) infinite;
+        animation-delay: calc(var(--i) * 0.25s);
+      }
+      @keyframes press3 {
+        0%,
+        38% {
+          opacity: 1;
+          transform: none;
+        }
+        48% {
+          opacity: 0;
+          transform: rotateX(55deg) scale(0.92);
+        }
+        88% {
+          opacity: 0;
+          transform: rotateX(55deg) scale(0.92);
+        }
+        100% {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes press2 {
+        0%,
+        40% {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        50%,
+        86% {
+          opacity: 1;
+          transform: none;
+        }
+        96%,
+        100% {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+      }
+      .twin figcaption {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 8px;
+        font: 12px var(--mono);
+        color: var(--muted);
+      }
+      .twin figcaption span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .twin figcaption img {
+        width: 24px;
+      }
+      .twin figcaption img + img {
+        width: 16px;
+      }
+
+      /* ---------- family ---------- */
+      .family {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+      }
+      .family figure {
+        margin: 0;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 12px 8px 10px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(14px);
+        transition:
+          opacity 0.6s var(--ease),
+          transform 0.6s var(--ease);
+      }
+      .family.in figure {
+        opacity: 1;
+        transform: none;
+      }
+      .family img {
+        width: 100%;
+        aspect-ratio: 1;
+        transition: transform 0.35s var(--ease);
+      }
+      .family figure:hover img {
+        transform: translateY(-6px) rotate(-3deg) scale(1.05);
+      }
+      .family figcaption {
+        font: 12px var(--mono);
+        color: var(--muted);
+      }
+      .cta {
+        margin-top: 28px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-block;
+        padding: 12px 20px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .btn.ghost {
+        background: none;
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      footer {
+        padding: 40px 0 60px;
+        color: var(--muted);
+        font: 13px var(--mono);
+      }
+
+      /* ---------- responsive ---------- */
+      @media (max-width: 820px) {
+        .hero,
+        .diagrams {
+          grid-template-columns: 1fr;
+        }
+        .twins {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+        .yaml {
+          grid-template-columns: 1fr;
+        }
+        .hero {
+          min-height: 0;
+          padding-top: 12px;
+        }
+        .hero-art {
+          max-width: 360px;
+        }
+        .marks {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+        .mark {
+          padding: 12px;
+        }
+        .st svg {
+          width: 32px;
+          height: 32px;
+        }
+        .versus,
+        .layers {
+          grid-template-columns: 1fr;
+        }
+        .versus ol {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .people {
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .people figure {
+          padding: 10px 10px 14px;
+        }
+        .sources,
+        .sources figure {
+          grid-template-columns: 1fr;
+        }
+        .flow {
+          --disc: 120px;
+          grid-template-columns: 1fr;
+          gap: 18px;
+        }
+        .flow::before {
+          left: 50%;
+          right: auto;
+          top: 4%;
+          bottom: 4%;
+          width: 4px;
+          height: auto;
+          background: repeating-linear-gradient(180deg, var(--line) 0 12px, transparent 12px 22px);
+        }
+        .packet {
+          display: none;
+        }
+        .step .disc {
+          width: var(--disc);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+        .typed {
+          width: 16ch;
+        }
+        .stage .d2,
+        .hero-art .scene {
+          transition: none;
+        }
+        .code .ln,
+        .url,
+        .family figure {
+          opacity: 1;
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav>
+        <a class="brand" href="/"><b>&gt;</b>via icons</a>
+        <a class="link" href="#notu">Notetaker</a>
+        <a class="link" href="#people">Who</a>
+        <a class="link" href="#social">Social</a>
+        <a class="link" href="#how">Relay</a>
+        <a class="link" href="#marks">Marks</a>
+        <a class="link" href="#why">Why</a>
+        <a class="link" href="#diagrams">Diagrams</a>
+        <a class="link" href="#twins">Flat</a>
+        <a class="link" href="#family">Family</a>
+        <a class="link" href="/overview">Overview</a>
+        <a class="link" href="/approve">Approval</a>
+        <a class="link" href="/animations">Animations</a>
+        <a class="link" href="/gallery">All rounds</a>
+        <button class="theme" id="theme" aria-label="Toggle light or dark">◐</button>
+      </nav>
+
+      <header class="hero">
+        <div>
+          <p class="kicker">Viaalink Notetaker</p>
+          <h1>Your meetings<br />stay in the <em>room</em>.</h1>
+          <p class="lede">
+            The doctor, the lawyer, the student, the parents at school: the phone on the table
+            records and transcribes the conversation. It hands the minutes to your own laptop,
+            directly. No cloud in between, nobody else listening.
+          </p>
+          <div class="chips">
+            <span class="chip"><i class="rec"></i>Recording on this phone</span>
+            <span class="chip">🔒 100% private</span>
+            <span class="chip">↔ phone to laptop</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-label="A doctor and a lawyer at their desks, phone linked to laptop">
+          <img class="scene on" data-icon="scene-doctor" data-who="the doctor" alt="" />
+          <img class="scene" data-icon="scene-lawyer" data-who="the lawyer" alt="" />
+          <img class="scene" data-icon="scene-student" data-who="the student" alt="" />
+          <img class="scene" data-icon="scene-school" data-who="the school board" alt="" />
+          <span class="who" aria-hidden="true">the doctor</span>
+        </div>
+      </header>
+    </div>
+
+    <section id="notu">
+      <div class="wrap">
+        <p class="kicker">How Notetaker works</p>
+        <h2>Phone on the table. Minutes in your pocket.</h2>
+        <div class="flow" style="--cols: 2fr 1fr 1fr 1fr">
+          <span class="packet"></span><span class="packet p2"></span>
+          <div class="step" style="--i: 0">
+            <div class="duo"><div><div class="disc"><img data-icon="record" alt="record" /></div><b>Record</b><code>the meeting</code></div><span class="plus" aria-hidden="true">+</span><div><div class="disc"><img data-icon="transcribe" alt="speech to text" /></div><b>Transcribe</b><code>on the phone</code></div></div>
+          </div>
+          <div class="step" style="--i: 1">
+            <div class="disc"><img data-icon="minutes" alt="minutes" /></div>
+            <b>Keep</b><code>your minutes</code>
+          </div>
+          <div class="step" style="--i: 2">
+            <div class="disc"><img data-icon="mcp-a" alt="MCP" /></div>
+            <b>Connect</b><code>your laptop</code>
+          </div>
+          <div class="step" style="--i: 3">
+            <div class="disc"><img data-icon="report" alt="report" /></div>
+            <b>Report</b><code>AI summary</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="people">
+      <div class="wrap">
+        <p class="kicker">Who it is for</p>
+        <h2>Every conversation worth keeping.</h2>
+        <div class="people">
+          <figure><img data-icon="scene-doctor" alt="" loading="lazy" /><figcaption><b>The doctor</b>Consults written up while the patient is still in the room. Nothing leaves the practice.</figcaption></figure>
+          <figure><img data-icon="scene-lawyer" alt="" loading="lazy" /><figcaption><b>The lawyer</b>Client meetings on record, privileged and on your own laptop.</figcaption></figure>
+          <figure><img data-icon="scene-student" alt="" loading="lazy" /><figcaption><b>The student</b>Lectures and study groups turned into notes you can search.</figcaption></figure>
+          <figure><img data-icon="scene-school" alt="" loading="lazy" /><figcaption><b>The school board</b>Parent evenings and board meetings, with minutes everyone agrees on.</figcaption></figure>
+          <figure><img data-icon="scene-kids" alt="" loading="lazy" /><figcaption><b>The family</b>Kids making agreements together, and remembering what was promised.</figcaption></figure>
+          <figure><img data-icon="scene-contract" alt="" loading="lazy" /><figcaption><b>Two people, one deal</b>Agreements on paper in minutes: what was said is what gets signed.</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="sources">
+      <div class="wrap">
+        <p class="kicker">Any recording</p>
+        <h2>Bring the audio you already have.</h2>
+        <div class="sources">
+          <figure><img data-icon="scene-import" alt="" loading="lazy" /><figcaption><b>Files and devices</b>Audio files, video files, a voice recorder or a camera: drop the recording in and get text back, on your own devices.</figcaption></figure>
+          <figure><img data-icon="scene-search" alt="" loading="lazy" /><figcaption><b>Sessions you can search</b>Every recording becomes a session with its transcript and minutes. Find what was said, by whom, and when.</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="social">
+      <div class="wrap">
+        <p class="kicker">Viaalink Social</p>
+        <h2>Phone to phone. AI on top.</h2>
+        <div class="flow" style="--cols: 2fr 1fr 2fr">
+          <span class="packet"></span><span class="packet p2"></span>
+          <div class="step" style="--i: 0">
+            <div class="duo"><div><div class="disc"><img data-icon="call" alt="call" /></div><b>Talk</b><code>phone to phone</code></div><span class="plus" aria-hidden="true">+</span><div><div class="disc"><img data-icon="chat" alt="encrypted chat" /></div><b>Chat</b><code>end-to-end</code></div></div>
+          </div>
+          <div class="step" style="--i: 1">
+            <div class="disc"><img data-icon="meet" alt="meeting" /></div>
+            <b>Meet</b><code>in the browser</code>
+          </div>
+          <div class="step" style="--i: 2">
+            <div class="duo"><div><div class="disc"><img data-icon="files" alt="files" /></div><b>Share</b><code>from your device</code></div><span class="plus" aria-hidden="true">+</span><div><div class="disc"><img data-icon="ai-a" alt="AI agent" /></div><b>Agent</b><code>over MCP</code></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <div class="wrap">
+        <p class="kicker">For developers · Viaalink Relay</p>
+        <h2>Your app, on a link.</h2>
+        <div class="flow" style="--cols: 2fr 1fr 2fr">
+          <span class="packet"></span><span class="packet p2"></span>
+          <div class="step" style="--i: 0">
+            <div class="duo"><div><div class="disc"><img data-icon="config" alt="via.yaml" /></div><b>Declare</b><code>via.yaml</code></div><span class="plus" aria-hidden="true">+</span><div><div class="disc"><img data-icon="cli" alt="via CLI" /></div><b>Run</b><code>via up</code></div></div>
+          </div>
+          <div class="step" style="--i: 1">
+            <div class="disc"><img data-icon="relay" alt="Viaalink Relay" /></div>
+            <b>Relay</b><code>your server</code>
+          </div>
+          <div class="step" style="--i: 2">
+            <div class="duo"><div><div class="disc"><img data-icon="lock" alt="HTTPS" /></div><b>Secure</b><code>auto HTTPS</code></div><span class="plus" aria-hidden="true">+</span><div><div class="disc"><img data-icon="globe" alt="the world" /></div><b>Share</b><code>any device</code></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap yaml">
+        <div class="yaml-art"><img data-icon="config" alt="via.yaml" /></div>
+        <div>
+          <p class="kicker">One file</p>
+          <h2>Write it once. via does the rest.</h2>
+          <pre
+            class="code"
+            aria-label="via.yaml example"
+          ><span class="ln" style="--l: 0"><span class="c"># via.yaml</span></span><span class="ln" style="--l: 1"><span class="k">project</span>:</span><span class="ln" style="--l: 2">  <span class="k">name</span>: my-app</span><span class="ln" style="--l: 3"><span class="k">network</span>:</span><span class="ln" style="--l: 4">  <span class="k">services</span>:</span><span class="ln" style="--l: 5">    <span class="k">web</span>:</span><span class="ln" style="--l: 6">      <span class="k">dial</span>: <span class="hl">localhost:3000</span></span></pre>
+          <div class="result">
+            <img data-icon="phone" alt="" />
+            <span class="url">https://my-app.your-relay.example</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="marks">
+      <div class="wrap">
+        <p class="kicker">Product marks</p>
+        <h2>Every product, one object. Every object, a stamp.</h2>
+        <div class="marks">
+          <article class="mark">
+            <img class="m3" data-round="25d-b7" data-name="relay" alt="Relay, 2.5D" />
+            <div class="stamps">
+              <span class="st" data-stamp="relay" style="color: var(--accent)"></span>
+              <span class="st" data-stamp="relay" style="color: var(--ink)"></span>
+              <span class="st badge" data-stamp="relay-badge" style="color: var(--accent)"></span>
+            </div>
+            <h3>Relay</h3>
+            <p>Your server, on a link.</p>
+          </article>
+          <article class="mark">
+            <img class="m3" data-round="25d-b7" data-name="notetaker" alt="Notetaker, 2.5D" />
+            <div class="stamps">
+              <span class="st" data-stamp="notetaker" style="color: var(--accent)"></span>
+              <span class="st" data-stamp="notetaker" style="color: var(--ink)"></span>
+              <span class="st badge" data-stamp="notetaker-badge" style="color: var(--accent)"></span>
+            </div>
+            <h3>Notetaker</h3>
+            <p>Phone on the table. Minutes in your pocket.</p>
+          </article>
+          <article class="mark">
+            <img class="m3" data-round="25d-b7" data-name="cli" alt="via CLI, 2.5D" />
+            <div class="stamps">
+              <span class="st" data-stamp="cli" style="color: var(--accent)"></span>
+              <span class="st" data-stamp="cli" style="color: var(--ink)"></span>
+              <span class="st badge" data-stamp="cli-badge" style="color: var(--accent)"></span>
+            </div>
+            <h3>via CLI</h3>
+            <p>From localhost to the world.</p>
+          </article>
+          <article class="mark">
+            <img class="m3" data-round="25d-b7" data-name="social" alt="Social, 2.5D" />
+            <div class="stamps">
+              <span class="st" data-stamp="social" style="color: var(--accent)"></span>
+              <span class="st" data-stamp="social" style="color: var(--ink)"></span>
+              <span class="st badge" data-stamp="social-badge" style="color: var(--accent)"></span>
+            </div>
+            <h3>Social</h3>
+            <p>Phone to phone. Chat and meet, AI on top.</p>
+          </article>
+        </div>
+        <p class="note">
+          The 2.5D mark is built in Blender, so the light and dark editions are the same model.
+          The stamp is the flat twin in one colour: it works as a favicon, an app badge, a
+          watermark on a PDF, or a rubber stamp.
+        </p>
+      </div>
+    </section>
+
+    <section id="why">
+      <div class="wrap">
+        <p class="kicker">Why icons</p>
+        <h2>One picture per step. One layer per question.</h2>
+
+        <div class="versus">
+          <figure class="plain">
+            <figcaption>Without</figcaption>
+            <p>
+              Viaalink Notetaker records the meeting on the phone, transcribes it on the device,
+              stores the minutes locally, syncs them end-to-end encrypted to your laptop and exposes
+              them over MCP so your AI agent can write the report.
+            </p>
+          </figure>
+          <figure class="pictured">
+            <figcaption>With</figcaption>
+            <ol>
+              <li><img data-icon="record" alt="" /><span>Record</span></li>
+              <li><img data-icon="transcribe" alt="" /><span>Transcribe</span></li>
+              <li><img data-icon="minutes" alt="" /><span>Keep</span></li>
+              <li><img data-icon="lock" alt="" /><span>Private</span></li>
+              <li><img data-icon="mcp-a" alt="" /><span>Connect</span></li>
+              <li><img data-icon="report" alt="" /><span>Report</span></li>
+            </ol>
+          </figure>
+        </div>
+        <p class="note">
+          Same sentence, same facts. The second one is read in a glance, and every step can be
+          pointed at in a call, a manual or a film.
+        </p>
+
+        <h3 class="sub">Four layers, from "is this for me?" to "where do I tap?"</h3>
+        <div class="layers">
+          <article>
+            <span class="lvl">1 · Scene</span>
+            <img data-icon="scene-doctor" alt="" />
+            <h4>Is this for me?</h4>
+            <p>People recognise their own desk before they read a word.</p>
+          </article>
+          <article>
+            <span class="lvl">2 · Steps</span>
+            <div class="mini"><img data-icon="record" alt="" /><img data-icon="transcribe" alt="" /><img data-icon="report" alt="" /></div>
+            <h4>What happens?</h4>
+            <p>Each step is one object, in the order it happens.</p>
+          </article>
+          <article>
+            <span class="lvl">3 · System</span>
+            <div class="mini sys"><img data-icon="phone" alt="" /><i></i><img data-icon="link" alt="" /><i></i><img data-icon="cli" alt="" /></div>
+            <h4>How does it fit together?</h4>
+            <p>The same icons become nodes in diagrams for docs and support.</p>
+          </article>
+          <article>
+            <span class="lvl">4 · Screen</span>
+            <ul class="ui">
+              <li><img data-flat="record" alt="" />New recording</li>
+              <li><img data-flat="transcribe" alt="" />Transcripts</li>
+              <li><img data-flat="files" alt="" />Share with laptop</li>
+            </ul>
+            <h4>Where do I tap?</h4>
+            <p>The flat twin is the button. The customer already knows it.</p>
+          </article>
+        </div>
+
+        <h3 class="sub">Work so far</h3>
+        <div class="stats" id="stats">
+          <div><b data-stat="icons">–</b><span>icon designs</span></div>
+          <div><b data-stat="flat">–</b><span>flat twins</span></div>
+          <div><b data-stat="scenes">–</b><span>scenes</span></div>
+          <div><b data-stat="renders">–</b><span>renders reviewed</span></div>
+          <div><b data-stat="rounds">–</b><span>design rounds</span></div>
+        </div>
+
+        <h3 class="sub">How they are made</h3>
+        <div class="principles">
+          <div class="card">
+            <div class="demo iso">
+              <img data-icon="cli" alt="" /><img data-icon="lock" alt="" /><img
+                data-icon="relay"
+                alt=""
+              />
+            </div>
+            <h3>One camera</h3>
+            <p>True isometric, 30°. Every icon, same light.</p>
+          </div>
+          <div class="card">
+            <div class="demo swatches">
+              <span style="--s: 0; background: var(--red)"></span
+              ><span style="--s: 1; background: var(--red-deep)"></span
+              ><span style="--s: 2; background: var(--navy)"></span
+              ><span style="--s: 3; background: var(--cream); border: 1px solid var(--line)"></span>
+            </div>
+            <h3>Our palette</h3>
+            <p>Brand red, navy ink, paper cream. Nothing else.</p>
+          </div>
+          <div class="card">
+            <div class="demo sizes">
+              <img data-icon="link" width="96" height="96" alt="" /><img
+                data-icon="link"
+                width="64"
+                height="64"
+                alt=""
+              /><img data-icon="link" width="40" height="40" alt="" /><img
+                data-icon="link"
+                width="24"
+                height="24"
+                alt=""
+              />
+            </div>
+            <h3>Reads small</h3>
+            <p>Three parts max. Still clear at 24&nbsp;px.</p>
+          </div>
+          <div class="card">
+            <div class="demo surfaces">
+              <div style="background: var(--cream)">
+                <img data-icon="check" data-mode="light" alt="" />
+              </div>
+              <div style="background: #fff"><img data-icon="check" data-mode="light" alt="" /></div>
+              <div style="background: var(--deep)">
+                <img data-icon="check" data-mode="dark" alt="" />
+              </div>
+              <div class="checker"><img data-icon="check" data-mode="light" alt="" /></div>
+            </div>
+            <h3>Any surface</h3>
+            <p>Transparent cut-outs. A light and a dark edition.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="diagrams">
+      <div class="wrap">
+        <p class="kicker">In your diagrams</p>
+        <h2>Drop them in a flow.</h2>
+        <div class="diagrams">
+          <figure class="diagram">
+            <div class="mmd" data-mmd="flat"></div>
+            <figcaption>Mermaid architecture · flat · <code>via:*</code> icon pack</figcaption>
+          </figure>
+          <figure class="diagram">
+            <div class="mmd" data-mmd="rich"></div>
+            <figcaption>Mermaid flowchart · 2.5D image nodes</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="twins">
+      <div class="wrap">
+        <p class="kicker">Two dimensions</p>
+        <h2>Same object. Pressed flat.</h2>
+        <div class="twins" id="twinGrid"></div>
+      </div>
+    </section>
+
+    <section id="family">
+      <div class="wrap">
+        <p class="kicker">The family</p>
+        <h2>Same hands. Every icon.</h2>
+        <div class="family" id="familyGrid"></div>
+        <div class="cta">
+          <a class="btn" href="/gallery">See every round</a>
+          <a class="btn ghost" href="/gallery?view=compare">Compare iterations</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="wrap">&gt;via · Viaalink · Made in the Netherlands</footer>
+
+    <script type="module">
+      const root = document.documentElement
+      const dark = () =>
+        root.dataset.theme
+          ? root.dataset.theme === "dark"
+          : matchMedia("(prefers-color-scheme: dark)").matches
+      try {
+        const t = localStorage.getItem("via-icons-theme")
+        if (t) root.dataset.theme = t
+      } catch {}
+
+      // Stamps: inline so currentColor follows the theme.
+      for (const el of document.querySelectorAll("[data-stamp]"))
+        fetch(`/stamp/${el.dataset.stamp}.svg`).then((r) => r.text()).then((t) => (el.innerHTML = t))
+
+      // Hero: rotate the desk scenes (doctor, lawyer, student, school board).
+      {
+        const scenes = [...document.querySelectorAll(".hero-art .scene")]
+        const who = document.querySelector(".hero-art .who")
+        let k = 0
+        if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
+          setInterval(() => {
+            scenes[k].classList.remove("on")
+            k = (k + 1) % scenes.length
+            scenes[k].classList.add("on")
+            who.textContent = scenes[k].dataset.who
+          }, 3800)
+      }
+
+      function paint() {
+        const mode = dark() ? "dark" : "light"
+        for (const img of document.querySelectorAll("img[data-round]")) {
+          const src = `/img/round/${img.dataset.round}/${mode}/${img.dataset.name}.png`
+          if (img.getAttribute("src") !== src) img.src = src
+        }
+        for (const img of document.querySelectorAll("img[data-icon], img[data-flat]")) {
+          const m = img.dataset.mode ?? mode
+          const src = img.dataset.flat
+            ? `/flat/${m}/${img.dataset.flat}.svg`
+            : `/icon/${m}/${img.dataset.icon}.png`
+          if (img.getAttribute("src") !== src) img.src = src
+        }
+      }
+
+      // Diagrams: the real Mermaid renderer, fed our icon pack and images.
+      const DIAGRAMS = {
+        flat: `architecture-beta
+  group phone(via:phone)[Your phone]
+  service rec(via:record)[Record] in phone
+  service tr(via:transcribe)[Transcribe] in phone
+  service min(via:minutes)[Minutes] in phone
+  service mcp(via:mcp-a)[MCP]
+  service ai(via:ai-a)[AI agent]
+  service rep(via:report)[Report]
+  rec:R --> L:tr
+  tr:R --> L:min
+  min:B --> T:mcp
+  mcp:R --> L:ai
+  ai:R --> L:rep`,
+        rich: (m) => `flowchart LR
+  cfg@{ img: "/icon/${m}/config.png", label: "via.yaml", pos: "b", w: 64, h: 64, constraint: "on" }
+  cli@{ img: "/icon/${m}/cli.png", label: "via up", pos: "b", w: 64, h: 64, constraint: "on" }
+  rel@{ img: "/icon/${m}/relay.png", label: "Relay", pos: "b", w: 64, h: 64, constraint: "on" }
+  web@{ img: "/icon/${m}/globe.png", label: "the world", pos: "b", w: 64, h: 64, constraint: "on" }
+  cfg --> cli --> rel -- HTTPS --> web`,
+      }
+      let mermaidP = null
+      async function drawDiagrams() {
+        try {
+          mermaidP ??=
+            import("https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs").then(
+              async ({ default: mermaid }) => {
+                const pack = await fetch("/iconify/via.json").then((r) => r.json())
+                mermaid.registerIconPacks([{ name: "via", icons: pack }])
+                return mermaid
+              },
+            )
+          const mermaid = await mermaidP
+          const d = dark()
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: "base",
+            themeVariables: {
+              fontFamily: "inherit",
+              primaryColor: d ? "#17243a" : "#ffffff",
+              primaryTextColor: d ? "#f6f3ee" : "#13223a",
+              primaryBorderColor: d ? "#263443" : "#e6e0d6",
+              lineColor: d ? "#ff6b6b" : "#f73f3f",
+              textColor: d ? "#f6f3ee" : "#13223a",
+              background: "transparent",
+              // label boxes otherwise get a derived (greenish) tint on dark
+              mainBkg: d ? "#17243a" : "#ffffff",
+              labelBackground: d ? "#17243a" : "#ffffff",
+              edgeLabelBackground: d ? "#17243a" : "#ffffff",
+              tertiaryColor: d ? "#17243a" : "#ffffff",
+            },
+          })
+          let k = 0
+          for (const el of document.querySelectorAll("[data-mmd]")) {
+            const src = DIAGRAMS[el.dataset.mmd]
+            const code = typeof src === "function" ? src(d ? "dark" : "light") : src
+            const { svg } = await mermaid.render(`mmd-${el.dataset.mmd}-${k++}-${Date.now()}`, code)
+            el.innerHTML = svg
+          }
+        } catch (e) {
+          console.warn("diagrams", e)
+        }
+      }
+      document.getElementById("theme").addEventListener("click", () => {
+        root.dataset.theme = dark() ? "light" : "dark"
+        try {
+          localStorage.setItem("via-icons-theme", root.dataset.theme)
+        } catch {}
+        paint()
+        drawDiagrams()
+      })
+      matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        paint()
+        drawDiagrams()
+      })
+      drawDiagrams()
+
+      // Family grid: every icon name found in any round.
+      const sets = await fetch("/api/sets").then((r) => r.json())
+      const names = [
+        ...new Set(
+          sets
+            .filter((s) => s.kind === "round" && s.label.startsWith("25d"))
+            .flatMap((s) => Object.keys(s.icons)),
+        ),
+      ]
+        .filter((n) => !n.startsWith("scene-")) // hero illustrations, not icons
+        .sort()
+      const flatNames = new Set(
+        sets
+          .filter((s) => s.kind === "round" && s.label.startsWith("flat"))
+          .flatMap((s) => Object.keys(s.icons)),
+      )
+      // Proof of work: counted live from the rounds on disk.
+      {
+        const all = sets.filter((x) => x.kind === "round")
+        const n25 = new Set(all.filter((x) => x.label.startsWith("25d")).flatMap((x) => Object.keys(x.icons)))
+        const put = (k, v) => (document.querySelector(`[data-stat="${k}"]`).textContent = v)
+        put("icons", [...n25].filter((n) => !n.startsWith("scene-")).length)
+        put("scenes", [...n25].filter((n) => n.startsWith("scene-")).length)
+        put("flat", flatNames.size)
+        put("rounds", all.length)
+        put("renders", all.reduce((t, x) => t + Object.values(x.icons).reduce((u, i) => u + i.modes.length, 0), 0))
+      }
+      document.getElementById("twinGrid").innerHTML = names
+        .filter((n) => flatNames.has(n))
+        .map(
+          (n, i) =>
+            `<figure class="twin" style="--i:${i}"><div class="stage"><img class="d3" data-icon="${n}" alt="${n}, 2.5D"><img class="d2" data-flat="${n}" alt="${n}, flat"></div><figcaption>${n}<span><img data-flat="${n}" alt=""><img data-flat="${n}" alt=""></span></figcaption></figure>`,
+        )
+        .join("")
+      const grid = document.getElementById("familyGrid")
+      grid.innerHTML = names
+        .map(
+          (n, i) =>
+            `<figure style="transition-delay:${i * 50}ms"><img data-icon="${n}" alt="${n}" loading="lazy"><figcaption>${n}</figcaption></figure>`,
+        )
+        .join("")
+      paint()
+      new IntersectionObserver(
+        (es, io) => {
+          if (es.some((e) => e.isIntersecting)) {
+            grid.classList.add("in")
+            io.disconnect()
+          }
+        },
+        { threshold: 0.15 },
+      ).observe(grid)
+      setTimeout(() => grid.classList.add("in"), 1500) // never leave the grid invisible
+    </script>
+      <script src="/zoom.js"></script>
+  </body>
+</html>

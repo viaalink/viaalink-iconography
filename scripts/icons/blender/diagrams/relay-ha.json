@@ -1,0 +1,25 @@
+{
+ "title": "Zero downtime: one router, three Relays kept in sync by NATS",
+ "board": "fit",
+ "nodes": [
+  {"id": "web", "icon": "globe", "at": [-0.6, 1.2], "label": "Internet", "side": "out"},
+  {"id": "modem", "icon": "modem", "at": [0.5, 1.2], "label": "Modem", "side": "out"},
+  {"id": "router", "icon": "router", "at": [1.6, 1.2], "label": "Router", "side": "out"},
+  {"id": "r1", "icon": "relay", "at": [2.9, 0.0], "label": "Relay 1", "side": "out"},
+  {"id": "r2", "icon": "relay", "at": [2.9, 1.2], "label": "Relay 2", "side": "out"},
+  {"id": "r3", "icon": "relay", "at": [2.9, 2.4], "label": "Relay 3", "side": "in"},
+  {"id": "srv", "icon": "server", "at": [4.4, 1.2], "label": "Your services", "side": "out"}
+ ],
+ "edges": [
+  ["web", "modem"],
+  ["modem", "router"],
+  ["router", "r1"],
+  ["router", "r2"],
+  ["router", "r3"],
+  ["r1", "r2", {"label": "NATS", "tile": "need", "side": "in"}],
+  ["r2", "r3"],
+  ["r1", "srv"],
+  ["r2", "srv", {"packet": 0.2, "arrow": 0.4}],
+  ["r3", "srv"]
+ ]
+}

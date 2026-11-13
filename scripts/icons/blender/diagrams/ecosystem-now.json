@@ -1,0 +1,25 @@
+{
+ "title": "Viaalink today: your apps, your Relay",
+ "board": "fit",
+ "nodes": [
+  {"id": "you", "doll": "person-red", "scale": 1.3, "at": [-0.55, 0.4], "label": "You", "side": "out"},
+  {"id": "ph", "icon": "record", "at": [0.45, 0.4], "scale": 0.85, "label": "Notetaker phone", "side": "out"},
+  {"id": "desk", "glyph": "desktop", "at": [1.6, 0.4], "label": "Notetaker desktop", "side": "out"},
+  {"id": "soc", "icon": "social", "at": [0.45, 1.6], "label": "Social", "side": "out"},
+  {"id": "meet", "icon": "meet", "at": [1.6, 1.6], "label": "Meetings", "side": "out"},
+  {"id": "cli", "icon": "cli", "at": [0.45, 2.8], "label": "CLI", "side": "out"},
+  {"id": "relay", "icon": "relay", "at": [2.9, 1.6], "label": "Your Relay", "side": "out"},
+  {"id": "ai", "icon": "ai-a", "at": [4.1, 0.4], "label": "Your AI", "side": "out"},
+  {"id": "web", "icon": "globe", "at": [4.1, 2.8], "label": "Anyone you invite", "side": "out"}
+ ],
+ "edges": [
+  ["you", "ph", {"style": "speech"}],
+  ["ph", "desk", {"style": "wireless", "waves": 1, "label": "local", "tile": "need", "side": "out"}],
+  ["soc", "meet"],
+  ["desk", "relay", {"route": "L"}],
+  ["meet", "relay"],
+  ["cli", "relay", {"route": "L"}],
+  ["relay", "ai", {"route": "L", "label": "MCP", "tile": "need", "side": "in"}],
+  ["relay", "web", {"route": "L", "packet": 0.2, "arrow": 0.4}]
+ ]
+}

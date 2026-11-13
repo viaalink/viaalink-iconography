@@ -1,0 +1,123 @@
+{
+ "title": "Social meetings: Bluetooth recording, local transcript, AI summary over MCP via Relay",
+ "board": "fit",
+ "nodes": [
+  {
+   "id": "p1",
+   "doll": "person",
+   "scale": 1.6,
+   "at": [
+    0,
+    0.4
+   ],
+   "label": "Meeting",
+   "side": "out"
+  },
+  {
+   "id": "p2",
+   "doll": "person-red",
+   "scale": 1.6,
+   "at": [
+    0.05,
+    1.6
+   ]
+  },
+  {
+   "id": "mic",
+   "icon": "notetaker",
+   "at": [
+    0.95,
+    1.0
+   ],
+   "scale": 0.8,
+   "label": "Bluetooth mic",
+   "side": "in"
+  },
+  {
+   "id": "tr",
+   "icon": "transcribe",
+   "at": [
+    1.75,
+    1.0
+   ],
+   "label": "Local transcript",
+   "side": "out"
+  },
+  {
+   "id": "relay",
+   "icon": "relay",
+   "at": [
+    2.55,
+    1.0
+   ],
+   "label": "Your Relay",
+   "side": "out"
+  },
+  {
+   "id": "ai",
+   "icon": "ai-a",
+   "at": [
+    3.35,
+    1.0
+   ],
+   "label": "Your AI",
+   "side": "out"
+  },
+  {
+   "id": "report",
+   "icon": "report",
+   "at": [
+    4.35,
+    2.0
+   ],
+   "label": "Summary",
+   "side": "in"
+  }
+ ],
+ "edges": [
+  [
+   "p1",
+   "mic",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "p2",
+   "mic",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "mic",
+   "tr",
+   {
+    "style": "wireless",
+    "waves": 1
+   }
+  ],
+  [
+   "tr",
+   "relay"
+  ],
+  [
+   "relay",
+   "ai",
+   {
+    "label": "MCP",
+    "tile": "need",
+    "side": "in"
+   }
+  ],
+  [
+   "ai",
+   "report",
+   {
+    "route": "L",
+    "packet": 0.2,
+    "arrow": 0.4
+   }
+  ]
+ ]
+}

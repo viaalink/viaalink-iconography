@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Icon Overview</title>
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      :root {
+        --bg: #f6f3ee;
+        --card: #ffffff;
+        --ink: #13223a;
+        --muted: #5b6573;
+        --line: #e6e0d6;
+        --accent: #f73f3f;
+        --ok: #1f8a5b;
+        --todo: #b7791f;
+        --mode-bg: #f6f3ee;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0e1626;
+          --card: #17243a;
+          --ink: #f6f3ee;
+          --muted: #a7b0bd;
+          --line: #263443;
+          --accent: #ff6b6b;
+          --ok: #4cc38a;
+          --todo: #e3a64a;
+          --mode-bg: #0e1626;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0e1626;
+        --card: #17243a;
+        --ink: #f6f3ee;
+        --muted: #a7b0bd;
+        --line: #263443;
+        --accent: #ff6b6b;
+        --ok: #4cc38a;
+        --todo: #e3a64a;
+        --mode-bg: #0e1626;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.5 "Space Grotesk",
+          system-ui,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 16px 64px;
+      }
+      nav {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 18px 0;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      nav a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      nav b {
+        font-family: "JetBrains Mono", monospace;
+      }
+      .theme {
+        margin-left: auto;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        border-radius: 999px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
+        flex: none;
+      }
+      h1 {
+        font-size: clamp(28px, 4vw, 44px);
+        margin: 8px 0 6px;
+        letter-spacing: -0.02em;
+      }
+      .lede {
+        color: var(--muted);
+        max-width: 70ch;
+        margin: 0 0 18px;
+      }
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 18px;
+      }
+      .stat {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 14px;
+      }
+      .stat b {
+        font-size: 22px;
+        margin-right: 6px;
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 22px;
+      }
+      .filters button {
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 14px;
+      }
+      .filters button.on {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      h2 {
+        font-size: 22px;
+        margin: 34px 0 12px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 12px;
+        min-width: 0;
+      }
+      .pics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .pics figure {
+        margin: 0;
+        border-radius: 12px;
+        background: var(--mode-bg);
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+      .pics img {
+        width: 86%;
+      }
+      .pics .flat img {
+        width: 56%;
+      }
+      .pics figcaption {
+        position: absolute;
+        left: 6px;
+        top: 4px;
+        font:
+          600 10px "JetBrains Mono",
+          monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .pics .missing {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .name {
+        font:
+          600 15px "JetBrains Mono",
+          monospace;
+        margin: 10px 0 6px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .chip {
+        font-size: 12px;
+        border-radius: 999px;
+        padding: 2px 9px;
+        border: 1px solid currentColor;
+      }
+      .chip.ok {
+        color: var(--ok);
+      }
+      .chip.todo {
+        color: var(--todo);
+      }
+      .diagrams img {
+        width: 100%;
+        display: block;
+        border-radius: 14px;
+        background: var(--mode-bg);
+      }
+      .dg {
+        position: relative;
+        container-type: inline-size;
+      }
+      .lbl {
+        position: absolute;
+        left: var(--x);
+        top: var(--y);
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+        font:
+          600 calc(var(--ff, 0.0125) * 100cqw) "Space Grotesk",
+          system-ui,
+          sans-serif;
+        color: #13223a;
+        background: #ffffffe6;
+        border: 1px solid #0f172a26;
+        border-radius: 999px;
+        padding: 1px 8px;
+        box-shadow: 0 2px 6px #0e16261a;
+      }
+      .lbl.edge {
+        font-weight: 500;
+        color: #c0392b;
+      }
+      .lbl .s,
+      .dg .lead {
+        display: none;
+      }
+      .dg .lead,
+      .dg .flead {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      .dg svg line {
+        stroke: #13223a;
+        stroke-opacity: 0.6;
+        stroke-width: 1.4px;
+        stroke-linecap: round;
+        vector-effect: non-scaling-stroke;
+      }
+      .dg svg line.halo {
+        stroke: #fff;
+        stroke-opacity: 0.85;
+        stroke-width: 3.4px;
+      }
+      .dg svg circle {
+        fill: #e04a46;
+        stroke: #fff;
+        stroke-width: 1px;
+        vector-effect: non-scaling-stroke;
+      }
+      /* Tile size: the full-size spots pile up, so diagram.py lays the labels out again for
+         tiles (tx/ty, short texts, leader lines) with the font as a fixed share of the width
+         (tileFont), so the layout it computed is exactly what every tile width shows. */
+      @container (max-width: 560px) {
+        .lbl {
+          left: var(--tx);
+          top: var(--ty);
+          font-size: calc(var(--tf) * 100cqw);
+          line-height: 1.4;
+          padding: 0 0.5em;
+          box-shadow: 0 1px 3px #0e16261a;
+        }
+        .lbl.notile {
+          display: none;
+        }
+        .lbl.has-s .f,
+        .dg .flead {
+          display: none;
+        }
+        .lbl.has-s .s,
+        .dg .lead {
+          display: inline;
+        }
+      }
+      /* scene cards: the 2.5D picture carries its step labels; clicks pass through to the image
+         (zoom.js) */
+      .pics .sc {
+        width: 86%;
+      }
+      .pics .sc img {
+        width: 100%;
+        display: block;
+      }
+      .sc .lbl {
+        pointer-events: none;
+      }
+      @container (max-width: 560px) {
+        .sc .lbl {
+          font-size: max(10px, calc(var(--tf) * 100cqw));
+          padding: 0 0.45em;
+          background: #e04a46;
+          color: #fff;
+          border-color: #fff;
+        }
+      }
+      .diagrams .card {
+        padding: 10px;
+      }
+      .diagrams .dg {
+        cursor: zoom-in;
+      }
+      /* Hover (or tap) a diagram: a large copy in the middle of the screen. Labels keep their
+         pixel size while the picture grows, so they stop piling on top of each other. */
+      #zoom {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        background: #0e162666;
+        z-index: 50;
+        pointer-events: none;
+      }
+      #zoom.on {
+        display: grid;
+      }
+      #zoom img {
+        width: 100%;
+        display: block;
+        border-radius: 14px;
+        background: var(--mode-bg);
+      }
+      #zoom .dg {
+        box-shadow: 0 20px 60px #0e16264d;
+        border-radius: 14px;
+      }
+      #zoom .lbl {
+        padding: 0.15em 0.65em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav>
+        <a href="/"><b>&gt;via</b> icons</a>
+        <a href="/overview">Overview</a>
+        <a href="/approve">Approval</a>
+        <a href="/animations">Animations</a>
+        <a href="/gallery">All rounds</a>
+        <button class="theme" id="theme" aria-label="Toggle light or dark">◐</button>
+      </nav>
+      <h1>2.5D overview</h1>
+      <p class="lede">
+        Every icon, scene and doll once. <b>Blender ✓</b> means the final 2.5D model exists
+        (deterministic; light and dark are one model). <b>AI → convert</b> means the picture is
+        still an AI render waiting to be rebuilt in Blender. <b>2D ✓</b> means the flat twin exists.
+      </p>
+      <div class="stats" id="stats"></div>
+      <div class="filters" id="filters"></div>
+      <div id="sections"></div>
+      <h2>Flow diagrams (2.5D, scripted pipes)</h2>
+      <div class="grid diagrams" id="diagrams"></div>
+    </div>
+    <div id="zoom" aria-hidden="true"></div>
+    <script>
+      const root = document.documentElement
+      try {
+        const t = localStorage.getItem("via-icons-theme")
+        if (t) root.dataset.theme = t
+      } catch {}
+      const dark = () =>
+        root.dataset.theme
+          ? root.dataset.theme === "dark"
+          : matchMedia("(prefers-color-scheme: dark)").matches
+      document.getElementById("theme").onclick = () => {
+        root.dataset.theme = dark() ? "light" : "dark"
+        try {
+          localStorage.setItem("via-icons-theme", root.dataset.theme)
+        } catch {}
+        render()
+      }
+      let data,
+        filter = "all"
+      const FILTERS = [
+        ["all", "All"],
+        ["convert", "AI → convert"],
+        ["blender", "Blender ✓"],
+        ["noflat", "2D missing"],
+      ]
+      function pass(r) {
+        if (filter === "convert") return !r.blender
+        if (filter === "blender") return r.blender
+        if (filter === "noflat") return r.kind === "icon" && !r.flat
+        return true
+      }
+      function card(r, m) {
+        const pic = r.blender
+          ? `/img/round/${r.kind === "doll" ? data.dollsRound : data.blenderRound}/${m}/${r.name}.png`
+          : `/icon/${m}/${r.name}.png`
+        const flat =
+          r.kind === "doll"
+            ? ""
+            : r.flat
+              ? `<figure class="flat"><figcaption>2D</figcaption><img src="/flat/${m}/${r.name}.svg" alt="" loading="lazy"></figure>`
+              : `<figure class="flat"><figcaption>2D</figcaption><span class="missing">${r.kind === "scene" ? "n/a" : "missing"}</span></figure>`
+        const chips = [
+          r.blender
+            ? `<span class="chip ok">Blender ✓</span>`
+            : `<span class="chip todo">AI → convert</span>`,
+          r.kind === "icon"
+            ? r.flat
+              ? `<span class="chip ok">2D ✓</span>`
+              : `<span class="chip todo">2D missing</span>`
+            : "",
+          r.kind !== "icon" ? `<span class="chip">${r.kind}</span>` : "",
+        ].join("")
+        // scenes: the picture sits in a label box so the numbered step labels can lie over it
+        const img = `<img src="${pic}" alt="${r.name}" loading="lazy">`
+        const pic25 = r.kind === "scene" && r.blender ? `<div class="dg sc" data-sc="${r.name}">${img}</div>` : img
+        return `<div class="card"><div class="pics"${r.kind === "doll" ? ' style="grid-template-columns:1fr"' : ""}><figure><figcaption>2.5D</figcaption>${pic25}</figure>${flat}</div><div class="name">${r.name}</div><div class="chips">${chips}</div></div>`
+      }
+      function render() {
+        if (!data) return
+        const m = dark() ? "dark" : "light"
+        const icons = data.rows.filter((r) => r.kind === "icon")
+        const done = icons.filter((r) => r.blender).length
+        const scenes = data.rows.filter((r) => r.kind === "scene")
+        document.getElementById("stats").innerHTML = [
+          `<div class="stat"><b>${done}/${icons.length}</b>icons in Blender</div>`,
+          `<div class="stat"><b>${icons.filter((r) => r.flat).length}/${icons.length}</b>icons with 2D</div>`,
+          `<div class="stat"><b>${scenes.filter((r) => r.blender).length}/${scenes.length}</b>scenes in Blender</div>`,
+          `<div class="stat"><b>${data.rows.filter((r) => r.kind === "doll").length}</b>dolls</div>`,
+          `<div class="stat"><b>${data.diagrams.length}</b>flow diagrams</div>`,
+        ].join("")
+        document.getElementById("filters").innerHTML = FILTERS.map(
+          ([k, t]) => `<button data-f="${k}" class="${k === filter ? "on" : ""}">${t}</button>`,
+        ).join("")
+        const groups = [
+          ["Icons", "icon"],
+          ["Scenes", "scene"],
+          ["Dolls", "doll"],
+        ]
+        document.getElementById("sections").innerHTML = groups
+          .map(([title, kind]) => {
+            const rows = data.rows.filter((r) => r.kind === kind && pass(r))
+            return rows.length
+              ? `<h2>${title}</h2><div class="grid">${rows.map((r) => card(r, m)).join("")}</div>`
+              : ""
+          })
+          .join("")
+        document.getElementById("diagrams").innerHTML = data.diagrams
+          .map(
+            (d) =>
+              `<div class="card"><div class="dg" data-dg="${d}"><img src="/diagram/${d}/${m}.png" alt="${d}" loading="lazy"></div><div class="name">${d}</div></div>`,
+          )
+          .join("")
+        // crisp HTML labels over the render, positioned from labels.json (written by diagram.py);
+        // scenes get theirs mapped onto the normalised square by the server (/scene/<name>/labels.json)
+        const overlays = [
+          ...[...document.querySelectorAll("[data-dg]")].map((el) => [el, `/diagram/${el.dataset.dg}/labels.json`]),
+          ...[...document.querySelectorAll("[data-sc]")].map((el) => [el, `/scene/${el.dataset.sc}/labels.json`]),
+        ]
+        for (const [el, src] of overlays)
+          fetch(src)
+            .then((r) => (r.ok ? r.json() : { labels: [] }))
+            .then((j) => {
+              const ar = j.aspect || 1.6
+              el.style.setProperty("--tf", j.tileFont || 0.04)
+              if (j.fullFont) el.style.setProperty("--ff", j.fullFont)
+              const tile = (l) => l.tile !== false && l.tx !== undefined
+              const line = (from, x, y, r) => {
+                const [x1, y1, x2, y2] = [
+                  from[0] * 100,
+                  (from[1] * 100) / ar,
+                  x * 100,
+                  (y * 100) / ar,
+                ]
+                return `<line class="halo" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x1}" cy="${y1}" r="${r}"/>`
+              }
+              const leads = j.labels
+                .filter((l) => tile(l) && l.lead)
+                .map((l) => line(l.lead, l.tx, l.ty, 0.7))
+                .join("")
+              const fleads = j.labels
+                .filter((l) => l.flead)
+                .map((l) => line(l.flead, l.x, l.y, 0.35))
+                .join("")
+              const box = `viewBox="0 0 100 ${(100 / ar).toFixed(3)}" preserveAspectRatio="none"`
+              el.insertAdjacentHTML(
+                "beforeend",
+                `<svg class="lead" ${box}>${leads}</svg><svg class="flead" ${box}>${fleads}</svg>` +
+                  j.labels
+                    .map(
+                      (l) =>
+                        `<span class="lbl ${l.kind}${tile(l) ? "" : " notile"}${l.short ? " has-s" : ""}" style="--x:${l.x * 100}%;--y:${l.y * 100}%;--tx:${(l.tx ?? l.x) * 100}%;--ty:${(l.ty ?? l.y) * 100}%"><span class="f">${l.text}</span><span class="s">${l.short ?? ""}</span></span>`,
+                    )
+                    .join(""),
+              )
+              if (j.title && el.dataset.dg) el.parentElement.querySelector(".name").textContent = j.title
+            })
+      }
+      // Enlarge a flow diagram while the pointer is on it (tap toggles on touch screens).
+      const zoom = document.getElementById("zoom")
+      const showZoom = (dg) => {
+        const img = dg.querySelector("img")
+        const ratio = img?.naturalHeight ? img.naturalWidth / img.naturalHeight : 16 / 9
+        const copy = dg.cloneNode(true)
+        copy.style.width = `min(92vw, ${(88 * ratio).toFixed(1)}vh, 1200px)`
+        zoom.replaceChildren(copy)
+        zoom.classList.add("on")
+      }
+      const hideZoom = () => zoom.classList.remove("on")
+      const diagrams = document.getElementById("diagrams")
+      diagrams.addEventListener("mouseover", (e) => {
+        const dg = e.target.closest?.(".dg")
+        if (dg) showZoom(dg)
+      })
+      diagrams.addEventListener("mouseleave", hideZoom)
+      diagrams.addEventListener("mouseout", (e) => {
+        if (!e.relatedTarget?.closest?.(".dg")) hideZoom()
+      })
+      diagrams.addEventListener("click", (e) => {
+        const dg = e.target.closest?.(".dg")
+        if (dg && !zoom.classList.contains("on")) showZoom(dg)
+        else hideZoom()
+      })
+      addEventListener("keydown", (e) => e.key === "Escape" && hideZoom())
+      document.getElementById("filters").onclick = (e) => {
+        const f = e.target.dataset?.f
+        if (f) {
+          filter = f
+          render()
+        }
+      }
+      matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render)
+      fetch("/api/overview")
+        .then((r) => r.json())
+        .then((d) => {
+          data = d
+          render()
+        })
+    </script>
+      <script src="/zoom.js"></script>
+  </body>
+</html>

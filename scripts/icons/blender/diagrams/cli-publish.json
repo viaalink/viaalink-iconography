@@ -1,0 +1,171 @@
+{
+ "title": "Publish from your laptop: via CLI, your Relay, Caddy HTTPS in front (server)",
+ "board": "fit",
+ "nodes": [
+  {
+   "id": "you",
+   "doll": "person-red",
+   "scale": 1.3,
+   "at": [
+    -0.55,
+    0.6
+   ],
+   "label": "You",
+   "side": "out"
+  },
+  {
+   "id": "app",
+   "glyph": "desktop",
+   "at": [
+    0.5,
+    0.6
+   ],
+   "label": "Your app on :3000",
+   "side": "out"
+  },
+  {
+   "id": "cfg",
+   "icon": "config",
+   "at": [
+    0.5,
+    1.8
+   ],
+   "scale": 0.8,
+   "label": "via.yaml",
+   "side": "in"
+  },
+  {
+   "id": "cli",
+   "icon": "cli",
+   "at": [
+    1.6,
+    0.6
+   ],
+   "label": "via up",
+   "side": "out"
+  },
+  {
+   "id": "relay",
+   "icon": "relay",
+   "at": [
+    2.9,
+    0.6
+   ],
+   "label": "Your Relay (server)",
+   "side": "out"
+  },
+  {
+   "id": "caddy",
+   "icon": "caddy",
+   "at": [
+    4.3,
+    0.6
+   ],
+   "label": "Caddy: HTTPS",
+   "side": "out"
+  },
+  {
+   "id": "web",
+   "icon": "globe",
+   "at": [
+    5.7,
+    0.6
+   ],
+   "label": "app.yourdomain.com",
+   "side": "out"
+  },
+  {
+   "id": "vis",
+   "icon": "browser",
+   "at": [
+    5.7,
+    1.8
+   ],
+   "label": "Visitors",
+   "side": "in"
+  },
+  {
+   "id": "cert",
+   "icon": "certstore",
+   "at": [
+    4.3,
+    -0.8
+   ],
+   "scale": 0.85,
+   "label": "Let's Encrypt",
+   "side": "in"
+  },
+  {
+   "id": "dns",
+   "icon": "dns",
+   "at": [
+    2.9,
+    -0.8
+   ],
+   "scale": 0.85,
+   "label": "DNS",
+   "side": "in"
+  }
+ ],
+ "edges": [
+  [
+   "you",
+   "app",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "app",
+   "cli"
+  ],
+  [
+   "cfg",
+   "cli",
+   {
+    "route": "L"
+   }
+  ],
+  [
+   "cli",
+   "relay",
+   {
+    "label": "tunnel",
+    "tile": "need",
+    "side": "in",
+    "packet": 0.2,
+    "arrow": 0.4
+   }
+  ],
+  [
+   "relay",
+   "caddy"
+  ],
+  [
+   "caddy",
+   "web"
+  ],
+  [
+   "web",
+   "vis"
+  ],
+  [
+   "cert",
+   "caddy",
+   {
+    "label": "certificate",
+    "tile": "need",
+    "side": "out"
+   }
+  ],
+  [
+   "dns",
+   "relay",
+   {
+    "label": "name \u2192 Relay",
+    "tile": "need",
+    "side": "out"
+   }
+  ]
+ ]
+}
