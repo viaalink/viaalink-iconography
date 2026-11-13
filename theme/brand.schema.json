@@ -1,0 +1,887 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Icon theme (brand look)",
+  "description": "Everything brand- or look-specific of the icon pipeline. Read by scripts/icons/theme.py and scripts/icons/theme.ts, which validate a theme against this schema. Paths are relative to the theme file.",
+  "type": "object",
+  "required": [
+    "brand",
+    "fonts",
+    "logo",
+    "pages",
+    "colors25d",
+    "materials",
+    "render",
+    "camera",
+    "lights",
+    "shape",
+    "flat",
+    "canvas",
+    "gate",
+    "diagram",
+    "animation",
+    "gallery",
+    "prompt"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "brand": {
+      "type": "object",
+      "required": [
+        "name",
+        "slug",
+        "cssPrefix",
+        "cliWord",
+        "url"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Iconify prefix, file and zip names"
+        },
+        "cssPrefix": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "CSS variables --<cssPrefix>-<role>"
+        },
+        "cliWord": {
+          "type": "string",
+          "description": "the word after the > prompt on the cli icon"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "fonts": {
+      "description": "font files (mono for prompts, sans for letters, sansCaps = sans capitals as SVG paths made by fonts/glyphs.py)",
+      "type": "object",
+      "required": [
+        "mono",
+        "sans",
+        "sansCaps"
+      ],
+      "properties": {
+        "mono": {
+          "type": "string"
+        },
+        "sans": {
+          "type": "string"
+        },
+        "sansCaps": {
+          "type": "string"
+        }
+      }
+    },
+    "logo": {
+      "description": "logo SVGs: mark3d is extruded in Blender, markFlat is inlined in flat SVGs",
+      "type": "object",
+      "required": [
+        "mark3d",
+        "markFlat"
+      ],
+      "properties": {
+        "mark3d": {
+          "type": "string"
+        },
+        "markFlat": {
+          "type": "string"
+        }
+      }
+    },
+    "pages": {
+      "description": "page colours behind the icons (sheets, films)",
+      "type": "object",
+      "required": [
+        "light",
+        "dark",
+        "video"
+      ],
+      "properties": {
+        "light": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "dark": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "video": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    },
+    "colors25d": {
+      "type": "object",
+      "required": [
+        "hex",
+        "roles",
+        "calibrated",
+        "lifted"
+      ],
+      "properties": {
+        "hex": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "description": "named 2.5D colours"
+        },
+        "roles": {
+          "type": "object",
+          "required": [
+            "dark",
+            "light"
+          ],
+          "properties": {
+            "dark": {
+              "description": "2.5D roles: p primary body, s secondary parts, r recess, c cream detail, g glowing glyph, k accent rim",
+              "type": "object",
+              "required": [
+                "p",
+                "s",
+                "r",
+                "c",
+                "g",
+                "k"
+              ],
+              "properties": {
+                "p": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "s": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "r": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "c": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "g": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "k": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                }
+              }
+            },
+            "light": {
+              "description": "2.5D roles: p primary body, s secondary parts, r recess, c cream detail, g glowing glyph, k accent rim",
+              "type": "object",
+              "required": [
+                "p",
+                "s",
+                "r",
+                "c",
+                "g",
+                "k"
+              ],
+              "properties": {
+                "p": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "s": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "r": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "c": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "g": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                },
+                "k": {
+                  "type": "string",
+                  "description": "a key of colors25d.hex"
+                }
+              }
+            }
+          }
+        },
+        "calibrated": {
+          "type": "string",
+          "description": "hex name whose lit top must land on its own hex (albedo calibrated)"
+        },
+        "lifted": {
+          "type": "string",
+          "description": "hex name lifted by navyLift when used for role s"
+        }
+      }
+    },
+    "materials": {
+      "type": "object",
+      "required": [
+        "roughness",
+        "specular",
+        "coatWeight",
+        "coatRoughness",
+        "glow",
+        "glowFlesh",
+        "creamAlbedo",
+        "creamDim",
+        "navyLift"
+      ],
+      "properties": {
+        "roughness": {
+          "type": "object",
+          "required": [
+            "p",
+            "s",
+            "c",
+            "g",
+            "r",
+            "default"
+          ],
+          "properties": {
+            "p": {
+              "type": "number"
+            },
+            "s": {
+              "type": "number"
+            },
+            "c": {
+              "type": "number"
+            },
+            "g": {
+              "type": "number"
+            },
+            "r": {
+              "type": "number"
+            },
+            "default": {
+              "type": "number"
+            }
+          }
+        },
+        "specular": {
+          "type": "object",
+          "required": [
+            "p",
+            "s",
+            "c",
+            "g",
+            "r",
+            "default"
+          ],
+          "properties": {
+            "p": {
+              "type": "number"
+            },
+            "s": {
+              "type": "number"
+            },
+            "c": {
+              "type": "number"
+            },
+            "g": {
+              "type": "number"
+            },
+            "r": {
+              "type": "number"
+            },
+            "default": {
+              "type": "number"
+            }
+          }
+        },
+        "coatWeight": {
+          "type": "number"
+        },
+        "coatRoughness": {
+          "type": "number"
+        },
+        "glow": {
+          "type": "number"
+        },
+        "glowFlesh": {
+          "type": "number"
+        },
+        "creamAlbedo": {
+          "type": "number"
+        },
+        "creamDim": {
+          "type": "number"
+        },
+        "navyLift": {
+          "type": "number"
+        }
+      }
+    },
+    "render": {
+      "type": "object",
+      "required": [
+        "samples",
+        "seed",
+        "resolution",
+        "denoise",
+        "viewTransform",
+        "look",
+        "exposure",
+        "world"
+      ],
+      "properties": {
+        "samples": {
+          "type": "integer"
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "resolution": {
+          "type": "integer"
+        },
+        "denoise": {
+          "type": "boolean"
+        },
+        "viewTransform": {
+          "type": "string"
+        },
+        "look": {
+          "type": "string"
+        },
+        "exposure": {
+          "type": "number"
+        },
+        "world": {
+          "type": "object",
+          "required": [
+            "color",
+            "strength"
+          ],
+          "properties": {
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "strength": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "camera": {
+      "description": "orthographic camera: azimuth about Z, pitch about X (60 = 30 degrees above horizontal)",
+      "type": "object",
+      "required": [
+        "azimuth",
+        "pitch",
+        "orthoMargin",
+        "distance"
+      ],
+      "properties": {
+        "azimuth": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "orthoMargin": {
+          "type": "number"
+        },
+        "distance": {
+          "type": "number"
+        }
+      }
+    },
+    "lights": {
+      "type": "object",
+      "required": [
+        "target",
+        "key",
+        "rim"
+      ],
+      "properties": {
+        "target": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "key": {
+          "type": "object",
+          "required": [
+            "energy",
+            "color",
+            "size",
+            "location"
+          ],
+          "properties": {
+            "energy": {
+              "type": "number"
+            },
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "size": {
+              "type": "number"
+            },
+            "location": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          }
+        },
+        "rim": {
+          "type": "object",
+          "required": [
+            "energy",
+            "color",
+            "size",
+            "location"
+          ],
+          "properties": {
+            "energy": {
+              "type": "number"
+            },
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "size": {
+              "type": "number"
+            },
+            "location": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          }
+        }
+      }
+    },
+    "shape": {
+      "type": "object",
+      "required": [
+        "bevel",
+        "smoothAngle",
+        "tubeResolution",
+        "port"
+      ],
+      "properties": {
+        "bevel": {
+          "type": "object",
+          "required": [
+            "box",
+            "cyl",
+            "minSegments",
+            "text"
+          ],
+          "properties": {
+            "box": {
+              "type": "number"
+            },
+            "cyl": {
+              "type": "number"
+            },
+            "minSegments": {
+              "type": "integer"
+            },
+            "text": {
+              "type": "number"
+            }
+          }
+        },
+        "smoothAngle": {
+          "type": "number"
+        },
+        "tubeResolution": {
+          "type": "integer"
+        },
+        "port": {
+          "description": "the cream pipe port of the device family",
+          "type": "object",
+          "required": [
+            "radius",
+            "length",
+            "offset",
+            "bevel",
+            "bore",
+            "boreLength",
+            "boreOffset"
+          ],
+          "properties": {
+            "radius": {
+              "type": "number"
+            },
+            "length": {
+              "type": "number"
+            },
+            "offset": {
+              "type": "number"
+            },
+            "bevel": {
+              "type": "number"
+            },
+            "bore": {
+              "type": "number"
+            },
+            "boreLength": {
+              "type": "number"
+            },
+            "boreOffset": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "flat": {
+      "type": "object",
+      "required": [
+        "roles",
+        "lip",
+        "art"
+      ],
+      "properties": {
+        "roles": {
+          "type": "object",
+          "required": [
+            "light",
+            "dark"
+          ],
+          "properties": {
+            "light": {
+              "description": "flat roles: p body, s body lip, n secondary, m secondary lip, r recess, c detail",
+              "type": "object",
+              "required": [
+                "p",
+                "s",
+                "n",
+                "m",
+                "r",
+                "c"
+              ],
+              "properties": {
+                "p": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "s": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "n": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "m": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "r": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "c": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                }
+              }
+            },
+            "dark": {
+              "description": "flat roles: p body, s body lip, n secondary, m secondary lip, r recess, c detail",
+              "type": "object",
+              "required": [
+                "p",
+                "s",
+                "n",
+                "m",
+                "r",
+                "c"
+              ],
+              "properties": {
+                "p": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "s": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "n": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "m": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "r": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "c": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                }
+              }
+            }
+          }
+        },
+        "lip": {
+          "type": "number"
+        },
+        "art": {
+          "type": "integer"
+        }
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "required": [
+        "size",
+        "margin",
+        "optical",
+        "trimThreshold"
+      ],
+      "properties": {
+        "size": {
+          "type": "integer"
+        },
+        "margin": {
+          "type": "number"
+        },
+        "optical": {
+          "type": "number"
+        },
+        "trimThreshold": {
+          "type": "number"
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": [
+        "whiteLevel",
+        "whiteMaxPct",
+        "opaqueAlpha",
+        "edgePx",
+        "minAspect"
+      ],
+      "properties": {
+        "whiteLevel": {
+          "type": "number"
+        },
+        "whiteMaxPct": {
+          "type": "number"
+        },
+        "opaqueAlpha": {
+          "type": "number"
+        },
+        "edgePx": {
+          "type": "integer"
+        },
+        "minAspect": {
+          "type": "number"
+        }
+      }
+    },
+    "diagram": {
+      "type": "object",
+      "required": [
+        "samples",
+        "grid",
+        "foot",
+        "pipeZ",
+        "pipeR",
+        "tileFont",
+        "fullFont",
+        "board"
+      ],
+      "properties": {
+        "samples": {
+          "type": "integer"
+        },
+        "grid": {
+          "type": "number"
+        },
+        "foot": {
+          "type": "number"
+        },
+        "pipeZ": {
+          "type": "number"
+        },
+        "pipeR": {
+          "type": "number"
+        },
+        "tileFont": {
+          "type": "number"
+        },
+        "fullFont": {
+          "type": "number"
+        },
+        "board": {
+          "type": "object",
+          "required": [
+            "thickness",
+            "thicknessScene",
+            "topRole",
+            "underRole",
+            "groupRole"
+          ],
+          "properties": {
+            "thickness": {
+              "type": "number"
+            },
+            "thicknessScene": {
+              "type": "number"
+            },
+            "topRole": {
+              "type": "string"
+            },
+            "underRole": {
+              "type": "string"
+            },
+            "groupRole": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "animation": {
+      "type": "object",
+      "required": [
+        "samples",
+        "storySamples",
+        "fps"
+      ],
+      "properties": {
+        "samples": {
+          "type": "integer"
+        },
+        "storySamples": {
+          "type": "integer"
+        },
+        "fps": {
+          "type": "integer"
+        }
+      }
+    },
+    "gallery": {
+      "type": "object",
+      "required": [
+        "background",
+        "ink",
+        "link"
+      ],
+      "properties": {
+        "background": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "ink": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "link": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    },
+    "prompt": {
+      "type": "object",
+      "required": [
+        "chroma",
+        "palette"
+      ],
+      "properties": {
+        "chroma": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "palette": {
+          "type": "object",
+          "required": [
+            "red",
+            "redDeep",
+            "coral",
+            "navy",
+            "navyDeep",
+            "slate",
+            "cream",
+            "white"
+          ],
+          "properties": {
+            "red": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "redDeep": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "coral": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "navy": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "navyDeep": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "slate": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "cream": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "white": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

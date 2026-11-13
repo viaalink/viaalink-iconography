@@ -1,0 +1,147 @@
+{
+  "$schema": "./brand.schema.json",
+  "brand": {
+    "name": "Viaalink",
+    "slug": "viaalink",
+    "cssPrefix": "via",
+    "cliWord": "via",
+    "url": "https://viaalink.com"
+  },
+  "fonts": {
+    "mono": "../scripts/icons/fonts/IBMPlexMono-Bold.ttf",
+    "sans": "../scripts/icons/fonts/SpaceGrotesk-Bold.ttf",
+    "sansCaps": "../scripts/icons/fonts/space-grotesk-caps.json"
+  },
+  "logo": {
+    "mark3d": "../scripts/icons/blender/logo-mark.svg",
+    "markFlat": "../static/assets/logo-mark.svg"
+  },
+  "pages": {
+    "light": "#F6F3EE",
+    "dark": "#0E1626",
+    "video": "#f4efe8"
+  },
+  "colors25d": {
+    "hex": {
+      "red": "#F73F3F",
+      "redDeep": "#D62828",
+      "coral": "#FF6B6B",
+      "warm": "#E04A46",
+      "navy": "#13223A",
+      "slate": "#1C2B45",
+      "cream": "#F6F3EE"
+    },
+    "roles": {
+      "dark": { "p": "warm", "s": "cream", "r": "slate", "c": "cream", "g": "cream", "k": "warm" },
+      "light": { "p": "warm", "s": "cream", "r": "slate", "c": "cream", "g": "cream", "k": "warm" }
+    },
+    "calibrated": "cream",
+    "lifted": "navy"
+  },
+  "materials": {
+    "roughness": { "p": 0.78, "s": 0.82, "c": 0.82, "g": 0.85, "r": 0.72, "default": 0.8 },
+    "specular": { "p": 0.06, "s": 0.04, "c": 0.04, "g": 0.0, "r": 0.12, "default": 0.05 },
+    "coatWeight": 0.0,
+    "coatRoughness": 0.35,
+    "glow": 0.15,
+    "glowFlesh": 0.55,
+    "creamAlbedo": 0.88,
+    "creamDim": 0.86,
+    "navyLift": 2.4
+  },
+  "render": {
+    "samples": 96,
+    "seed": 7,
+    "resolution": 2048,
+    "denoise": true,
+    "viewTransform": "Standard",
+    "look": "None",
+    "exposure": -0.15,
+    "world": { "color": [0.9, 0.88, 0.85], "strength": 0.22 }
+  },
+  "camera": {
+    "azimuth": 35,
+    "pitch": 60,
+    "orthoMargin": 1.25,
+    "distance": 20
+  },
+  "lights": {
+    "target": [0, 0, 0.8],
+    "key": { "energy": 740, "color": [1.0, 0.95, 0.88], "size": 4.5, "location": [-2.5, -5.5, 6.0] },
+    "rim": { "energy": 65, "color": [1.0, 0.88, 0.78], "size": 3.5, "location": [-3, 5, 4] }
+  },
+  "shape": {
+    "bevel": { "box": 0.08, "cyl": 0.03, "minSegments": 12, "text": 0.004 },
+    "smoothAngle": 40,
+    "tubeResolution": 14,
+    "port": {
+      "radius": 0.39,
+      "length": 0.88,
+      "offset": 0.2,
+      "bevel": 0.08,
+      "bore": 0.21,
+      "boreLength": 0.8,
+      "boreOffset": 0.46
+    }
+  },
+  "flat": {
+    "roles": {
+      "light": { "p": "#F73F3F", "s": "#D62828", "n": "#E2D5C4", "m": "#BFAE98", "r": "#13223A", "c": "#F6F3EE" },
+      "dark": { "p": "#F73F3F", "s": "#D62828", "n": "#F6F3EE", "m": "#D8D1C6", "r": "#17243A", "c": "#F6F3EE" }
+    },
+    "lip": 1.1,
+    "art": 860
+  },
+  "canvas": {
+    "size": 1024,
+    "margin": 0.08,
+    "optical": 0.84,
+    "trimThreshold": 8
+  },
+  "gate": {
+    "whiteLevel": 252,
+    "whiteMaxPct": 0.5,
+    "opaqueAlpha": 250,
+    "edgePx": 2,
+    "minAspect": 0.45
+  },
+  "diagram": {
+    "samples": 64,
+    "grid": 3.7,
+    "foot": 1.45,
+    "pipeZ": 0.3,
+    "pipeR": 0.09,
+    "tileFont": 0.036,
+    "fullFont": 0.0125,
+    "board": {
+      "thickness": 0.34,
+      "thicknessScene": 0.62,
+      "topRole": "c",
+      "underRole": "p",
+      "groupRole": "r"
+    }
+  },
+  "animation": {
+    "samples": 24,
+    "storySamples": 10,
+    "fps": 24
+  },
+  "gallery": {
+    "background": "#f4efe8",
+    "ink": "#1d2433",
+    "link": "#c8302c"
+  },
+  "prompt": {
+    "chroma": "#00FF00",
+    "palette": {
+      "red": "#F73F3F",
+      "redDeep": "#D62828",
+      "coral": "#FF6B6B",
+      "navy": "#13223A",
+      "navyDeep": "#0E1626",
+      "slate": "#17243A",
+      "cream": "#F6F3EE",
+      "white": "#FFFFFF"
+    }
+  }
+}
