@@ -13,7 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VIA_ICON_FONT=/work/scripts/icons/fonts/IBMPlexMono-Bold.ttf
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl xz-utils unzip zip git ffmpeg fonts-dejavu-core \
+      ca-certificates curl xz-utils unzip zip git ffmpeg fonts-dejavu-core pipx \
       libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libxkbcommon0 libsm6 libice6 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -26,6 +26,10 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash 
 
 # Bun
 RUN curl -fsSL https://bun.sh/install | bash
+
+# ruff (Python lint + format, `just lint`); Biome and tsc come with `bun install` (devDependencies)
+ARG RUFF_VERSION=0.17.5
+RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install "ruff==${RUFF_VERSION}"
 
 # JetBrains Mono Bold (OFL) for the "> via" prompts on screens
 RUN mkdir -p /usr/share/fonts/truetype/jetbrains \

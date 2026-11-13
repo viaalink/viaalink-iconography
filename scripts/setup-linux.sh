@@ -7,7 +7,7 @@ BLENDER_VERSION=${BLENDER_VERSION:-5.3.0}
 JETBRAINS_MONO=${JETBRAINS_MONO:-2.304}
 
 sudo apt-get update
-sudo apt-get install -y curl xz-utils unzip zip git ffmpeg fonts-dejavu-core libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libxkbcommon0
+sudo apt-get install -y curl xz-utils unzip zip git ffmpeg fonts-dejavu-core pipx libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libxkbcommon0
 
 if ! command -v blender >/dev/null; then
   mkdir -p ~/.local/opt ~/.local/bin
@@ -16,6 +16,8 @@ if ! command -v blender >/dev/null; then
 fi
 command -v just >/dev/null && just --version | grep -qE "^just 1\.(2[5-9]|[3-9][0-9])" || curl --proto "=https" --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
 command -v bun >/dev/null || curl -fsSL https://bun.sh/install | bash
+# ruff for `just lint` / `just fmt` (Python); Biome and tsc come with `bun install`
+command -v ruff >/dev/null || { command -v uv >/dev/null && uv tool install "ruff==${RUFF_VERSION:-0.17.5}"; } || pipx install "ruff==${RUFF_VERSION:-0.17.5}"
 
 FONT=~/.local/share/fonts/JetBrainsMono-Bold.ttf
 if [ ! -f "$FONT" ]; then

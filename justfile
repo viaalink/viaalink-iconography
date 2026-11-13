@@ -53,3 +53,21 @@ icons-check-svg before after:
 # Refactor guard: two renders must match within Cycles noise (per-icon mean abs diff, max channel diff)
 icons-check-png before after *args:
 	bun scripts/icons/check-identical.ts png {{before}} {{after}} {{args}}
+
+# Validate the icon theme (theme/brand.json, or $VIA_ICON_THEME) in both loaders
+theme-check:
+	python3 scripts/icons/theme.py
+	bun scripts/icons/theme.ts
+
+# Lint, check only (exit 1 on any problem): ruff (Python), Biome + tsc (TypeScript), the theme
+lint: theme-check
+	ruff check .
+	ruff format --check .
+	bunx biome ci .
+	bunx tsc --noEmit -p tsconfig.json
+
+# Fix what the linters can fix (format + safe fixes); `just lint` afterwards shows what is left
+fmt:
+	ruff check --fix .
+	ruff format .
+	bunx biome check --write .
