@@ -18,20 +18,39 @@ flow diagrams with pipes between the icons, and story animations.
 | `icons/drawio/*.xml` | draw.io / diagrams.net libraries (File → Open Library) |
 | `icons/platform-marks/` | where Viaalink runs: GitHub, Apple, Android, Linux, Windows, Docker, Raspberry Pi, Bluetooth, Caddy. **Trademarks of their owners**, see [TRADEMARKS.md](TRADEMARKS.md) |
 
-Mermaid:
+Mermaid (architecture diagrams with `viaalink:<name>`; one-colour stamps with `viaalink:<name>-mono`):
+
+![Mermaid architecture diagram with Viaalink icons](docs/examples/mermaid-architecture.png)
 
 ```js
 mermaid.registerIconPacks([{ name: "viaalink", loader: () => fetch("/viaalink.json").then((r) => r.json()) }])
 ```
 
-```mermaid
+```text
 architecture-beta
-  service phone(viaalink:record)[Notetaker phone]
-  service relay(viaalink:relay)[Your Relay]
-  service ai(viaalink:ai-a)[Your AI]
-  phone:R --> L:relay
-  relay:R --> L:ai
+  group home(viaalink:nas)[Your office]
+  service user(viaalink:user)[Users]
+  service web(viaalink:browser)[Browser]
+  service fw(viaalink:firewall)[Firewall] in home
+  service lb(viaalink:loadbalancer)[Load balancer] in home
+  service api(viaalink:api)[API] in home
+  service db(viaalink:database)[Database] in home
+  service cache(viaalink:cache)[Cache] in home
+  service queue(viaalink:queue)[Queue] in home
+  service mon(viaalink:monitoring)[Monitoring] in home
+  user:R --> L:web
+  web:R --> L:fw
+  fw:R --> L:lb
+  lb:R --> L:api
+  api:R --> L:db
+  api:B --> T:cache
+  api:T --> B:queue
+  db:B --> T:mon
 ```
+
+(The code is shown as text: GitHub renders Mermaid itself but cannot load an icon pack, so the icons would
+show as "?" there. Serve `icons/mermaid/viaalink.json` from your own site and register it as above.
+Source: [docs/examples/mermaid-architecture.mmd](docs/examples/mermaid-architecture.mmd).)
 
 Icons: `ai-a` · `api` · `backup` · `bell` · `browser-ext` · `browser` · `bucket` · `cache` · `calendar` · `call` · `certstore` · `chat` · `check` · `cicd` · `cli` · `cloud` · `cluster` · `config` · `container` · `database` · `desktop` · `dns` · `download` · `error` · `files` · `firewall` · `globe` · `info` · `key` · `license` · `link` · `loadbalancer` · `lock` · `logs` · `mail` · `mcp-a` · `meet` · `minutes` · `modem` · `monitoring` · `nas` · `notetaker` · `page` · `payment` · `pending` · `phone` · `qr-pair` · `queue` · `record` · `relay` · `report` · `router` · `search` · `server` · `shield` · `social` · `switch` · `sync` · `tablet` · `team` · `transcribe` · `trash` · `upload` · `user` · `video` · `vm` · `voice-profile` · `vscode` · `warning` · `webhook` · `wifi`
 

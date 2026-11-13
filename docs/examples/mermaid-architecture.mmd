@@ -1,0 +1,19 @@
+architecture-beta
+  group home(viaalink:nas)[Your office]
+  service user(viaalink:user)[Users]
+  service web(viaalink:browser)[Browser]
+  service fw(viaalink:firewall)[Firewall] in home
+  service lb(viaalink:loadbalancer)[Load balancer] in home
+  service api(viaalink:api)[API] in home
+  service db(viaalink:database)[Database] in home
+  service cache(viaalink:cache)[Cache] in home
+  service queue(viaalink:queue)[Queue] in home
+  service mon(viaalink:monitoring)[Monitoring] in home
+  user:R --> L:web
+  web:R --> L:fw
+  fw:R --> L:lb
+  lb:R --> L:api
+  api:R --> L:db
+  api:B --> T:cache
+  api:T --> B:queue
+  db:B --> T:mon
