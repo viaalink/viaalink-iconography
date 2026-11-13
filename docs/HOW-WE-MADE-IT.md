@@ -27,7 +27,7 @@ one, but never matched each other: every icon had its own light, camera and red.
   "lip" (the same shape shifted down in a darker shade) as its only depth cue.
 
 The generator is still used, but only for **concepts**. When a new icon is needed, we write three to five
-ideas in text, render rough AI sketches with the existing Blender icons attached as style references, Kelvin
+ideas in text, render rough AI sketches with the existing Blender icons attached as style references, a human
 picks one, and it is then built in Blender. The Caddy, Let's Encrypt, DNS and IT-diagram icons were made this
 way.
 
@@ -39,7 +39,7 @@ Every round of images goes through the same loop, which Kelvin designed:
 2. **Share** it: the gallery (`tools/icon-gallery`) runs on Viaalink's own machine and is published through
    Viaalink's own Relay at a shared URL, so colleagues, testers and outside reviewers can look.
 3. **Judge**: on `/approve` every image gets approved, needs work, rejected or regenerate, with a note
-   (`local/icons/reviews.json`). Kelvin's verdict counts.
+   (`local/icons/reviews.json`). A human approves.
 4. **Feed back**: `just icons-regen` renders the queue again with the notes as feedback, so a rejection
    becomes the brief for the next attempt.
 5. **Build in 3D**: an approved image is the target for a Blender model (`build.py`).
@@ -75,12 +75,12 @@ reviewing agent never trusts the report. It renders a contact sheet (2.5D and fl
 side), **looks at it**, and only then commits. The working rules the agents follow are in
 [docs/skill/SKILL.md](skill/SKILL.md).
 
-## 3. Rules that came from Kelvin's eye
+## 3. Rules that came from looking
 
 Most of the house style came from looking at renders and saying what was wrong:
 
 - **The icon is the object.** No tile or disc behind an icon. A Wi-Fi icon is the arcs themselves, and a
-  sync icon is the two arrows (Kelvin's reference icon).
+  sync icon is the two arrows (the reference icon).
 - **One family for infrastructure.** Relay, modem, router, server, NAS, Caddy, certificate store and DNS
   keep their own shapes, but share the same cream pipe ports, so pipes plug into them in diagrams.
 - **2D matches 2.5D.** The flat twins use sand where the 2.5D uses cream. Navy and red are accents.

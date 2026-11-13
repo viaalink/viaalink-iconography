@@ -53,8 +53,8 @@ open, until it earns its place.
 
 1. **Generate** a round of candidates in the house style.
 2. **Share** it through Viaalink's own Relay, so colleagues, testers and outside reviewers can look.
-3. **Judge**: every image gets approved, needs work, rejected or regenerate, with a note. Kelvin's verdict
-   counts; outside reactions and independent reviews feed into it.
+3. **Judge**: every image gets approved, needs work, rejected or regenerate, with a note. A human approves;
+   outside reactions and independent reviews feed into that judgement.
 4. **Feed back**: the notes become the brief for the next round, so a rejection is never lost.
 5. **Build in 3D, then flat**: an approved image becomes a Blender model, and its flat twin is drawn from it.
 6. **Judge again**: the gate, a look at every render, an independent review, the shared gallery.
@@ -68,15 +68,15 @@ vote on icons, comment and request new ones, and their input becomes the next ro
 Kelvin designed how the agents work together. No single agent does everything, and no agent is trusted on its
 word.
 
-- **The orchestrator** acts as product owner and QA. It turns Kelvin's direction into precise task files,
+- **The orchestrator** acts as product owner and QA. It turns human direction into precise task files,
   verifies every result against the real output (renders, measurements, contact sheets), and only then keeps
   it. It never accepts "done" from a report.
 - **The executor** (Google's Antigravity CLI) builds in Blender from a task file. Each task names exactly what
   to change, carries the house rules, and ends with the same finish line: the gate must pass, and every render
   must be looked at. At most three iterations, then an honest "done" or "not done, and why".
 - **Independent reviewers** are fresh agents that see only the images: an expert scoring of every icon, and
-  blind reads that ask "what does this picture say?" without labels. Their findings are input for Kelvin, not
-  decisions.
+  blind reads that ask "what does this picture say?" without labels. Their findings are input for the
+  human who decides, not decisions.
 - **Specialised agents work in parallel, each in its own lane.** One builds the icons, one builds the
   website, one runs the film and encoding workers, one leads the app releases. They hand work to each other,
   report back, and never edit each other's files.
@@ -87,15 +87,15 @@ word.
 
 ## 6. The human role
 
-The machines do the work; the human decides. Kelvin set the vision, the architecture and the rules, and made
-every call that shaped the set: what to build, what to reject, which concept to pick, how far is far enough.
-Many icons were rejected before they were kept, and each rejection sharpened the rules. Taste is never
-delegated. Even colour is looked at, not trusted: when the brand red looked orange, the cause was found, once
-on a screen and once in how films were encoded.
+The machines do the work; humans shape and approve. We shape the objects until we like what we see: a human
+looks, says what is wrong, and the next round answers it. What to build, what to reject, which concept to
+pick and when it is good enough are human calls. Many icons were rejected before they were kept, and each
+rejection sharpened the rules. Taste is never delegated. Even colour is looked at, not trusted: when the brand
+red looked orange, the cause was found, once on a screen and once in how films were encoded.
 
 ## 7. Open, with care
 
 What can help others is shared: the icons, the pipeline, the theme, the rules and the way of working.
 Viaalink's own mark and other companies' marks are protected, the internal film and voice tools stay private,
 and the repository shows how Viaalink hosts its tools without giving away where. Nothing is published before
-Kelvin has read it.
+a human has read it.
