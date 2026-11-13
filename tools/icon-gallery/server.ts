@@ -23,7 +23,7 @@ import sharp from "sharp"
 import { fitScale, ICON_SIZE } from "../../scripts/icons/canvas"
 import { ICONS } from "../../scripts/icons/catalog"
 import { FLAT, stampSvg, svgThemeable } from "../../scripts/icons/flat"
-import { THEME } from "../../scripts/icons/theme"
+import { THEME, themePath } from "../../scripts/icons/theme"
 import { CANON, DOLLS_ROUND, NOT_SHOWN, STYLE_EXT, snapshot, styleOf } from "../../scripts/review/snapshot"
 import { isVerdict, ReviewError, repoStore, summarize, topByScore } from "../../scripts/review/store"
 import { ITEM_KEY, ROUND_NAME } from "../../scripts/review/types"
@@ -537,6 +537,20 @@ Bun.serve({
     const an = url.pathname.match(/^\/anim\/([\w-]+)\/([\w-]+\.(?:mp4|gif))$/)
     if (an && (await exists(join(ANIM, an[1], an[2]))))
       return new Response(Bun.file(join(ANIM, an[1], an[2])), { headers: { "cache-control": "no-cache" } })
+    // the brand fonts the pages ask for, served from the theme's own font files (no website needed)
+    if (url.pathname === "/fonts/fonts.css")
+      return new Response(
+        `@font-face{font-family:"IBM Plex Mono";font-weight:100 900;src:url(/fonts/mono.ttf) format("truetype")}\n` +
+          `@font-face{font-family:"Space Grotesk";font-weight:100 900;src:url(/fonts/sans.ttf) format("truetype")}\n`,
+        { headers: { "content-type": "text/css", "cache-control": "max-age=3600" } },
+      )
+    if (url.pathname === "/fonts/mono.ttf" || url.pathname === "/fonts/sans.ttf")
+      return new Response(
+        Bun.file(themePath(url.pathname.endsWith("mono.ttf") ? THEME.fonts.mono : THEME.fonts.sans)),
+        {
+          headers: { "content-type": "font/ttf", "cache-control": "max-age=86400" },
+        },
+      )
     if (url.pathname === "/zoom.js")
       return new Response(Bun.file(join(import.meta.dir, "zoom.js")), {
         headers: { "content-type": "text/javascript", "cache-control": "no-cache" },
