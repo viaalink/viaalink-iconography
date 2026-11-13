@@ -1,84 +1,91 @@
 # The human in the loop
 
-This set was made by Kelvin Wuite together with AI agents. The agents wrote most of the code, modelled the
-icons in Blender and checked every render by looking at it. But the **ideas, the taste and the decisions** came
-from Kelvin. This page lists them, in the order they happened, so it is clear which parts are human.
+This icon set is Kelvin Wuite's vision, made real together with AI agents. The agents wrote code, modelled
+objects in Blender and checked every render. The vision, the taste and every decision came from Kelvin. This
+page sets out that vision, and how each part of the set follows from it.
 
-Quotes are Kelvin's own words from the working sessions, translated from Dutch where needed.
+## The vision
 
-## 1. The foundation
+**A company that lets you own your technology should also own its image.** Viaalink is about running your
+apps on your own devices instead of someone else's cloud. Its pictures follow the same idea. They are not
+stock icons, and not one-off AI images that drift from week to week. They are a library Viaalink owns
+completely: models, code and rules that rebuild every icon exactly, in light and dark, flat and in depth,
+for the website, for diagrams and for film.
 
-- **The generator.** Kelvin designed the icon generator in 2025 at ASD Engineering for the ASD Manager. He
-  first used OpenAI, and moved the code to OpenRouter after OpenAI blocked his access. Everything here
-  starts from that code.
-- **The ambition.** "Keep validating with vision, and make sure we build a high-quality 3D, 2.5D and 2D icon
-  library." This made the set a library, not a handful of pictures.
-- **Own models, not pictures.** He noticed that many icons were still plain AI images and not built from
-  our own models. That pushed the whole 2.5D set into Blender, where every icon is a real model.
+That vision has five parts.
 
-## 2. The house style came from his eye
+### 1. One world, not a collection of pictures
 
-- **"The icon is the object."** Looking at a Wi-Fi icon sitting on a square tile, he said the icon itself
-  should be the object, not a picture on a tile. He picked `sync` as the approved reference. This became
-  the main rule of the set.
-- **Faces, not surfaces.** Speech waves should come from the face of a person, not from some upper surface.
-- **Platform marks with character.** He asked for GitHub, Windows, Mac, Linux, Android and iOS "in our own
-  design", with the ASD Manager icons as the bar.
-- **Docker, his idea.** "Write VIA on top and LINK in the containers below, one letter per container."
-- **Colour vigilance.** He noticed when the brand red looked orange. Twice this led to a real problem: a
-  screen-mode question, and later a film encoding bug (BT.601 without colour tags) that turned red into
-  orange in every video.
-- **2D matches 2.5D.** He chose sand as the flat secondary colour, so the flat twins match the cream parts
-  of the 2.5D icons, with navy and red as accents.
-- **Raspberry Pi with navy leaves** (picked from three options). Also more navy in the set, for example a
-  globe caught in the `webhook` hook.
+Every icon is a real object from the same world: the same camera, the same light, the same materials, the
+same red. A relay, a phone and a padlock look as if they stand on the same desk. That is why the set moved
+from generated images into Blender. A model can be rebuilt; a picture can only be replaced.
 
-## 3. What to make, and what not
+From this follow the house rules:
 
-- **Missing icons.** He named the gaps: NAS, Raspberry Pi, router, modem, Caddy, Let's Encrypt, DNS. Then:
-  "keep looking, there are more things", and finally: make the set complete enough for real IT
-  architecture diagrams.
-- **Rejecting what does not fit.** The realistic apple fruit, a GitHub flat that "looks like a monster",
-  and a Caddy sculpture that "looked odd and not fitting when used as an example in our project". Each
-  rejection became a better icon.
-- **The concept workflow.** "Can we make a few suggestions so I can approve one?" From this came the method:
-  ideas in text, then AI sketches in our style, then he picks one, then it is built in Blender.
-- **One device family.** "Ports for all": every network device keeps its own shape but gets the same pipe
-  ports. Then the final call on how many ports: two on the icon, with extra sockets added in diagrams where
-  a pipe needs them.
-- **Real use cases.** "If os-ios is a phone with the logo, do the same for the rest": Android on the phone,
-  Linux, Windows and macOS on a desktop screen.
-- **Caddy's own mark.** He found Caddy's official logo and asked to put it on "the default block we use".
+- **The icon is the object, never a symbol on a tile.** A Wi-Fi icon is the waves themselves; a sync icon is
+  the two arrows. `sync` is the reference.
+- **Things that do the same job belong to the same family.** Every network device keeps its own character
+  (a modem stands, a router has antennas, a NAS has drive bays) but shares the same ports. In a diagram they
+  all plug into the same pipes. Two ports on the icon keep it calm; the diagram adds a socket where a pipe
+  needs one.
+- **Flat and depth are one design.** The flat twin is the same object pressed flat, in the same colour
+  logic: sand where the 2.5D has cream, navy and red as accents.
+- **Brand typography everywhere,** down to the letters on a container: Space Grotesk and IBM Plex Mono, from
+  the brand itself.
 
-## 4. From icons to a system
+### 2. Pictures that explain the product
 
-- **Diagrams that explain the company.** Flow diagrams of Viaalink now and in the future ("every Viaalink
-  app will be able to talk to the next"). A router feeding three NATS-linked Relays for zero downtime. The
-  CLI as a web publisher, with Caddy inside the Relay on a NAS.
-- **Animation.** He asked for the Blender objects to become animations for the product films, and was not
-  happy with a drifting camera. That led to story animations: things appear, pipes connect, a Relay fails
-  and the rest keeps serving.
-- **Publishing.** A Mermaid icon set and draw.io/Visio stencils: "we're not there yet". Without that, the
-  set would not be usable outside the website.
+An icon earns its place by explaining something real. So the set grew from Viaalink's own story, not from a
+list of generic symbols:
 
-## 5. Strategy and openness
+- an operating system is shown as the device you run it on, a phone or a desktop, with its mark;
+- an internet webhook catches a globe;
+- Caddy carries its own mark on the device block it lives in;
+- a Raspberry Pi keeps the two-colour character of the real thing.
 
-- **Open source, with boundaries.** Icons, pipeline and process in the open; the Viaalink mark and
-  third-party marks protected; the film engine and voice kept private.
-- **Show that we host it, keep the rest private.** The gallery's `via.yaml` shows how Viaalink hosts its own
-  tools, without any infrastructure details.
-- **A submodule, like the ASD Manager.** The website takes the icons from this repo.
-- **A community page.** An iconography page on viaalink.com built from the latest release, with downloads
-  from Mermaid to Blender, and votes, comments and icon requests from signed-in users.
-- **Review before public.** Nothing went public before he had read the code.
+The same thinking produced the diagrams. One shows Viaalink today. One shows its future, where every
+Viaalink app talks to the next. One shows a router feeding three Relays that keep each other in sync, so
+one can fail while the others keep serving. Then came the animations. Things should not drift across the
+screen; the story is told: devices appear, pipes connect, and a Relay fails and the network carries on.
+
+### 3. Complete enough to build with
+
+A brand set becomes a tool when others can describe their own systems with it. Kelvin set that bar: the
+library must cover real IT architecture (users, networks, firewalls, load balancers, servers, containers,
+clusters, databases, caches, queues, APIs, monitoring) and work where people actually draw: Mermaid,
+draw.io and Visio, and Blender itself.
+
+### 4. Human judgement decides; machines do the work
+
+The method is part of the vision. Kelvin designed the generator behind this set at ASD Engineering in 2025.
+It first ran on OpenAI and was moved to OpenRouter when access was blocked, so it no longer depends on one
+provider. For Viaalink the roles are clear:
+
+- **AI explores.** For every new icon, ideas are first written out and sketched in the house style. They are
+  options to choose from, never final art.
+- **The human chooses.** Every icon in this set was approved, and many were rejected first: a realistic
+  apple, a flat GitHub mark that read as a monster, a Caddy sculpture that did not fit the family. Each
+  rejection sharpened the rules above.
+- **The machine builds and checks.** The chosen idea is modelled in Blender, rendered, measured by a colour
+  gate and reviewed by eye before it is kept.
+
+Taste is not delegated. Even colour is looked at, not trusted: when the brand red looked orange, the cause
+was found, once on a screen and once in how films were encoded.
+
+### 5. Open, with care
+
+What can help others is shared: the icons, the pipeline, the rules and the way of working, all here in the
+open. Viaalink's own mark and other companies' marks are protected, and the internal film and voice tools
+stay private. Viaalink hosts its own tools on its own infrastructure, and the repository shows how without
+giving away where. Everyone can use the set; signed-in users will be able to vote on icons, comment and ask
+for new ones on viaalink.com. Nothing was published before Kelvin had read it.
 
 ## Who did what
 
 | Kelvin (human) | The AI agents |
 |---|---|
-| The original generator and its move to OpenRouter | The Blender pipeline, flat twins, gate, pack, diagrams, animations |
-| The vision: a complete, consistent library in Viaalink's style | Modelling every icon from his descriptions and picks |
-| The house rules: the icon is the object, one device family, 2D matches 2.5D | Rules written down (docs/skill) and enforced in every task |
-| Every approval and rejection, every pick between concepts | Concept sketches, renders, contact sheets, vision QA |
-| What the set must cover, and why | Gap lists and expert reviews, offered as input for his decisions |
-| Publishing, licensing and community strategy | Packaging, docs, the repo and the release |
+| The vision: one owned, consistent world of objects that explains Viaalink | Turning each part of it into code and models |
+| The original generator, and its move to OpenRouter | The Blender pipeline, flat twins, gate, pack, diagrams, animations |
+| The house rules, and every approval and rejection | Concept sketches, renders, contact sheets, review by eye |
+| What the set must cover, and for whom | Gap lists and expert reviews, as input for his decisions |
+| Openness, licensing and community | Packaging, documentation, the repository and the release |
