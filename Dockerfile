@@ -1,6 +1,6 @@
 # Viaalink icons: the whole pipeline in one image (Blender headless, Bun, just, ffmpeg, the fonts).
-#   docker build -t viaalink-icons .
-#   docker run --rm -v "$PWD":/work viaalink-icons just icons-blender local/icons/rounds/25d-b7 --samples 48 relay
+#   docker build -t viaalink-iconography .
+#   docker run --rm -v "$PWD":/work viaalink-iconography just icons-blender local/icons/rounds/25d-b7 --samples 48 relay
 # GPU (optional, NVIDIA): add `--gpus all`; without it Blender renders on the CPU (slower, same result).
 FROM ubuntu:24.04
 

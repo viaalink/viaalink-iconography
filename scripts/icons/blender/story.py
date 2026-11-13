@@ -137,9 +137,25 @@ def key_scale(e, frames_values):
         e.keyframe_insert("scale", frame=f)
 
 
-def pop(e, t, dur=0.45):
-    f0 = F(t)
-    key_scale(e, [(1, 0.001), (f0, 0.001), (f0 + int(dur * FPS * 0.6), 1.14), (f0 + int(dur * FPS), 1.0)])
+def key_scale3(e, frames_xyz):
+    for f, xyz in frames_xyz:
+        e.scale = xyz
+        e.keyframe_insert("scale", frame=f)
+
+
+def pop(e, t, dur=0.5):
+    """Drop in with squash and stretch: tall and thin while growing, a soft squash on landing, settle."""
+    f0, n = F(t), int(dur * FPS)
+    key_scale3(
+        e,
+        [
+            (1, (0.001,) * 3),
+            (f0, (0.001,) * 3),
+            (f0 + int(n * 0.45), (0.92, 0.92, 1.22)),
+            (f0 + int(n * 0.7), (1.1, 1.1, 0.88)),
+            (f0 + n, (1.0, 1.0, 1.0)),
+        ],
+    )
 
 
 # ---- beats ----------------------------------------------------------------------------------
@@ -258,24 +274,45 @@ src_mat = next(
 if src_mat:
     proto.data.materials.append(src_mat)
 proto.hide_render = True
+arrivals = {}  # node id -> frames a packet arrives
 for k, (key, (tb, f_on, f_off)) in enumerate(edge_alive.items()):
     pts = polyline(tb)
     if len(pts) < 2:
         continue
     total = sum((b - a).length for a, b in zip(pts, pts[1:]))
+    target = key.split(">")[1]
     for j in range(2):
-        r = proto.copy()
-        r.name = f"rider.{key}.{j}"
-        scene.collection.objects.link(r)
-        r.hide_render = False
-        for f in range(1, FRAMES + 1):
-            on = f_on <= f < f_off
-            u = (((f - f_on) / PERIOD) + j * 0.5 + k * 0.17) % 1.0 if on else 0.0
-            r.location = point_at(pts, u * total)
-            v = 1.0 if on else 0.001
-            r.scale = (v, v, v)
-            r.keyframe_insert("location", frame=f)
-            r.keyframe_insert("scale", frame=f)
+        # the rider and two trailing sparks (smaller, a few frames behind): a packet with a light trail
+        for lag, size in ((0, 1.0), (2, 0.62), (4, 0.36)):
+            r = proto.copy()
+            r.name = f"rider.{key}.{j}.{lag}"
+            scene.collection.objects.link(r)
+            r.hide_render = False
+            prev_u = None
+            for f in range(1, FRAMES + 1):
+                on = f_on + lag <= f < f_off
+                u = (((f - lag - f_on) / PERIOD) + j * 0.5 + k * 0.17) % 1.0 if on else 0.0
+                r.location = point_at(pts, u * total)
+                v = size if on else 0.001
+                r.scale = (v, v, v)
+                r.keyframe_insert("location", frame=f)
+                r.keyframe_insert("scale", frame=f)
+                if lag == 0 and on and prev_u is not None and u < prev_u:  # wrapped: arrived at the target
+                    arrivals.setdefault(target, []).append(f)
+                prev_u = u if on else None
+
+# arrival pulse: the receiving device gives a small bump when a packet lands (not while it pops in or fails)
+for nid, fs in arrivals.items():
+    if nid not in rigs:
+        continue
+    settle = F(appear.get(nid, 0) + 0.6)
+    end = F(failed[nid]) - 2 if nid in failed else FRAMES - 4
+    last = -99
+    for f in sorted(fs):
+        if f < settle or f + 6 > end or f - last < 10:
+            continue
+        key_scale3(rigs[nid], [(f, (1.0, 1.0, 1.0)), (f + 3, (1.06, 1.06, 0.95)), (f + 7, (1.0, 1.0, 1.0))])
+        last = f
 
 # ---- camera ---------------------------------------------------------------------------------
 cam = scene.camera
@@ -317,6 +354,13 @@ for i, (f, loc, sc) in enumerate(shots):
         hold = max(f, nf - int(1.0 * FPS))
         cam.keyframe_insert("location", frame=hold)
         cam.data.keyframe_insert("ortho_scale", frame=hold)
+
+# after the last shot the camera never stops: a slow push-in to the end of the clip
+lf, lloc, lsc = shots[-1]
+if FRAMES - lf > FPS:
+    cam.location, cam.data.ortho_scale = lloc, lsc * 0.94
+    cam.keyframe_insert("location", frame=FRAMES)
+    cam.data.keyframe_insert("ortho_scale", frame=FRAMES)
 
 # ---- labels ---------------------------------------------------------------------------------
 lab_file = os.path.join(os.path.dirname(bpy.data.filepath), "labels.json")

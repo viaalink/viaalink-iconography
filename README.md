@@ -1,6 +1,6 @@
-# Viaalink icons
+# Viaalink iconography
 
-An open icon set by [Viaalink](https://viaalink.com): **71 icons**, each as a **2.5D render made in Blender**
+The iconography of [Viaalink](https://viaalink.com), and the system that builds it: **71 icons**, each as a **2.5D render made in Blender**
 and a **flat SVG twin**, in a **light** and a **dark** edition. Plus the Blender pipeline that makes them,
 flow diagrams with pipes between the icons, and story animations.
 
@@ -16,6 +16,7 @@ flow diagrams with pipes between the icons, and story animations.
 | `icons/svg/mono` | one colour (`currentColor`), for stamps, favicons and print |
 | `icons/mermaid/viaalink.json` | Iconify set for Mermaid (`viaalink:<name>`, `viaalink:<name>-mono`) |
 | `icons/drawio/*.xml` | draw.io / diagrams.net libraries (File → Open Library) |
+| `icons/scenes/{light,dark}` | desk scenes (doctor, lawyer, student, school, kids, contract, import, search), 2.5D only |
 | `icons/platform-marks/` | where Viaalink runs: GitHub, Apple, Android, Linux, Windows, Docker, Raspberry Pi, Bluetooth, Caddy. **Trademarks of their owners**, see [TRADEMARKS.md](TRADEMARKS.md) |
 
 Mermaid (architecture diagrams with `viaalink:<name>`; one-colour stamps with `viaalink:<name>-mono`):
@@ -23,7 +24,13 @@ Mermaid (architecture diagrams with `viaalink:<name>`; one-colour stamps with `v
 ![Mermaid architecture diagram with Viaalink icons](docs/examples/mermaid-architecture.png)
 
 ```js
-mermaid.registerIconPacks([{ name: "viaalink", loader: () => fetch("/viaalink.json").then((r) => r.json()) }])
+// from the CDN (jsDelivr serves this GitHub repo; pin a release tag)
+const CDN = "https://cdn.jsdelivr.net/gh/viaalink/viaalink-iconography@v0.1.0"
+mermaid.registerIconPacks([
+  { name: "viaalink", loader: () => fetch(`${CDN}/icons/mermaid/viaalink.json`).then((r) => r.json()) },
+  { name: "viaalink-platform", loader: () => fetch(`${CDN}/icons/platform-marks/mermaid/viaalink-platform.json`).then((r) => r.json()) },
+])
+// or self-hosted, nothing loaded from outside: copy icons/mermaid/viaalink.json to your site and fetch("/viaalink.json")
 ```
 
 ```text
@@ -73,8 +80,8 @@ Icons: `ai-a` · `api` · `backup` · `bell` · `browser-ext` · `browser` · `b
 **Docker (any OS):**
 
 ```sh
-docker build -t viaalink-icons .
-docker run --rm -v "$PWD":/work --user "$(id -u):$(id -g)" -e HOME=/tmp viaalink-icons \
+docker build -t viaalink-iconography .
+docker run --rm -v "$PWD":/work --user "$(id -u):$(id -g)" -e HOME=/tmp viaalink-iconography \
   just icons-blender local/icons/rounds/25d-b7 --samples 48 relay
 # NVIDIA GPU: add --gpus all. The first run installs the Bun dependencies into the repo (node_modules).
 ```

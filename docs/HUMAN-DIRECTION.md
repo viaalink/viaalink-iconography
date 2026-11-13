@@ -1,110 +1,101 @@
-# The human in the loop
+# The system behind the Viaalink iconography
 
-This icon set is Kelvin Wuite's vision, made real together with AI agents. The agents wrote code, modelled
-objects in Blender and checked every render. The vision, the taste and every decision came from Kelvin. This
-page sets out that vision, and how each part of the set follows from it.
+Kelvin Wuite designed this system: the philosophy, the architecture, the infrastructure it runs on, and the
+agentic way of working that builds it. AI agents carry out the work inside it. This page describes the system
+as he designed it.
 
-## The vision
+## 1. Philosophy: own your technology, own your image
 
-**A company that lets you own your technology should also own its image.** Viaalink is about running your
-apps on your own devices instead of someone else's cloud. Its pictures follow the same idea. They are not
-stock icons, and not one-off AI images that drift from week to week. They are a library Viaalink owns
-completely: models, code and rules that rebuild every icon exactly, in light and dark, flat and in depth,
-for the website, for diagrams and for film.
+Viaalink lets people run their apps on their own devices instead of someone else's cloud. The iconography
+follows the same principle. It is not a set of bought icons or one-off generated images. It is a system
+Viaalink owns end to end: the code that generates ideas, the models that turn them into objects, the rules
+that keep them consistent, and the infrastructure that serves and reviews them. Every icon can be rebuilt
+exactly from source, in light and dark, flat and in depth, for the website, for diagrams and for film.
 
-That vision has five parts.
+Three convictions run through everything:
 
-### 1. One world, not a collection of pictures
+- **One world.** Every icon is an object from the same world: the same camera, light, materials and red. A
+  relay, a phone and a padlock could stand on the same desk. The icon *is* the object, never a symbol on a
+  tile.
+- **The brand is imprinted on the objects.** Like a maker's stamp: the Viaalink mark on the relay, the phone,
+  the desktop and the plug; the CLI prompt `> via` on screens; VIA and LINK on the Docker containers; all in
+  the brand's own typography.
+- **Pictures explain the product.** Operating systems appear as the devices you run them on; network devices
+  form one family that plugs into the same pipes; diagrams and animations tell how Viaalink works.
 
-Every icon is a real object from the same world: the same camera, the same light, the same materials, the
-same red. A relay, a phone and a padlock look as if they stand on the same desk. That is why the set moved
-from generated images into Blender. A model can be rebuilt; a picture can only be replaced.
+## 2. Architecture
 
-From this follow the house rules:
+The system is built in layers, each with one job, each reproducible from code:
 
-- **The icon is the object, never a symbol on a tile.** A Wi-Fi icon is the waves themselves; a sync icon is
-  the two arrows. `sync` is the reference.
-- **Things that do the same job belong to the same family.** Every network device keeps its own character
-  (a modem stands, a router has antennas, a NAS has drive bays) but shares the same ports. In a diagram they
-  all plug into the same pipes. Two ports on the icon keep it calm; the diagram adds a socket where a pipe
-  needs one.
-- **Flat and depth are one design.** The flat twin is the same object pressed flat, in the same colour
-  logic: sand where the 2.5D has cream, navy and red as accents.
-- **The brand imprinted on the objects.** Kelvin's idea, from the start: icons carry Viaalink's own signs
-  the way a product carries its maker's stamp. The Viaalink mark is imprinted on the relay, the phone, the
-  desktop and the plug; screens show the CLI prompt `> via`; and the containers on the Docker whale spell
-  VIA and LINK, one letter each. The letters use the brand's own typography, Space Grotesk and IBM Plex
-  Mono, so even the smallest sign belongs to Viaalink.
+| Layer | What it does | Where |
+|---|---|---|
+| **Theme** | One source of truth for the look: brand, colours, fonts, logo, camera, light, materials, canvas, diagram style. Swap it and the same system builds another brand | `theme/brand.json` |
+| **Generator** | Explores ideas as images in the house style. Kelvin built it in 2025 at ASD Engineering on OpenAI, and ported it to OpenRouter when access was blocked, so it depends on no single provider | `scripts/icons/render.ts`, `openrouter.ts` |
+| **3D models** | Every approved idea becomes a real Blender model, built from parts with colour roles; light and dark are a palette swap | `scripts/icons/blender/build.py` |
+| **Flat twins** | The same object drawn flat as SVG, part by part, with the same roles | `scripts/icons/flat.ts` |
+| **Gate** | Measures every render: no clipped white, both editions present, nothing cropped | `scripts/icons/blender/gate.ts` |
+| **Packs** | SVG, PNG, Mermaid and draw.io libraries for real-world use | `scripts/icons/pack.ts` |
+| **Diagrams and stories** | Icons placed on a board with pipes routed between them; story animations where devices appear, pipes connect and a Relay can fail while the network carries on | `diagram.py`, `story.py` |
+| **Gallery and approval** | Every round on a review page, with a verdict and a note per image | `tools/icon-gallery` |
 
-### 2. Pictures that explain the product
+## 3. Infrastructure
 
-An icon earns its place by explaining something real. So the set grew from Viaalink's own story, not from a
-list of generic symbols:
+The system runs on Viaalink's own infrastructure, the way it asks its users to run theirs. Rendering happens on
+Viaalink's own machines and GPUs. The review gallery is served from its own machine and published through its
+own Relay at a shared URL. Nothing in the loop needs a third-party platform except the image model behind the
+generator, and that one is replaceable by design. The setup is portable: a Docker image and a Linux script
+rebuild the whole pipeline anywhere.
 
-- an operating system is shown as the device you run it on, a phone or a desktop, with its mark;
-- an internet webhook catches a globe;
-- Caddy carries its own mark on the device block it lives in;
-- a Raspberry Pi keeps the two-colour character of the real thing.
+## 4. The loop
 
-The same thinking produced the diagrams. One shows Viaalink today. One shows its future, where every
-Viaalink app talks to the next. One shows a router feeding three Relays that keep each other in sync, so
-one can fail while the others keep serving. Then came the animations. Things should not drift across the
-screen; the story is told: devices appear, pipes connect, and a Relay fails and the network carries on.
+The heart of the system is an iterative loop, designed to be honest: every image is judged by people, in the
+open, until it earns its place.
 
-### 3. Complete enough to build with
+1. **Generate** a round of candidates in the house style.
+2. **Share** it through Viaalink's own Relay, so colleagues, testers and outside reviewers can look.
+3. **Judge**: every image gets approved, needs work, rejected or regenerate, with a note. Kelvin's verdict
+   counts; outside reactions and independent reviews feed into it.
+4. **Feed back**: the notes become the brief for the next round, so a rejection is never lost.
+5. **Build in 3D, then flat**: an approved image becomes a Blender model, and its flat twin is drawn from it.
+6. **Judge again**: the gate, a look at every render, an independent review, the shared gallery.
 
-A brand set becomes a tool when others can describe their own systems with it. Kelvin set that bar: the
-library must cover real IT architecture (users, networks, firewalls, load balancers, servers, containers,
-clusters, databases, caches, queues, APIs, monitoring) and work where people actually draw: Mermaid,
-draw.io and Visio, and Blender itself.
+Between 9 and 13 November 2026 this loop ran twelve AI rounds, eight Blender rounds, nine rounds of flat twins
+and three concept rounds, in 144 commits. Next, the same loop opens up: signed-in users on viaalink.com will
+vote on icons, comment and request new ones, and their input becomes the next round.
 
-### 4. The loop: human judgement decides, machines do the work
+## 5. Agentic logic: many agents, clear roles
 
-The heart of the vision is not one icon but **the loop that makes them**, and that loop is designed to be
-honest: every image is judged by people, in the open, until it earns its place. Kelvin designed it.
+Kelvin designed how the agents work together. No single agent does everything, and no agent is trusted on its
+word.
 
-1. **Generate.** The generator Kelvin built in 2025 at ASD Engineering, first on OpenAI and moved to
-   OpenRouter when access was blocked, produces a round of candidates in the house style.
-2. **Share.** Every round is published as a gallery, served by Viaalink from its own machine through its own
-   Relay, at a shared URL. Anyone with the link can look: colleagues, testers, outside eyes. It is the same
-   way Viaalink asks its users to share their own apps.
-3. **Judge.** On the approval page each image gets a verdict (approved, needs work, rejected, regenerate)
-   with a note. Kelvin's verdict is the one that counts; outside reactions and independent reviewers feed
-   into it.
-4. **Feed back.** The notes go back into the generator as feedback for the next round, so a rejection is
-   never lost: it becomes the brief for the next attempt.
-5. **Build in depth, then flat.** An approved image becomes the target for a real 3D design, modelled in
-   Blender. From that 3D object its flat twin is drawn as code, with the same parts and colour roles, and
-   checked side by side with it. Both are code, so every icon can be rebuilt exactly, in light and dark,
-   flat and in depth.
-6. **Judge again.** The 3D result goes through the same loop: rendered, measured by a colour gate, reviewed
-   by eye, scored by an independent reviewer, shared, approved or sent back.
+- **The orchestrator** acts as product owner and QA. It turns Kelvin's direction into precise task files,
+  verifies every result against the real output (renders, measurements, contact sheets), and only then keeps
+  it. It never accepts "done" from a report.
+- **The executor** (Google's Antigravity CLI) builds in Blender from a task file. Each task names exactly what
+  to change, carries the house rules, and ends with the same finish line: the gate must pass, and every render
+  must be looked at. At most three iterations, then an honest "done" or "not done, and why".
+- **Independent reviewers** are fresh agents that see only the images: an expert scoring of every icon, and
+  blind reads that ask "what does this picture say?" without labels. Their findings are input for Kelvin, not
+  decisions.
+- **Specialised agents work in parallel, each in its own lane.** One builds the icons, one builds the
+  website, one runs the film and encoding workers, one leads the app releases. They hand work to each other,
+  report back, and never edit each other's files.
+- **Gates over promises.** Every new kind of failure becomes a permanent check, so the system gets more
+  reliable with every round instead of repeating mistakes.
+- **Serial where it must be, parallel where it can be.** Tasks that touch the same files run one after
+  another; independent work runs side by side.
 
-The numbers show it is a loop and not a single pass. Between 9 and 13 November 2026 the set went through
-twelve AI rounds, eight Blender rounds, nine rounds of flat twins and three concept rounds, in 144 commits.
-Many icons were rejected before they were kept: a realistic apple, a flat GitHub mark that read as a monster,
-a Caddy sculpture that did not fit the family. Each rejection sharpened the rules above. Taste is never
-delegated. Even colour is looked at, not trusted: when the brand red looked orange, the cause was found,
-once on a screen and once in how films were encoded.
+## 6. The human role
 
-The same loop is what comes next for everyone. On viaalink.com, signed-in users will be able to vote on
-icons, comment and request new ones. Their votes and requests become the input for the next round, which
-becomes the next 3D design.
+The machines do the work; the human decides. Kelvin set the vision, the architecture and the rules, and made
+every call that shaped the set: what to build, what to reject, which concept to pick, how far is far enough.
+Many icons were rejected before they were kept, and each rejection sharpened the rules. Taste is never
+delegated. Even colour is looked at, not trusted: when the brand red looked orange, the cause was found, once
+on a screen and once in how films were encoded.
 
-### 5. Open, with care
+## 7. Open, with care
 
-What can help others is shared: the icons, the pipeline, the rules and the way of working, all here in the
-open. Viaalink's own mark and other companies' marks are protected, and the internal film and voice tools
-stay private. Viaalink hosts its own tools on its own infrastructure, and the repository shows how without
-giving away where. Everyone can use the set. Nothing was published before Kelvin had read it.
-
-## Who did what
-
-| Kelvin (human) | The AI agents |
-|---|---|
-| The vision: one owned, consistent world of objects that explains Viaalink | Turning each part of it into code and models |
-| The original generator, and its move to OpenRouter | The Blender pipeline, flat twins, gate, pack, diagrams, animations |
-| The loop: generate, share, judge, feed back, build in 3D, judge again | Running each step of the loop, round after round |
-| The house rules, and every approval and rejection | Concept sketches, renders, contact sheets, review by eye |
-| What the set must cover, and for whom | Gap lists and expert reviews, as input for his decisions |
-| Openness, licensing and community | Packaging, documentation, the repository and the release |
+What can help others is shared: the icons, the pipeline, the theme, the rules and the way of working.
+Viaalink's own mark and other companies' marks are protected, the internal film and voice tools stay private,
+and the repository shows how Viaalink hosts its tools without giving away where. Nothing is published before
+Kelvin has read it.
