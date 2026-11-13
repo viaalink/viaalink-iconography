@@ -111,6 +111,7 @@ offline.
 
 How the set was made, with AI agents as executor and art director: [docs/HOW-WE-MADE-IT.md](docs/HOW-WE-MADE-IT.md).
 Which ideas, choices and rejections came from the human: [docs/HUMAN-DIRECTION.md](docs/HUMAN-DIRECTION.md).
+What is planned next: [docs/TODO.md](docs/TODO.md).
 The working rules the agents follow: [docs/skill/SKILL.md](docs/skill/SKILL.md); real task files: [docs/tasks](docs/tasks).
 
 ## Feedback rounds
