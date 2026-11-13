@@ -6,9 +6,10 @@
  *   bun scripts/icons/check-identical.ts svg <before dir> <after dir>
  *     every dumped SVG must be byte-identical (exit 1 otherwise)
  *   bun scripts/icons/check-identical.ts png <before dir> <after dir> [--max-mean 1.0]
- *     per-icon mean absolute difference (0–255, over RGBA) and the largest channel difference of the
- *     PNGs under <dir>/{light,dark}; prints the worst first, exits 1 when a mean is above --max-mean
- *     (Cycles noise between two renders stays well below 1.0; a real shift does not).
+ *     per-icon mean absolute difference (0–255, over RGBA), the largest channel difference and the
+ *     number of differing pixels of the PNGs under <dir>/{light,dark}; prints the worst first, exits 1
+ *     when a mean is above --max-mean (Cycles noise between two renders stays well below 1.0; a real
+ *     shift does not).
  *
  * (just icons-check-dump / icons-check-svg / icons-check-png)
  */
@@ -69,7 +70,7 @@ async function svg(before: string, after: string) {
 
 async function png(before: string, after: string) {
   const maxMean = flag("max-mean", 1.0)
-  const rows: { f: string; mean: number; max: number }[] = []
+  const rows: { f: string; mean: number; max: number; px: number }[] = []
   let bad = 0
   for (const f of await files(before, ".png")) {
     const p = `${after}/${f}`
@@ -88,18 +89,24 @@ async function png(before: string, after: string) {
     }
     let sum = 0
     let max = 0
-    for (let i = 0; i < x.data.length; i++) {
-      const d = Math.abs(x.data[i] - y.data[i])
-      sum += d
-      if (d > max) max = d
+    let px = 0 // pixels with any channel different
+    for (let i = 0; i < x.data.length; i += 4) {
+      let pixel = 0
+      for (let c = 0; c < 4; c++) {
+        const d = Math.abs(x.data[i + c] - y.data[i + c])
+        sum += d
+        if (d > pixel) pixel = d
+      }
+      if (pixel) px++
+      if (pixel > max) max = pixel
     }
-    rows.push({ f, mean: sum / x.data.length, max })
+    rows.push({ f, mean: sum / x.data.length, max, px })
   }
   rows.sort((p, q) => q.mean - p.mean)
   for (const r of rows) {
     const over = r.mean > maxMean
     if (over) bad++
-    console.log(`${over ? "FAIL" : "ok  "} ${r.f.padEnd(34)} mean=${r.mean.toFixed(3)} max=${r.max}`)
+    console.log(`${over ? "FAIL" : "ok  "} ${r.f.padEnd(34)} mean=${r.mean.toFixed(4)} max=${r.max} pixels=${r.px}`)
   }
   console.log(
     bad ? `PNG: ${bad} of ${rows.length} beyond noise (mean > ${maxMean})` : `PNG: ${rows.length} within noise`,
