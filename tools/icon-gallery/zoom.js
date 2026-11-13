@@ -6,13 +6,18 @@
 .zx b{position:fixed;bottom:14px;left:0;right:0;text-align:center;color:#f6f3ee;font:600 14px system-ui}
 main img,.wrap img{cursor:zoom-in}`
   document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`)
-  let list = [], i = 0, box = null
+  let list = [],
+    i = 0,
+    box = null
   const big = (src) => src.replace(/\/(icon|flat)\/(light|dark)\//, "/$1/$2/")
   const show = () => {
     const im = list[i]
     box.innerHTML = `<img src="${big(im.currentSrc || im.src)}" alt=""><b>${im.alt || ""} · ${i + 1}/${list.length}</b>`
   }
-  const close = () => { box?.remove(); box = null }
+  const close = () => {
+    box?.remove()
+    box = null
+  }
   document.addEventListener("click", (e) => {
     const im = e.target.closest("img")
     if (box) return close()
@@ -27,15 +32,31 @@ main img,.wrap img{cursor:zoom-in}`
   document.addEventListener("keydown", (e) => {
     if (!box) return
     if (e.key === "Escape") close()
-    if (e.key === "ArrowRight") { i = (i + 1) % list.length; show() }
-    if (e.key === "ArrowLeft") { i = (i - 1 + list.length) % list.length; show() }
+    if (e.key === "ArrowRight") {
+      i = (i + 1) % list.length
+      show()
+    }
+    if (e.key === "ArrowLeft") {
+      i = (i - 1 + list.length) % list.length
+      show()
+    }
   })
   let x0 = null
-  document.addEventListener("touchstart", (e) => { if (box && e.touches.length === 1) x0 = e.touches[0].clientX }, { passive: true })
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      if (box && e.touches.length === 1) x0 = e.touches[0].clientX
+    },
+    { passive: true },
+  )
   document.addEventListener("touchend", (e) => {
     if (!box || x0 === null) return
     const dx = e.changedTouches[0].clientX - x0
     x0 = null
-    if (Math.abs(dx) > 50) { i = (i + (dx < 0 ? 1 : -1) + list.length) % list.length; show(); e.preventDefault() }
+    if (Math.abs(dx) > 50) {
+      i = (i + (dx < 0 ? 1 : -1) + list.length) % list.length
+      show()
+      e.preventDefault()
+    }
   })
 })()

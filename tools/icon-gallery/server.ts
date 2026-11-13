@@ -8,14 +8,15 @@
  * Reviews (approve / needs work + note) are stored in local/icons/reviews.json;
  * the design iterations read them as feedback.
  */
-import { readdir, readFile, stat } from "node:fs/promises"
-import { join, resolve, sep } from "node:path"
+
 import { randomBytes, timingSafeEqual } from "node:crypto"
-import { chmod } from "node:fs/promises"
-import { FLAT, stampSvg, svgThemeable } from "../../scripts/icons/flat"
-import { ICONS } from "../../scripts/icons/catalog"
+import { chmod, readdir, readFile, stat } from "node:fs/promises"
+import { join, resolve, sep } from "node:path"
 import sharp from "sharp"
-import { ICON_SIZE, fitScale } from "../../scripts/icons/canvas"
+import { fitScale, ICON_SIZE } from "../../scripts/icons/canvas"
+import { ICONS } from "../../scripts/icons/catalog"
+import { FLAT, stampSvg, svgThemeable } from "../../scripts/icons/flat"
+import { THEME } from "../../scripts/icons/theme"
 
 const ROOT = resolve(import.meta.dir, "../..")
 const ROUNDS = join(ROOT, "local/icons/rounds")
@@ -38,7 +39,7 @@ async function ownerKey() {
   const f = Bun.file(OWNER_KEY_FILE)
   if (await f.exists()) return (await f.text()).trim()
   const key = randomBytes(24).toString("base64url")
-  await Bun.write(OWNER_KEY_FILE, key + "\n")
+  await Bun.write(OWNER_KEY_FILE, `${key}\n`)
   await chmod(OWNER_KEY_FILE, 0o600)
   return key
 }
@@ -49,7 +50,7 @@ const isOwner = (req: Request) =>
   sameKey(
     (req.headers.get("cookie") ?? "")
       .split(/;\s*/)
-      .find((c) => c.startsWith(OWNER_COOKIE + "="))
+      .find((c) => c.startsWith(`${OWNER_COOKIE}=`))
       ?.slice(OWNER_COOKIE.length + 1),
   )
 
@@ -61,25 +62,19 @@ async function exists(p: string) {
 }
 async function dirs(p: string) {
   if (!(await exists(p))) return []
-  return (await readdir(p, { withFileTypes: true }))
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
+  return (await readdir(p, { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name)
 }
 
 /** A "set" is a round directory or a shipped style directory; both hold <mode>/<name>.png. */
 async function listSets() {
-  const rounds = (await dirs(ROUNDS)).sort((a, b) =>
-    a.localeCompare(b, undefined, { numeric: true }),
-  )
+  const rounds = (await dirs(ROUNDS)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   const sets = []
   for (const id of rounds) {
     const base = join(ROUNDS, id)
     const meta = (await exists(join(base, "prompts.json")))
       ? JSON.parse(await readFile(join(base, "prompts.json"), "utf8"))
       : {}
-    const critique = (await exists(join(base, "critique.md")))
-      ? await readFile(join(base, "critique.md"), "utf8")
-      : ""
+    const critique = (await exists(join(base, "critique.md"))) ? await readFile(join(base, "critique.md"), "utf8") : ""
     sets.push({
       id: `round:${id}`,
       label: id,
@@ -140,15 +135,12 @@ function imagePath(parts: string[]): string | null {
  */
 function canWrite(req: Request): boolean {
   const host = (req.headers.get("host") ?? "").split(":")[0]
-  const forwarded = ["x-forwarded-for", "x-forwarded-host", "x-real-ip", "forwarded"].some((h) =>
-    req.headers.has(h),
-  )
+  const forwarded = ["x-forwarded-for", "x-forwarded-host", "x-real-ip", "forwarded"].some((h) => req.headers.has(h))
   return (!forwarded && (host === "127.0.0.1" || host === "localhost")) || isOwner(req)
 }
 
 /** Round directory a resolved icon path came from (null for the shipped set). */
-const roundOf = (p: string | null) =>
-  p?.startsWith(ROUNDS + sep) ? p.slice(ROUNDS.length + 1).split(sep)[0] : null
+const roundOf = (p: string | null) => (p?.startsWith(ROUNDS + sep) ? p.slice(ROUNDS.length + 1).split(sep)[0] : null)
 
 /** Every icon: the version each style shows now (main, per mode) and every other version, light and dark. */
 async function approval() {
@@ -158,7 +150,10 @@ async function approval() {
   const out = []
   for (const name of names) {
     const row: Record<string, unknown> = { name }
-    for (const [style, ext] of [["25d", "png"], ["flat", "svg"]] as const) {
+    for (const [style, ext] of [
+      ["25d", "png"],
+      ["flat", "svg"],
+    ] as const) {
       const main = {
         dark: roundOf(await bestIcon("dark", name, style, ext)),
         light: roundOf(await bestIcon("light", name, style, ext)),
@@ -198,19 +193,14 @@ async function bestIcon(
   const approved = Object.entries(await loadReviews())
     .filter(
       ([k, r]) =>
-        r.status === "approved" &&
-        k.startsWith("round:") &&
-        ofStyle(k.slice(6)) &&
-        k.endsWith(`/${mode}/${name}`),
+        r.status === "approved" && k.startsWith("round:") && ofStyle(k.slice(6)) && k.endsWith(`/${mode}/${name}`),
     )
     .sort((a, b) => b[1].at.localeCompare(a[1].at))
   for (const [k] of approved) {
     const p = imagePath(["round", k.slice(6).split("/")[0], mode, `${name}.${ext}`])
     if (p && (await exists(p))) return p
   }
-  const rounds = (await dirs(ROUNDS))
-    .filter(ofStyle)
-    .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
+  const rounds = (await dirs(ROUNDS)).filter(ofStyle).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
   for (const r of rounds) {
     const p = imagePath(["round", r, mode, `${name}.${ext}`])
     if (p && (await exists(p))) return p
@@ -220,8 +210,12 @@ async function bestIcon(
   return null
 }
 
-const page = (f: string) =>
-  new Response(Bun.file(join(import.meta.dir, f)), {
+/** The brand colours the gallery pages share (--red, --navy, ...), from the theme; injected after each
+ *  page's own :root block, so a theme change recolours the gallery without editing the HTML. */
+const P = THEME.prompt.palette
+const THEME_CSS = `<style id="theme">:root{--red:${P.red};--red-deep:${P.redDeep};--coral:${P.coral};--navy:${P.navy};--deep:${P.navyDeep};--slate:${P.slate};--cream:${P.cream}}</style>`
+const page = async (f: string) =>
+  new Response((await Bun.file(join(import.meta.dir, f)).text()).replace("</head>", `${THEME_CSS}</head>`), {
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" },
   })
 
@@ -274,23 +268,27 @@ async function sceneLabels(name: string) {
   const meta = await sharp(raw).metadata()
   const { info } = await sharp(raw)
     .ensureAlpha()
-    .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 }, threshold: 8 })
+    .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 }, threshold: THEME.canvas.trimThreshold })
     .toBuffer({ resolveWithObject: true })
-  const W = meta.width!, H = meta.height!
-  const left = -(info.trimOffsetLeft ?? 0), top = -(info.trimOffsetTop ?? 0)
+  const W = meta.width ?? 0,
+    H = meta.height ?? 0
+  const left = -(info.trimOffsetLeft ?? 0),
+    top = -(info.trimOffsetTop ?? 0)
   const k = fitScale(info.width, info.height, ICON_SIZE, false)
-  const ox = (ICON_SIZE - Math.round(info.width * k)) / 2, oy = (ICON_SIZE - Math.round(info.height * k)) / 2
+  const ox = (ICON_SIZE - Math.round(info.width * k)) / 2,
+    oy = (ICON_SIZE - Math.round(info.height * k)) / 2
   const px = (x: number) => (ox + (x * W - left) * k) / ICON_SIZE
   const py = (y: number) => (oy + (y * H - top) * k) / ICON_SIZE
-  const pt = (p?: number[]) => (p ? [px(p[0]), py(p[1])] : undefined)
+  const pt = (p: number[]) => [px(p[0]), py(p[1])]
   const r4 = (v: number) => Math.round(v * 1e4) / 1e4
-  const labels = j.labels.map((l: Record<string, any>) => ({
+  type Lab = { x: number; y: number; tx?: number; ty?: number; lead?: number[]; flead?: number[] }
+  const labels = j.labels.map((l: Lab) => ({
     ...l,
     x: r4(px(l.x)),
     y: r4(py(l.y)),
-    ...(l.tx !== undefined ? { tx: r4(px(l.tx)), ty: r4(py(l.ty)) } : {}),
-    ...(l.lead ? { lead: pt(l.lead)!.map(r4) } : {}),
-    ...(l.flead ? { flead: pt(l.flead)!.map(r4) } : {}),
+    ...(l.tx !== undefined ? { tx: r4(px(l.tx)), ty: r4(py(l.ty ?? 0)) } : {}),
+    ...(l.lead ? { lead: pt(l.lead).map(r4) } : {}),
+    ...(l.flead ? { flead: pt(l.flead).map(r4) } : {}),
   }))
   return { ...j, aspect: 1, labels }
 }
@@ -305,20 +303,25 @@ async function animationsPage() {
     const files = await readdir(join(ANIM, d)).catch(() => [] as string[])
     const mp4 = files.find((f) => f.endsWith(".mp4"))
     const gif = files.find((f) => f.endsWith(".gif"))
-    if (!mp4 && !gif) continue
-    const when = new Date((await stat(join(ANIM, d, (mp4 ?? gif)!))).mtimeMs).toISOString().slice(0, 16).replace("T", " ")
-    cards.push(`<figure>${
-      mp4 ? `<video src="/anim/${d}/${mp4}" autoplay loop muted playsinline></video>` : `<img src="/anim/${d}/${gif}" alt="${d}">`
-    }<figcaption><b>${d}</b> · ${when}${mp4 ? ` · <a href="/anim/${d}/${mp4}" download>mp4</a>` : ""}${
-      gif ? ` · <a href="/anim/${d}/${gif}" download>gif</a>` : ""
-    }</figcaption></figure>`)
+    const shown = mp4 ?? gif
+    if (!shown) continue
+    const when = new Date((await stat(join(ANIM, d, shown))).mtimeMs).toISOString().slice(0, 16).replace("T", " ")
+    cards.push(
+      `<figure>${
+        mp4
+          ? `<video src="/anim/${d}/${mp4}" autoplay loop muted playsinline></video>`
+          : `<img src="/anim/${d}/${gif}" alt="${d}">`
+      }<figcaption><b>${d}</b> · ${when}${mp4 ? ` · <a href="/anim/${d}/${mp4}" download>mp4</a>` : ""}${
+        gif ? ` · <a href="/anim/${d}/${gif}" download>gif</a>` : ""
+      }</figcaption></figure>`,
+    )
   }
   return new Response(
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Animations</title>
-<style>body{margin:0;background:#f4efe8;color:#1d2433;font:15px/1.5 system-ui,sans-serif}.wrap{max-width:1200px;margin:0 auto;padding:16px}
+<style>body{margin:0;background:${THEME.gallery.background};color:${THEME.gallery.ink};font:15px/1.5 system-ui,sans-serif}.wrap{max-width:1200px;margin:0 auto;padding:16px}
 nav{display:flex;gap:16px;align-items:center;margin-bottom:16px}nav a{color:inherit}figure{margin:0 0 32px}
-video,img{width:100%;height:auto;border-radius:12px;background:#f4efe8;display:block}figcaption{margin-top:6px}a{color:#c8302c}</style></head>
-<body><div class="wrap"><nav><a href="/"><b>&gt;via</b> icons</a><a href="/overview">Overview</a><a href="/animations">Animations</a><a href="/gallery">All rounds</a></nav>
+video,img{width:100%;height:auto;border-radius:12px;background:${THEME.gallery.background};display:block}figcaption{margin-top:6px}a{color:${THEME.gallery.link}}</style></head>
+<body><div class="wrap"><nav><a href="/"><b>&gt;${THEME.brand.cliWord}</b> icons</a><a href="/overview">Overview</a><a href="/animations">Animations</a><a href="/gallery">All rounds</a></nav>
 <h1>Animations</h1><p>Proofs rendered from the Blender scenes with <code>just icons-animate &lt;name&gt;</code>. Each loops seamlessly.</p>
 ${cards.join("\n") || "<p>No animations yet.</p>"}</div></body></html>`,
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" } },
@@ -372,18 +375,14 @@ Bun.serve({
     // Excalidraw/tldraw importers and @iconify/* all read this format.
     if (url.pathname === "/iconify/via.json") {
       const icons = Object.fromEntries(
-        Object.keys(FLAT).map((n) => [
-          n,
-          { body: svgThemeable(n).replace(/^<svg[^>]*>|<\/svg>$/g, "") },
-        ]),
+        Object.keys(FLAT).map((n) => [n, { body: svgThemeable(n).replace(/^<svg[^>]*>|<\/svg>$/g, "") }]),
       )
       return Response.json(
         { prefix: "via", width: 24, height: 24, icons },
         { headers: { "access-control-allow-origin": "*", "cache-control": "no-cache" } },
       )
     }
-    if (url.pathname === "/api/reviews" && req.method === "GET")
-      return Response.json(await loadReviews())
+    if (url.pathname === "/api/reviews" && req.method === "GET") return Response.json(await loadReviews())
     if (url.pathname === "/api/reviews" && req.method === "POST") {
       if (!canWrite(req)) return new Response("read-only", { status: 403 })
       // JSON only: a cross-site form post can't set this header (CSRF)
@@ -396,8 +395,7 @@ Bun.serve({
       }
       if (!body.key || !/^[\w:.-]+\/(light|dark)\/[\w-]+$/.test(body.key))
         return new Response("bad key", { status: 400 })
-      if (body.status && !STATUSES.includes(body.status))
-        return new Response("bad status", { status: 400 })
+      if (body.status && !STATUSES.includes(body.status)) return new Response("bad status", { status: 400 })
       const all = await loadReviews()
       if (body.status === "approved") {
         const [, round, mode, name] = body.key.match(/^round:([\w.-]+)\/(light|dark)\/([\w-]+)$/) ?? []
@@ -440,8 +438,7 @@ Bun.serve({
     }
     if (url.pathname.startsWith("/img/")) {
       const p = imagePath(url.pathname.slice(5).split("/").map(decodeURIComponent))
-      if (p && (await exists(p)))
-        return new Response(Bun.file(p), { headers: { "cache-control": "no-cache" } })
+      if (p && (await exists(p))) return new Response(Bun.file(p), { headers: { "cache-control": "no-cache" } })
     }
     return new Response("not found", { status: 404 })
   },

@@ -11,10 +11,11 @@
  *   <out>/prompts.json            exact prompts used (for reproducibility)
  */
 import sharp from "sharp"
-import { CONCEPTS, ICONS, PROBE, type IconSubject } from "./catalog"
-import { fileToDataUrl, generateImage, DEFAULT_IMAGE_MODEL } from "./openrouter"
 import { squareIcon } from "./canvas"
-import { buildPrompt, PALETTE, STYLE_VERSION, type Mode, type Style } from "./style"
+import { CONCEPTS, ICONS, type IconSubject, PROBE } from "./catalog"
+import { DEFAULT_IMAGE_MODEL, fileToDataUrl, generateImage } from "./openrouter"
+import { buildPrompt, type Mode, STYLE_VERSION, type Style } from "./style"
+import { THEME } from "./theme"
 
 const args = process.argv.slice(2)
 const opt = (k: string, d: string) => {
@@ -47,22 +48,22 @@ const logo = await fileToDataUrl("static/assets/logo-mark.png")
  * new icons match their camera, material and palette. `--anchors 25d-r2:light/cli,25d-r1:dark/lock`
  * (raw renders, chroma background included). Only anchors of the mode being rendered are sent.
  */
-const refs = await Promise.all(refArg.split(",").filter(Boolean).map((p) => fileToDataUrl(p)))
+const refs = await Promise.all(
+  refArg
+    .split(",")
+    .filter(Boolean)
+    .map((p) => fileToDataUrl(p)),
+)
 const anchors: Record<Mode, string[]> = { light: [], dark: [] }
 for (const spec of anchorArg.split(",").filter(Boolean)) {
   const m = spec.match(/^([\w.-]+):(light|dark)\/([\w-]+)$/)
   if (!m) throw new Error(`bad anchor: ${spec}`)
-  anchors[m[2] as Mode].push(
-    await fileToDataUrl(`local/icons/rounds/${m[1]}/${m[2]}/${m[3]}.raw.png`),
-  )
+  anchors[m[2] as Mode].push(await fileToDataUrl(`local/icons/rounds/${m[1]}/${m[2]}/${m[3]}.raw.png`))
 }
 
 /** Chroma-key #00FF00 to alpha with a soft edge and green despill. */
 export async function keyChroma(input: Buffer): Promise<Buffer> {
-  const { data, info } = await sharp(input)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true })
+  const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i],
       g = data[i + 1],
@@ -83,10 +84,7 @@ export async function keyChroma(input: Buffer): Promise<Buffer> {
  * pixel ring that is not (= object cropped by the canvas edge).
  */
 async function borderReport(input: Buffer): Promise<{ chroma: number; touching: number }> {
-  const { data, info } = await sharp(input)
-    .removeAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true })
+  const { data, info } = await sharp(input).removeAlpha().raw().toBuffer({ resolveWithObject: true })
   const { width: w, height: h } = info
   const band = Math.max(2, Math.round(w * 0.02))
   const green = (x: number, y: number) => {
@@ -147,7 +145,15 @@ await Promise.all(
 await Bun.write(
   `${out}/prompts.json`,
   JSON.stringify(
-    { styleVersion: STYLE_VERSION, style, model: DEFAULT_IMAGE_MODEL, anchors: anchorArg, refs: refArg, feedback, results },
+    {
+      styleVersion: STYLE_VERSION,
+      style,
+      model: DEFAULT_IMAGE_MODEL,
+      anchors: anchorArg,
+      refs: refArg,
+      feedback,
+      results,
+    },
     null,
     2,
   ),
@@ -157,7 +163,7 @@ await Bun.write(
 const CELL = 300
 const rows: sharp.OverlayOptions[] = []
 for (const [r, mode] of modes.entries()) {
-  const bg = mode === "light" ? PALETTE.cream : PALETTE.navyDeep
+  const bg = THEME.pages[mode]
   rows.push({
     input: await sharp({
       create: { width: CELL * icons.length, height: CELL, channels: 4, background: bg },

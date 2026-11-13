@@ -7,6 +7,7 @@
  *
  * The key is read from OPENROUTER_API_KEY (never stored in the repo).
  */
+import { THEME } from "./theme"
 
 export const DEFAULT_IMAGE_MODEL = process.env.ICON_MODEL ?? "google/gemini-3-pro-image"
 
@@ -33,7 +34,7 @@ export async function generateImage(req: ImageRequest): Promise<Buffer> {
     headers: {
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
-      "X-Title": "viaalink-website icons",
+      "X-Title": `${THEME.brand.slug}-website icons`,
     },
     body: JSON.stringify({
       model: req.model ?? DEFAULT_IMAGE_MODEL,

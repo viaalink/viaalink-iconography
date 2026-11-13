@@ -27,7 +27,12 @@ export interface Theme {
   fonts: { mono: string; sans: string; sansCaps: string }
   logo: { mark3d: string; markFlat: string }
   pages: { light: Hex; dark: Hex; video: Hex }
-  colors25d: { hex: Record<string, Hex>; roles: Record<Mode, Record<Role25, string>>; calibrated: string; lifted: string }
+  colors25d: {
+    hex: Record<string, Hex>
+    roles: Record<Mode, Record<Role25, string>>
+    calibrated: string
+    lifted: string
+  }
   materials: {
     roughness: PerRole
     specular: PerRole
@@ -55,7 +60,15 @@ export interface Theme {
     bevel: { box: number; cyl: number; minSegments: number; text: number }
     smoothAngle: number
     tubeResolution: number
-    port: { radius: number; length: number; offset: number; bevel: number; bore: number; boreLength: number; boreOffset: number }
+    port: {
+      radius: number
+      length: number
+      offset: number
+      bevel: number
+      bore: number
+      boreLength: number
+      boreOffset: number
+    }
   }
   flat: { roles: Record<Mode, Record<FlatRole, Hex>>; lip: number; art: number }
   canvas: { size: number; margin: number; optical: number; trimThreshold: number }
@@ -69,10 +82,14 @@ export interface Theme {
     tileFont: number
     fullFont: number
     board: { thickness: number; thicknessScene: number; topRole: string; underRole: string; groupRole: string }
+    labels: { font: string; ink: Hex; inkDark: Hex; edgeInk: Hex; pill: Hex; pillStroke: Hex }
   }
   animation: { samples: number; storySamples: number; fps: number }
   gallery: { background: Hex; ink: Hex; link: Hex }
-  prompt: { chroma: Hex; palette: Record<"red" | "redDeep" | "coral" | "navy" | "navyDeep" | "slate" | "cream" | "white", Hex> }
+  prompt: {
+    chroma: Hex
+    palette: Record<"red" | "redDeep" | "coral" | "navy" | "navyDeep" | "slate" | "cream" | "white", Hex>
+  }
 }
 
 type Schema = {
@@ -111,7 +128,9 @@ function check(value: unknown, schema: Schema, where: string, errors: string[]) 
     const obj = value as Record<string, unknown>
     for (const k of schema.required ?? []) if (!(k in obj)) errors.push(`${where}.${k}: missing`)
     for (const [k, v] of Object.entries(obj)) {
-      const sub = schema.properties?.[k] ?? (typeof schema.additionalProperties === "object" ? schema.additionalProperties : undefined)
+      const sub =
+        schema.properties?.[k] ??
+        (typeof schema.additionalProperties === "object" ? schema.additionalProperties : undefined)
       if (sub) check(v, sub, `${where}.${k}`, errors)
     }
   }
@@ -130,7 +149,8 @@ export function validateTheme(theme: unknown, schema?: Schema): Theme {
     const t = theme as Theme
     for (const [mode, roles] of Object.entries(t.colors25d.roles))
       for (const [role, name] of Object.entries(roles))
-        if (!(name in t.colors25d.hex)) errors.push(`theme.colors25d.roles.${mode}.${role}: "${name}" is not in colors25d.hex`)
+        if (!(name in t.colors25d.hex))
+          errors.push(`theme.colors25d.roles.${mode}.${role}: "${name}" is not in colors25d.hex`)
   }
   if (errors.length) throw new Error(`invalid icon theme:\n  ${errors.join("\n  ")}`)
   return theme as Theme

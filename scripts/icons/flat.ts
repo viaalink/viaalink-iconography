@@ -6,30 +6,35 @@
  * the 2.5D version. Geometry is hand-authored (not traced) so it stays crisp
  * in fonts, Iconify and diagram tools (ADR 0001, D6).
  *
- * Colour roles (same as style.ts):
- *   P  primary body        #F73F3F in both modes (W-140: the 2.5D set uses one red too;
- *                          the old dark #FF6B6B read pink next to it)
- *   S  primary lip/shade   #D62828 in both modes
- *   N  secondary part      light #33496E  dark #F6F3EE  (lighter than R: visible over screens)
- *   M  secondary lip       light #1E2F4C  dark #D8D1C6
- *   R  recess (screens)    light #13223A  dark #17243A
- *   C  detail (cream)      light #F6F3EE  dark #F6F3EE
+ * Colour roles (values per mode in the theme, theme/brand.json "flat.roles"):
+ *   p  primary body        (W-140: one red in both modes, like the 2.5D set)
+ *   s  primary lip/shade
+ *   n  secondary part      (sand on light: the flat twin of the 2.5D cream parts)
+ *   m  secondary lip
+ *   r  recess (screens)
+ *   c  detail (cream)
  *
  * The shipped SVG uses CSS variables with the light values as fallback
- * (`fill="var(--via-p, #F73F3F)"`), so one file follows a page theme when
- * inlined and still renders as the light edition inside <img>.
+ * (`fill="var(--via-p, #F73F3F)"`, prefix from the theme's brand.cssPrefix), so one
+ * file follows a page theme when inlined and still renders as the light edition inside <img>.
  *
  *   bun scripts/icons/flat.ts --out local/icons/rounds/flat-r1
  * writes <out>/<mode>/<name>.svg + <name>.png (1024) and <out>/pairs.png
  * (2.5D best icon next to its flat twin, both modes).
  */
-import sharp from "sharp"
 import { mkdir } from "node:fs/promises"
 import { parseArgs } from "node:util"
+import sharp from "sharp"
+import { cssVar, type FlatRole, THEME, themePath } from "./theme"
 
-/** The Viaalink mark, recoloured to one role, placed in a box (x, y, width). */
-const LOGO = await Bun.file(new URL("../../static/assets/logo-mark.svg", import.meta.url)).text()
-const LOGO_VIEWBOX = LOGO.match(/viewBox="([^"]+)"/)![1]
+/** The brand mark (theme logo.markFlat), recoloured to one role, placed in a box (x, y, width). */
+const LOGO = await Bun.file(themePath(THEME.logo.markFlat)).text()
+/** A regex match that must exist (a missing logo or brand path is a broken install, not a soft case). */
+const must = (m: RegExpMatchArray | null, what: string) => {
+  if (!m) throw new Error(`flat.ts: ${what} not found`)
+  return m[1]
+}
+const LOGO_VIEWBOX = must(LOGO.match(/viewBox="([^"]+)"/), "logo viewBox")
 const LOGO_BODY = LOGO.replace(/^[\s\S]*?<title>[^<]*<\/title>/, "")
   .replace(/<\/svg>\s*$/, "")
   .replace(/style="[^"]*"/g, "")
@@ -39,19 +44,16 @@ const mark = (x: number, y: number, w: number, f: Role) => {
   return `<svg x="${x}" y="${y}" width="${w}" height="${(w * vh) / vw}" viewBox="${LOGO_VIEWBOX}">${LOGO_BODY.replaceAll("{LOGO}", `{${f}}`)}</svg>`
 }
 
-export const ROLES = {
-  // light n/m: sand (cream with a darker sand lip), the flat twin of the 2.5D cream secondary parts
-  // (owner 2026-11-12, after the expert review found navy used as a body colour on light; navy and
-  // red stay for accents). Sand also stays visible over the navy screen recess r.
-  light: { p: "#F73F3F", s: "#D62828", n: "#E2D5C4", m: "#BFAE98", r: "#13223A", c: "#F6F3EE" },
-  dark: { p: "#F73F3F", s: "#D62828", n: "#F6F3EE", m: "#D8D1C6", r: "#17243A", c: "#F6F3EE" },
-} as const
-type Role = keyof (typeof ROLES)["light"]
+// light n/m: sand (cream with a darker sand lip), the flat twin of the 2.5D cream secondary parts
+// (owner 2026-11-12, after the expert review found navy used as a body colour on light; navy and
+// red stay for accents). Sand also stays visible over the navy screen recess r.
+export const ROLES = THEME.flat.roles
+type Role = FlatRole
 
 /** Brand letters as shapes (Space Grotesk Bold, scripts/icons/fonts/space-grotesk-caps.json, made by glyphs.py
  *  in Blender): a flat SVG then looks the same without the font installed. Centred on x, baseline at y,
  *  cap height `cap` grid units, red fill with a cream outline (painted first). */
-const CAPS = JSON.parse(await Bun.file(new URL("./fonts/space-grotesk-caps.json", import.meta.url)).text()).glyphs as Record<
+const CAPS = JSON.parse(await Bun.file(themePath(THEME.fonts.sansCaps)).text()).glyphs as Record<
   string,
   { d: string; x0: number; x1: number }
 >
@@ -63,7 +65,7 @@ const letter = (ch: string, x: number, y: number, cap: number) => {
 }
 
 /** `{p}` etc. in the shape strings become fill/stroke values. */
-const LIP = 1.1 // depth of the lip, in grid units
+const LIP = THEME.flat.lip // depth of the lip, in grid units
 
 /** A solid part with its lip: the same path, shifted down in the shade colour. */
 const part = (d: string, body: Role, lip: Role) =>
@@ -102,7 +104,7 @@ const viaPhone = (dx = 0, badge = false) =>
  */
 const WORLD = JSON.parse(await Bun.file(new URL("./world-land.json", import.meta.url)).text())
 const GLOBE = { cx: 11.5, cy: 10.6, r: 7.4, lon0: 8, lat0: 47 }
-const project = (lon: number, lat: number): [number, number] | null => {
+const project = (lon: number, lat: number): [number, number] => {
   const d = Math.PI / 180
   const [l, p, l0, p0] = [lon * d, lat * d, GLOBE.lon0 * d, GLOBE.lat0 * d]
   let x = Math.cos(p) * Math.sin(l - l0)
@@ -122,25 +124,30 @@ const mapPath = (polys: number[][][]) =>
       for (let k = 0; k < poly.length; k++) {
         const [a, b] = [poly[k], poly[(k + 1) % poly.length]]
         const m = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1])))
-        for (let t = 0; t < m; t++) pts.push(project(a[0] + ((b[0] - a[0]) * t) / m, a[1] + ((b[1] - a[1]) * t) / m)!)
+        for (let t = 0; t < m; t++) pts.push(project(a[0] + ((b[0] - a[0]) * t) / m, a[1] + ((b[1] - a[1]) * t) / m))
       }
-      return "M" + pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join("L") + "Z"
+      return `M${pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join("L")}Z`
     })
     .join("")
 const LAND_D = mapPath(Object.values(WORLD.land) as number[][][])
 const SEA_D = mapPath(Object.values(WORLD.seas) as number[][][])
-const NL = project(WORLD.nl[0], WORLD.nl[1])!
+const NL = project(WORLD.nl[0], WORLD.nl[1])
 
 /** The Apple mark (brands/apple.svg) and the inner Octocat silhouette of brands/github.svg (no outer disc). */
-const GITHUB_MARK = (await Bun.file(new URL("./brands/github.svg", import.meta.url)).text()).match(/ d="([^"]+)"/)![1]
+const brandPath = async (name: string) =>
+  must(
+    (await Bun.file(new URL(`./brands/${name}.svg`, import.meta.url)).text()).match(/ d="([^"]+)"/),
+    `brands/${name}.svg path`,
+  )
+const GITHUB_MARK = await brandPath("github")
 const GITHUB_OCTOCAT =
   "M9.025 22.4c" +
   GITHUB_MARK.slice(GITHUB_MARK.indexOf("0-.285"), GITHUB_MARK.indexOf(" 0 .315")) +
   "a1 1 0 0 1-1 1h-3.914a1 1 0 0 1-1-1z"
-const APPLE_MARK = (await Bun.file(new URL("./brands/apple.svg", import.meta.url)).text()).match(/ d="([^"]+)"/)![1]
-const ANDROID_MARK = (await Bun.file(new URL("./brands/android.svg", import.meta.url)).text()).match(/ d="([^"]+)"/)![1]
-const LINUX_MARK = (await Bun.file(new URL("./brands/linux.svg", import.meta.url)).text()).match(/ d="([^"]+)"/)![1]
-const WINDOWS_MARK = (await Bun.file(new URL("./brands/windows.svg", import.meta.url)).text()).match(/ d="([^"]+)"/)![1]
+const APPLE_MARK = await brandPath("apple")
+const ANDROID_MARK = await brandPath("android")
+const LINUX_MARK = await brandPath("linux")
+const WINDOWS_MARK = await brandPath("windows")
 
 export const FLAT: Record<string, string> = {
   // laptop: screen with `>` and block cursor on a trapezoid base, one hinge
@@ -193,10 +200,7 @@ export const FLAT: Record<string, string> = {
   // asymmetric tick standing on a coin
   check: [
     part(ellipse(12, 19.2, 8.2, 2.6), "n", "m"),
-    line("M6.6 11.4l3.9 4.4 8.3-11", "s", 4).replace(
-      "<path",
-      `<path transform="translate(0 ${LIP})"`,
-    ),
+    line("M6.6 11.4l3.9 4.4 8.3-11", "s", 4).replace("<path", `<path transform="translate(0 ${LIP})"`),
     line("M6.6 11.4l3.9 4.4 8.3-11", "p", 4),
   ].join(""),
 
@@ -204,10 +208,7 @@ export const FLAT: Record<string, string> = {
   notetaker: [
     part(rrect(5, 19.4, 10.4, 2.4, 1.2), "n", "m"),
     rect(9.3, 15.8, 1.8, 4.6, 0.5, "n"),
-    line("M4.6 8.8v1.2a5.6 5.6 0 0 0 11.2 0V8.8", "m", 2).replace(
-      "<path",
-      `<path transform="translate(0 .7)"`,
-    ),
+    line("M4.6 8.8v1.2a5.6 5.6 0 0 0 11.2 0V8.8", "m", 2).replace("<path", `<path transform="translate(0 .7)"`),
     line("M4.6 8.8v1.2a5.6 5.6 0 0 0 11.2 0V8.8", "n", 2),
     rect(4.9, 8.1, 10.6, 1.5, 0.75, "n"), // axle pins: the yoke holds the capsule
     part(rrect(6.5, 1.4, 7.4, 11, 3.7), "p", "s"),
@@ -221,10 +222,7 @@ export const FLAT: Record<string, string> = {
 
   // padlock: navy shackle, red body, cream collar round the keyhole
   lock: [
-    line("M7.8 11V7.4a4.2 4.2 0 0 1 8.4 0V11", "m", 2.8).replace(
-      "<path",
-      `<path transform="translate(0 .6)"`,
-    ),
+    line("M7.8 11V7.4a4.2 4.2 0 0 1 8.4 0V11", "m", 2.8).replace("<path", `<path transform="translate(0 .6)"`),
     line("M7.8 11V7.4a4.2 4.2 0 0 1 8.4 0V11", "n", 2.8),
     part(rrect(4.6, 9.6, 14.8, 12, 2.8), "p", "s"),
     `<circle cx="12" cy="14.3" r="2.75" fill="{c}"/><path d="M9.9 15.4h4.2l.8 3.5a.7.7 0 0 1-.7.8H9.8a.7.7 0 0 1-.7-.8z" fill="{c}"/>`,
@@ -339,10 +337,7 @@ export const FLAT: Record<string, string> = {
     rect(3, 7, 13.4, 10.4, 1.4, "r"),
     rect(4.6, 9.2, 9.2, 1.7, 0.85, "c"),
     rect(4.6, 12.4, 6.2, 1.7, 0.85, "c"),
-    line("M16.3 15.6v-1.8a1.7 1.7 0 0 1 3.4 0v1.8", "m", 1.7).replace(
-      "<path",
-      `<path transform="translate(0 .5)"`,
-    ),
+    line("M16.3 15.6v-1.8a1.7 1.7 0 0 1 3.4 0v1.8", "m", 1.7).replace("<path", `<path transform="translate(0 .5)"`),
     line("M16.3 15.6v-1.8a1.7 1.7 0 0 1 3.4 0v1.8", "n", 1.7),
     part(rrect(14.6, 15.2, 6.8, 6.2, 1.5), "n", "m"),
     rect(15.6, 16.1, 4.8, 4.4, 0.9, "c"),
@@ -464,11 +459,7 @@ export const FLAT: Record<string, string> = {
   // warning: chunky rounded triangle slab (p/s) with a cream "!" — no base disc, like the 2.5D slab
   warning: [
     `<g transform="translate(0 1.6)">`, // centred on the grid now the disc is gone
-    part(
-      "M10.1 2.7a2.2 2.2 0 0 1 3.8 0l7.4 12.8a2.2 2.2 0 0 1-1.9 3.3H4.6a2.2 2.2 0 0 1-1.9-3.3z",
-      "p",
-      "s",
-    ),
+    part("M10.1 2.7a2.2 2.2 0 0 1 3.8 0l7.4 12.8a2.2 2.2 0 0 1-1.9 3.3H4.6a2.2 2.2 0 0 1-1.9-3.3z", "p", "s"),
     rect(10.8, 6.9, 2.4, 5.8, 1.2, "c"),
     `<circle cx="12" cy="15.3" r="1.35" fill="{c}"/>`,
     `</g>`,
@@ -523,7 +514,10 @@ export const FLAT: Record<string, string> = {
     part("M3.5 5v14a8.5 2.8 0 0 0 17 0V5z", "p", "s"),
     `<ellipse cx="12" cy="5" rx="8.5" ry="2.8" fill="{s}"/><ellipse cx="12" cy="4.75" rx="7.6" ry="2.2" fill="{p}"/>`,
     line("M3.5 10.6a8.5 2.8 0 0 0 17 0M3.5 15.6a8.5 2.8 0 0 0 17 0", "n", 1.1),
-    ...[9.3, 14.3, 19.2].map((y) => `<circle cx="6.6" cy="${y - 0.4}" r=".75" fill="{c}"/><circle cx="8.9" cy="${y + 0.3}" r=".75" fill="{c}"/>`),
+    ...[9.3, 14.3, 19.2].map(
+      (y) =>
+        `<circle cx="6.6" cy="${y - 0.4}" r=".75" fill="{c}"/><circle cx="8.9" cy="${y + 0.3}" r=".75" fill="{c}"/>`,
+    ),
   ].join(""),
 
   // team: three toy-figure heads/shoulders together on a base (middle one larger)
@@ -615,14 +609,15 @@ export const FLAT: Record<string, string> = {
   ].join(""),
   // Docker, our way (owner): the whale's containers spell VIA on top and LINK below, one letter each
   docker: [
-    ...[..."VIA"].map((ch, i) => [4.6 + i * 4.1, 3.4, ch] as const)
-      .concat([..."LINK"].map((ch, i) => [2.55 + i * 4.1, 7.5, ch] as const))
-      .map(
-        ([x, y, ch]) =>
-          part(rrect(x, y, 3.7, 3.7, 0.5), "n", "m") +
-          letter(ch, x + 1.85, y + 2.85, 2.2),
-      ),
-    part("M1.6 12h17.6c.8-1.6 2.2-2.4 3.6-2.2-.2 1.4-.9 2.4-2 2.9C19.6 18 15 21.4 9.6 21.4 4.6 21.4 1.6 17.4 1.6 12z", "p", "s"),
+    ...[..."VIA"]
+      .map((ch, i): [number, number, string] => [4.6 + i * 4.1, 3.4, ch])
+      .concat([..."LINK"].map((ch, i): [number, number, string] => [2.55 + i * 4.1, 7.5, ch]))
+      .map(([x, y, ch]) => part(rrect(x, y, 3.7, 3.7, 0.5), "n", "m") + letter(ch, x + 1.85, y + 2.85, 2.2)),
+    part(
+      "M1.6 12h17.6c.8-1.6 2.2-2.4 3.6-2.2-.2 1.4-.9 2.4-2 2.9C19.6 18 15 21.4 9.6 21.4 4.6 21.4 1.6 17.4 1.6 12z",
+      "p",
+      "s",
+    ),
     `<circle cx="5.6" cy="14.6" r=".8" fill="{c}"/>`,
   ].join(""),
 
@@ -670,10 +665,7 @@ export const FLAT: Record<string, string> = {
   ].join(""),
 
   // mail: envelope (red) with a cream flap line
-  mail: [
-    part(rrect(1.6, 4.2, 20.8, 14.6, 2.6), "p", "s"),
-    line("M4.2 7.2L12 13.0l7.8-5.8", "c", 2.0),
-  ].join(""),
+  mail: [part(rrect(1.6, 4.2, 20.8, 14.6, 2.6), "p", "s"), line("M4.2 7.2L12 13.0l7.8-5.8", "c", 2.0)].join(""),
 
   // calendar: desk calendar (red binding rings on top, cream page with a grid and one red day)
   calendar: [
@@ -721,11 +713,16 @@ export const FLAT: Record<string, string> = {
 
   // wifi: three concentric red arcs and a dot below with the lip, no tile
   wifi: [
-    line("M2.04 9.23a13.4 13.4 0 0 1 19.92 0M5.01 11.91a9.4 9.4 0 0 1 13.98 0M7.99 14.59a5.4 5.4 0 0 1 8.02 0", "s", 2.4).replace(
-      "<path",
-      `<path transform="translate(0 ${LIP})"`,
+    line(
+      "M2.04 9.23a13.4 13.4 0 0 1 19.92 0M5.01 11.91a9.4 9.4 0 0 1 13.98 0M7.99 14.59a5.4 5.4 0 0 1 8.02 0",
+      "s",
+      2.4,
+    ).replace("<path", `<path transform="translate(0 ${LIP})"`),
+    line(
+      "M2.04 9.23a13.4 13.4 0 0 1 19.92 0M5.01 11.91a9.4 9.4 0 0 1 13.98 0M7.99 14.59a5.4 5.4 0 0 1 8.02 0",
+      "p",
+      2.4,
     ),
-    line("M2.04 9.23a13.4 13.4 0 0 1 19.92 0M5.01 11.91a9.4 9.4 0 0 1 13.98 0M7.99 14.59a5.4 5.4 0 0 1 8.02 0", "p", 2.4),
     part(ellipse(12, 18.2, 2.0, 2.0), "p", "s"),
   ].join(""),
 
@@ -753,20 +750,14 @@ export const FLAT: Record<string, string> = {
   // upload: thick red arrow pointing up, standing on a cream rounded bar
   upload: [
     part(rrect(3.5, 18.2, 17, 3.4, 1.7), "n", "m"),
-    line("M12 14.8V3.8M6.8 8.8L12 3.6l5.2 5.2", "s", 3.2).replace(
-      "<path",
-      `<path transform="translate(0 ${LIP})"`,
-    ),
+    line("M12 14.8V3.8M6.8 8.8L12 3.6l5.2 5.2", "s", 3.2).replace("<path", `<path transform="translate(0 ${LIP})"`),
     line("M12 14.8V3.8M6.8 8.8L12 3.6l5.2 5.2", "p", 3.2),
   ].join(""),
 
   // download: thick red arrow pointing down onto a cream rounded bar
   download: [
     part(rrect(3.5, 18.2, 17, 3.4, 1.7), "n", "m"),
-    line("M12 3.6v11.0M6.8 9.8L12 15.0l5.2-5.2", "s", 3.2).replace(
-      "<path",
-      `<path transform="translate(0 ${LIP})"`,
-    ),
+    line("M12 3.6v11.0M6.8 9.8L12 15.0l5.2-5.2", "s", 3.2).replace("<path", `<path transform="translate(0 ${LIP})"`),
     line("M12 3.6v11.0M6.8 9.8L12 15.0l5.2-5.2", "p", 3.2),
   ].join(""),
 
@@ -836,7 +827,7 @@ export const FLAT: Record<string, string> = {
     part(rrect(0.5, 9.0, 23.0, 5.6, 2.8), "n", "m"),
     part(rrect(3.8, 3.2, 16.4, 16.6, 3), "p", "s"),
     rect(5.3, 4.7, 13.4, 10.8, 1.5, "r"),
-    `<path data-mark="1" fill="{c}" transform="translate(6.9 5) scale(${10.2 / 24})" d="${(await Bun.file(new URL("./brands/caddy-mark.svg", import.meta.url)).text()).match(/ d="([^"]+)"/)![1]}"/>`,
+    `<path data-mark="1" fill="{c}" transform="translate(6.9 5) scale(${10.2 / 24})" d="${await brandPath("caddy-mark")}"/>`,
     ...[9.6, 12, 14.4].map((x) => `<circle cx="${x}" cy="17.7" r=".75" fill="{c}"/>`),
   ].join(""),
 
@@ -941,10 +932,7 @@ export const FLAT: Record<string, string> = {
       [15.5, 10.8, 3.7],
       [18.9, 13.7, 3.2],
     ] as const
-    const meet = (
-      [x1, y1, r1]: readonly [number, number, number],
-      [x2, y2, r2]: readonly [number, number, number],
-    ) => {
+    const meet = ([x1, y1, r1]: readonly [number, number, number], [x2, y2, r2]: readonly [number, number, number]) => {
       const dx = x2 - x1
       const dy = y2 - y1
       const d = Math.hypot(dx, dy)
@@ -972,7 +960,10 @@ export const FLAT: Record<string, string> = {
       `A${lobes[3][2]} ${lobes[3][2]} 0 0 1 ${f(xEnd)} ${yFlat}`,
       "Z",
     ].join("")
-    return [part(rrect(2.55, 15.0, 18.85, 3.4, 1.7), "n", "m"), part(d, "p", "s").replace(`translate(0 ${LIP})`, "translate(0 .75)")].join("")
+    return [
+      part(rrect(2.55, 15.0, 18.85, 3.4, 1.7), "n", "m"),
+      part(d, "p", "s").replace(`translate(0 ${LIP})`, "translate(0 .75)"),
+    ].join("")
   })(),
 
   // container: generic shipping container, ribbed red box, cream/sand corner posts, two cream doors on the end
@@ -999,7 +990,10 @@ export const FLAT: Record<string, string> = {
         [3.3, 11.3],
         [14.5, 11.3],
       ] as const
-    ).map(([x, y]) => part(rrect(x, y, 6.2, 5.8, 1.6), "p", "s") + `<circle cx="${x + 1.8}" cy="${y + 1.8}" r=".65" fill="{c}"/>`),
+    ).map(
+      ([x, y]) =>
+        `${part(rrect(x, y, 6.2, 5.8, 1.6), "p", "s")}<circle cx="${x + 1.8}" cy="${y + 1.8}" r=".65" fill="{c}"/>`,
+    ),
   ].join(""),
 
   // vm: device family box with side ports; front = navy screen showing a small cream box (machine in a machine)
@@ -1029,7 +1023,9 @@ export const FLAT: Record<string, string> = {
     rect(6.2, 14.5, 11.6, 2.3, 0.6, "r"),
     part(rrect(1.0, 5.0, 22.0, 9.6, 4.8), "n", "m"),
     rect(3.4, 6.8, 17.2, 6.0, 2.6, "r"),
-    ...[4.9, 9.9, 14.9].map((x) => part(rrect(x, 7.8, 4.2, 3.8, 1.1), "p", "s").replace(`translate(0 ${LIP})`, "translate(0 .65)")),
+    ...[4.9, 9.9, 14.9].map((x) =>
+      part(rrect(x, 7.8, 4.2, 3.8, 1.1), "p", "s").replace(`translate(0 ${LIP})`, "translate(0 .65)"),
+    ),
   ].join(""),
 
   // bucket: red pail with cream/sand rim and handle, two cream sheets sticking up out of it
@@ -1099,7 +1095,7 @@ export const FLAT: Record<string, string> = {
             const m = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2))
             for (let t = 0; t < m; t++) pts.push(proj(a[0] + ((b[0] - a[0]) * t) / m, a[1] + ((b[1] - a[1]) * t) / m))
           }
-          return "M" + pts.map(([x, y]) => `${f(x)} ${f(y)}`).join("L") + "Z"
+          return `M${pts.map(([x, y]) => `${f(x)} ${f(y)}`).join("L")}Z`
         })
         .join("")
     const greatCircle = (kind: "eq" | "mer", lonDeg = 0) => {
@@ -1194,27 +1190,25 @@ export const FLAT: Record<string, string> = {
         [px - 0.58 * sc * tx, py - 0.58 * sc * ty, 0.28 * sc],
         [px - 1.48 * sc * tx - wh * rx, py - 1.48 * sc * ty - wh * ry, 0.44 * sc],
       ]
-      return (
-        pts
-          .map(([bx, by, rad], i) => {
-            const [ax, ay] = pts[(i + pts.length - 1) % pts.length]
-            const [cxp, cyp] = pts[(i + 1) % pts.length]
-            const l1 = Math.hypot(ax - bx, ay - by)
-            const l2 = Math.hypot(cxp - bx, cyp - by)
-            const u1x = (ax - bx) / l1
-            const u1y = (ay - by) / l1
-            const u2x = (cxp - bx) / l2
-            const u2y = (cyp - by) / l2
-            const half = Math.acos(Math.max(-1, Math.min(1, u1x * u2x + u1y * u2y))) / 2
-            const d = Math.min(rad / Math.tan(half), l1 * 0.44, l2 * 0.44)
-            const t1x = bx + u1x * d
-            const t1y = by + u1y * d
-            const t2x = bx + u2x * d
-            const t2y = by + u2y * d
-            return `${i === 0 ? "M" : "L"}${f(t1x)} ${f(t1y)}Q${f(bx)} ${f(by)} ${f(t2x)} ${f(t2y)}`
-          })
-          .join("") + "Z"
-      )
+      return `${pts
+        .map(([bx, by, rad], i) => {
+          const [ax, ay] = pts[(i + pts.length - 1) % pts.length]
+          const [cxp, cyp] = pts[(i + 1) % pts.length]
+          const l1 = Math.hypot(ax - bx, ay - by)
+          const l2 = Math.hypot(cxp - bx, cyp - by)
+          const u1x = (ax - bx) / l1
+          const u1y = (ay - by) / l1
+          const u2x = (cxp - bx) / l2
+          const u2y = (cyp - by) / l2
+          const half = Math.acos(Math.max(-1, Math.min(1, u1x * u2x + u1y * u2y))) / 2
+          const d = Math.min(rad / Math.tan(half), l1 * 0.44, l2 * 0.44)
+          const t1x = bx + u1x * d
+          const t1y = by + u1y * d
+          const t2x = bx + u2x * d
+          const t2y = by + u2y * d
+          return `${i === 0 ? "M" : "L"}${f(t1x)} ${f(t1y)}Q${f(bx)} ${f(by)} ${f(t2x)} ${f(t2y)}`
+        })
+        .join("")}Z`
     }
     const arrow1D = lobeArrow(12 - cx, -82, 1, 1.0, 2.15)
     const arrow2D = lobeArrow(12 + cx, 48, -1, 0.72, 1.76)
@@ -1244,7 +1238,11 @@ export const FLAT: Record<string, string> = {
     part(rrect(4.2, 2.3, 15.6, 17.8, 2.2), "n", "m"),
     rect(5.2, 6.2, 13.6, 12.2, 1.1, "c"),
     rect(4.2, 5.75, 15.6, 0.85, 0.42, "m"),
-    line("M7.0 8.5h2.0M10.7 8.5h6.1M7.0 11.1h2.0M10.7 11.1h4.2M7.0 13.7h2.0M10.7 13.7h5.4M7.0 16.3h2.0M10.7 16.3h3.0", "r", 1.45),
+    line(
+      "M7.0 8.5h2.0M10.7 8.5h6.1M7.0 11.1h2.0M10.7 11.1h4.2M7.0 13.7h2.0M10.7 13.7h5.4M7.0 16.3h2.0M10.7 16.3h3.0",
+      "r",
+      1.45,
+    ),
     part(rrect(3.5, 18.0, 17.0, 2.9, 1.45), "n", "m").replace(`translate(0 ${LIP})`, "translate(0 .75)"),
   ].join(""),
 
@@ -1282,7 +1280,7 @@ export const FLAT: Record<string, string> = {
   ].join(""),
 }
 
-const VAR = { p: "--via-p", s: "--via-s", n: "--via-n", m: "--via-m", r: "--via-r", c: "--via-c" }
+const VAR = Object.fromEntries(Object.keys(ROLES.light).map((k) => [k, cssVar(k)])) as Record<Role, string>
 
 /** Resolved SVG for one mode (used for PNG renders and the dark file). */
 export function svgFor(name: string, mode: "light" | "dark") {
@@ -1319,8 +1317,9 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
       m.replace(`stroke="{${role}}" stroke-width="2.6"`, `stroke="{r}" stroke-width="4"`) + m
     return svg
       .replace(/<rect [^>]*stroke="\{p\}" stroke-width="2\.6"[^>]*\/>/, halo("p"))
-      .replace(/(<g clip-path="url\(#via-lk\)">)([\s\S]*?)(<\/g>)/, (_, a, b, c) =>
-        a + b.replace(/<rect [^>]*stroke="\{n\}" stroke-width="2\.6"[^>]*\/>/, halo("n")) + c,
+      .replace(
+        /(<g clip-path="url\(#via-lk\)">)([\s\S]*?)(<\/g>)/,
+        (_, a, b, c) => a + b.replace(/<rect [^>]*stroke="\{n\}" stroke-width="2\.6"[^>]*\/>/, halo("n")) + c,
       )
   },
   // cream details drawn straight on the red body (W-140 twins) would vanish in one ink
@@ -1328,12 +1327,16 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
     svg
       .replace('stroke="{c}" stroke-width="1.1"', 'stroke="{r}" stroke-width="1.1"')
       .replaceAll(/(<circle cx="(?:9\.2|14\.4)" cy="(?:16\.5|14\.1|18\.9)" r="1\.55" fill=")\{c\}/g, "$1{r}"),
-  globe: (svg) => svg.replace('fill="{c}" fill-rule="nonzero" data-land="1"', 'fill="{r}" fill-rule="nonzero" data-land="1"'),
+  globe: (svg) =>
+    svg.replace('fill="{c}" fill-rule="nonzero" data-land="1"', 'fill="{r}" fill-rule="nonzero" data-land="1"'),
   config: (svg) =>
     svg
       .replace(/<path d="M[0-9. L]+Z" fill="\{m\}" transform="translate\(0 \.6\)"\/>/, "")
       .replace(/<path d="(M[0-9. L]+Z)" fill="\{c\}"\/>/, '<path d="$1" fill="{r}"/>')
-      .replace('<circle cx="16.9" cy="17.6" r="1.25" fill="{p}"/>', '<circle cx="16.9" cy="17.6" r="1.25" fill="{c}"/>'),
+      .replace(
+        '<circle cx="16.9" cy="17.6" r="1.25" fill="{p}"/>',
+        '<circle cx="16.9" cy="17.6" r="1.25" fill="{c}"/>',
+      ),
   phone: (svg) =>
     svg
       .replaceAll('stroke="{p}"', 'stroke="{r}"')
@@ -1355,7 +1358,8 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
       .replace(rect(13.4, 6, 2.8, 10.6, 1.1, "p"), rect(13.4, 6, 2.8, 10.6, 1.1, "r"))
       .replace(mark(16.4, 9.9, 5.4, "p"), mark(16.7, 10, 5.5, "r")),
   // 009 ecosystem gaps: cream details drawn straight on the red body
-  tablet: (svg) => svg.replace('<circle cx="21.6" cy="11.4" r=".6" fill="{c}"/>', '<circle cx="21.6" cy="11.4" r=".6" fill="{r}"/>'),
+  tablet: (svg) =>
+    svg.replace('<circle cx="21.6" cy="11.4" r=".6" fill="{c}"/>', '<circle cx="21.6" cy="11.4" r=".6" fill="{r}"/>'),
   "browser-ext": (svg) => svg.replaceAll('fill="{c}"', 'fill="{r}"'),
   vscode: (svg) => svg.replaceAll('r=".75" fill="{c}"', 'r=".75" fill="{r}"'),
   mail: (svg) => svg.replaceAll('stroke="{c}"', 'stroke="{r}"'),
@@ -1363,16 +1367,25 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
     svg
       .replace(rect(5.8, 3.2, 3.6, 1.8, 0.9, "c"), rect(5.8, 3.2, 3.6, 1.8, 0.9, "r"))
       .replace(rect(14.6, 3.2, 3.6, 1.8, 0.9, "c"), rect(14.6, 3.2, 3.6, 1.8, 0.9, "r"))
-      .replace(rect(10.3, 9.6, 3.4, 3.2, 0.7, "p"), `<rect x="10.3" y="9.6" width="3.4" height="3.2" rx="0.7" fill="none" stroke="{r}" stroke-width=".9"/>`),
+      .replace(
+        rect(10.3, 9.6, 3.4, 3.2, 0.7, "p"),
+        `<rect x="10.3" y="9.6" width="3.4" height="3.2" rx="0.7" fill="none" stroke="{r}" stroke-width=".9"/>`,
+      ),
   "qr-pair": (svg) => svg.replaceAll('stroke="{c}"', 'stroke="{r}"'),
-  license: (svg) => svg.replace('<circle cx="6.8" cy="15.0" r="1.7" fill="{c}"/>', '<circle cx="6.8" cy="15.0" r="1.7" fill="{r}"/>'),
+  license: (svg) =>
+    svg.replace('<circle cx="6.8" cy="15.0" r="1.7" fill="{c}"/>', '<circle cx="6.8" cy="15.0" r="1.7" fill="{r}"/>'),
   payment: (svg) => svg.replaceAll('fill="{c}"', 'fill="{r}"').replaceAll('stroke="{c}"', 'stroke="{r}"'),
-  backup: (svg) => svg.replaceAll('stroke="{n}"', 'stroke="{r}"').replaceAll('stroke="{c}"', 'stroke="{r}"').replaceAll('fill="{c}"', 'fill="{r}"'),
+  backup: (svg) =>
+    svg
+      .replaceAll('stroke="{n}"', 'stroke="{r}"')
+      .replaceAll('stroke="{c}"', 'stroke="{r}"')
+      .replaceAll('fill="{c}"', 'fill="{r}"'),
   "voice-profile": (svg) =>
     svg
       .replace('<path d="M12.2 15.8', '<circle cx="17.2" cy="15.8" r="5.9" fill="{r}"/><path d="M12.2 15.8')
       .replaceAll('stroke="{c}"', 'stroke="{r}"'),
-  video: (svg) => svg.replace('<circle cx="13.8" cy="8.2" r="1.25" fill="{c}"/>', '<circle cx="13.8" cy="8.2" r="1.25" fill="{r}"/>'),
+  video: (svg) =>
+    svg.replace('<circle cx="13.8" cy="8.2" r="1.25" fill="{c}"/>', '<circle cx="13.8" cy="8.2" r="1.25" fill="{r}"/>'),
   // 011 network icons: cream emblem + LEDs drawn straight on the red modem body
   modem: (svg) => svg.replaceAll('fill="{c}"', 'fill="{r}"').replaceAll('stroke="{c}"', 'stroke="{r}"'),
   // 012 caddy, certstore, dns: status dots, handles and seal drawn on same-ink surfaces
@@ -1380,7 +1393,10 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
   certstore: (svg) =>
     svg
       .replace('<circle cx="12" cy="2.65" r=".66" fill="{c}"/>', '<circle cx="12" cy="2.65" r=".66" fill="{r}"/>')
-      .replace(rect(5.8, 4.05, 12.4, 7.35, 1.05, "c"), rect(5.2, 3.55, 13.6, 4.2, 1.35, "r") + rect(5.8, 4.05, 12.4, 7.35, 1.05, "c"))
+      .replace(
+        rect(5.8, 4.05, 12.4, 7.35, 1.05, "c"),
+        rect(5.2, 3.55, 13.6, 4.2, 1.35, "r") + rect(5.8, 4.05, 12.4, 7.35, 1.05, "c"),
+      )
       .replace('<circle cx="9.2" cy="6.65" r="1.75" fill="{p}"/>', '<circle cx="9.2" cy="6.65" r="1.75" fill="{r}"/>')
       .replace('2.4z" fill="{p}"', '2.4z" fill="{r}"')
       .replace(rect(4.0, 10.55, 16.0, 4.15, 1.35, "s"), rect(3.85, 10.4, 16.3, 4.55, 1.5, "r"))
@@ -1397,7 +1413,8 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
       ),
   shield: (svg) => svg.replaceAll('stroke="{c}"', 'stroke="{r}"'),
   firewall: (svg) => svg.replace(rect(5.4, 4.8, 13.2, 13.4, 1.4, "c"), rect(5.4, 4.8, 13.2, 13.4, 1.4, "r")),
-  cloud: (svg) => svg.replace('transform="translate(0 .75)"', 'transform="translate(0 .75)" stroke="{r}" stroke-width="1.1"'),
+  cloud: (svg) =>
+    svg.replace('transform="translate(0 .75)"', 'transform="translate(0 .75)" stroke="{r}" stroke-width="1.1"'),
   container: (svg) =>
     svg
       .replaceAll('stroke="{m}"', 'stroke="{r}"')
@@ -1405,7 +1422,10 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
   cluster: (svg) =>
     svg
       .replaceAll('r=".65" fill="{c}"', 'r=".65" fill="{r}"')
-      .replace(part(rrect(1.6, 17.6, 20.8, 3.6, 1.8), "n", "m"), rect(1.6, 17.1, 20.8, 1.0, 0.5, "r") + part(rrect(1.6, 17.9, 20.8, 3.4, 1.7), "n", "m")),
+      .replace(
+        part(rrect(1.6, 17.6, 20.8, 3.6, 1.8), "n", "m"),
+        rect(1.6, 17.1, 20.8, 1.0, 0.5, "r") + part(rrect(1.6, 17.9, 20.8, 3.4, 1.7), "n", "m"),
+      ),
   vm: (svg) => svg.replace(rect(8.9, 8.4, 6.2, 2.3, 0.8, "p"), rect(8.9, 8.4, 6.2, 2.3, 0.8, "r")),
   cache: (svg) =>
     svg
@@ -1445,12 +1465,19 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
       .replace(rect(4.2, 5.75, 15.6, 0.85, 0.42, "m"), rect(4.2, 5.75, 15.6, 0.85, 0.42, "r"))
       .replace(
         part(rrect(3.5, 18.0, 17.0, 2.9, 1.45), "n", "m").replace(`translate(0 ${LIP})`, "translate(0 .75)"),
-        rect(3.5, 17.25, 17.0, 0.85, 0.42, "r") + part(rrect(3.5, 18.0, 17.0, 2.9, 1.45), "n", "m").replace(`translate(0 ${LIP})`, "translate(0 .75)"),
+        rect(3.5, 17.25, 17.0, 0.85, 0.42, "r") +
+          part(rrect(3.5, 18.0, 17.0, 2.9, 1.45), "n", "m").replace(`translate(0 ${LIP})`, "translate(0 .75)"),
       ),
   bell: (svg) =>
     svg
-      .replace('<circle cx="17.3" cy="6.2" r="2.2" fill="{s}" transform="translate(0 .5)"/>', '<circle cx="17.3" cy="6.2" r="3.0" fill="{r}"/>')
-      .replace('<path d="M12 3.8', '<rect x="8.6" y="18.6" width="6.8" height="1.2" rx=".6" fill="{r}"/><path d="M12 3.8'),
+      .replace(
+        '<circle cx="17.3" cy="6.2" r="2.2" fill="{s}" transform="translate(0 .5)"/>',
+        '<circle cx="17.3" cy="6.2" r="3.0" fill="{r}"/>',
+      )
+      .replace(
+        '<path d="M12 3.8',
+        '<rect x="8.6" y="18.6" width="6.8" height="1.2" rx=".6" fill="{r}"/><path d="M12 3.8',
+      ),
   search: (svg) =>
     svg
       .replace('<circle cx="10.2" cy="9.8" r="4.6" fill="{s}"/>', "")
@@ -1477,26 +1504,28 @@ if (import.meta.main) {
     allowPositionals: true,
   })
   const out = values.out ?? "local/icons/rounds/flat-r1"
+  const SIZE = THEME.canvas.size
+  const ART = THEME.flat.art
   const names = positionals.length ? positionals : Object.keys(FLAT)
   for (const mode of ["light", "dark"] as const) {
     await mkdir(`${out}/${mode}`, { recursive: true })
     for (const name of names) {
       const svg = svgFor(name, mode)
       await Bun.write(`${out}/${mode}/${name}.svg`, svg)
-      // 24-unit art on a 1024 canvas with the same 8% margin as the 2.5D set
-      const art = await sharp(Buffer.from(svg), { density: (860 / 24) * 72 })
-        .resize(860, 860)
+      // 24-unit art on the icon canvas with the same margin as the 2.5D set
+      const art = await sharp(Buffer.from(svg), { density: (ART / 24) * 72 })
+        .resize(ART, ART)
         .png()
         .toBuffer()
       await sharp({
         create: {
-          width: 1024,
-          height: 1024,
+          width: SIZE,
+          height: SIZE,
           channels: 4,
           background: { r: 0, g: 0, b: 0, alpha: 0 },
         },
       })
-        .composite([{ input: art, left: 82, top: 82 }])
+        .composite([{ input: art, left: (SIZE - ART) / 2, top: (SIZE - ART) / 2 }])
         .png()
         .toFile(`${out}/${mode}/${name}.png`)
     }
@@ -1546,7 +1575,7 @@ if (import.meta.main) {
       }
       row++
     }
-    const bg = (m: "light" | "dark") => (m === "light" ? "#F6F3EE" : "#0E1626")
+    const bg = (m: "light" | "dark") => THEME.pages[m]
     const W = names.length * cell
     const H = 2 * (cell * 2 + 20)
     const bands = [

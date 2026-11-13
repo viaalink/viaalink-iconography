@@ -119,6 +119,14 @@
       "topRole": "c",
       "underRole": "p",
       "groupRole": "r"
+    },
+    "labels": {
+      "font": "DejaVu Sans",
+      "ink": "#13223a",
+      "inkDark": "#f6f0e6",
+      "edgeInk": "#c0392b",
+      "pill": "#ffffff",
+      "pillStroke": "#e6e0d6"
     }
   },
   "animation": {

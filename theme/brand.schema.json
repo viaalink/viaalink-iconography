@@ -28,13 +28,7 @@
     },
     "brand": {
       "type": "object",
-      "required": [
-        "name",
-        "slug",
-        "cssPrefix",
-        "cliWord",
-        "url"
-      ],
+      "required": ["name", "slug", "cssPrefix", "cliWord", "url"],
       "properties": {
         "name": {
           "type": "string"
@@ -61,11 +55,7 @@
     "fonts": {
       "description": "font files (mono for prompts, sans for letters, sansCaps = sans capitals as SVG paths made by fonts/glyphs.py)",
       "type": "object",
-      "required": [
-        "mono",
-        "sans",
-        "sansCaps"
-      ],
+      "required": ["mono", "sans", "sansCaps"],
       "properties": {
         "mono": {
           "type": "string"
@@ -81,10 +71,7 @@
     "logo": {
       "description": "logo SVGs: mark3d is extruded in Blender, markFlat is inlined in flat SVGs",
       "type": "object",
-      "required": [
-        "mark3d",
-        "markFlat"
-      ],
+      "required": ["mark3d", "markFlat"],
       "properties": {
         "mark3d": {
           "type": "string"
@@ -97,11 +84,7 @@
     "pages": {
       "description": "page colours behind the icons (sheets, films)",
       "type": "object",
-      "required": [
-        "light",
-        "dark",
-        "video"
-      ],
+      "required": ["light", "dark", "video"],
       "properties": {
         "light": {
           "type": "string",
@@ -119,12 +102,7 @@
     },
     "colors25d": {
       "type": "object",
-      "required": [
-        "hex",
-        "roles",
-        "calibrated",
-        "lifted"
-      ],
+      "required": ["hex", "roles", "calibrated", "lifted"],
       "properties": {
         "hex": {
           "type": "object",
@@ -136,22 +114,12 @@
         },
         "roles": {
           "type": "object",
-          "required": [
-            "dark",
-            "light"
-          ],
+          "required": ["dark", "light"],
           "properties": {
             "dark": {
               "description": "2.5D roles: p primary body, s secondary parts, r recess, c cream detail, g glowing glyph, k accent rim",
               "type": "object",
-              "required": [
-                "p",
-                "s",
-                "r",
-                "c",
-                "g",
-                "k"
-              ],
+              "required": ["p", "s", "r", "c", "g", "k"],
               "properties": {
                 "p": {
                   "type": "string",
@@ -182,14 +150,7 @@
             "light": {
               "description": "2.5D roles: p primary body, s secondary parts, r recess, c cream detail, g glowing glyph, k accent rim",
               "type": "object",
-              "required": [
-                "p",
-                "s",
-                "r",
-                "c",
-                "g",
-                "k"
-              ],
+              "required": ["p", "s", "r", "c", "g", "k"],
               "properties": {
                 "p": {
                   "type": "string",
@@ -245,14 +206,7 @@
       "properties": {
         "roughness": {
           "type": "object",
-          "required": [
-            "p",
-            "s",
-            "c",
-            "g",
-            "r",
-            "default"
-          ],
+          "required": ["p", "s", "c", "g", "r", "default"],
           "properties": {
             "p": {
               "type": "number"
@@ -276,14 +230,7 @@
         },
         "specular": {
           "type": "object",
-          "required": [
-            "p",
-            "s",
-            "c",
-            "g",
-            "r",
-            "default"
-          ],
+          "required": ["p", "s", "c", "g", "r", "default"],
           "properties": {
             "p": {
               "type": "number"
@@ -330,16 +277,7 @@
     },
     "render": {
       "type": "object",
-      "required": [
-        "samples",
-        "seed",
-        "resolution",
-        "denoise",
-        "viewTransform",
-        "look",
-        "exposure",
-        "world"
-      ],
+      "required": ["samples", "seed", "resolution", "denoise", "viewTransform", "look", "exposure", "world"],
       "properties": {
         "samples": {
           "type": "integer"
@@ -364,10 +302,7 @@
         },
         "world": {
           "type": "object",
-          "required": [
-            "color",
-            "strength"
-          ],
+          "required": ["color", "strength"],
           "properties": {
             "color": {
               "type": "array",
@@ -387,12 +322,7 @@
     "camera": {
       "description": "orthographic camera: azimuth about Z, pitch about X (60 = 30 degrees above horizontal)",
       "type": "object",
-      "required": [
-        "azimuth",
-        "pitch",
-        "orthoMargin",
-        "distance"
-      ],
+      "required": ["azimuth", "pitch", "orthoMargin", "distance"],
       "properties": {
         "azimuth": {
           "type": "number"
@@ -410,11 +340,7 @@
     },
     "lights": {
       "type": "object",
-      "required": [
-        "target",
-        "key",
-        "rim"
-      ],
+      "required": ["target", "key", "rim"],
       "properties": {
         "target": {
           "type": "array",
@@ -426,12 +352,7 @@
         },
         "key": {
           "type": "object",
-          "required": [
-            "energy",
-            "color",
-            "size",
-            "location"
-          ],
+          "required": ["energy", "color", "size", "location"],
           "properties": {
             "energy": {
               "type": "number"
@@ -459,12 +380,7 @@
         },
         "rim": {
           "type": "object",
-          "required": [
-            "energy",
-            "color",
-            "size",
-            "location"
-          ],
+          "required": ["energy", "color", "size", "location"],
           "properties": {
             "energy": {
               "type": "number"
@@ -494,21 +410,11 @@
     },
     "shape": {
       "type": "object",
-      "required": [
-        "bevel",
-        "smoothAngle",
-        "tubeResolution",
-        "port"
-      ],
+      "required": ["bevel", "smoothAngle", "tubeResolution", "port"],
       "properties": {
         "bevel": {
           "type": "object",
-          "required": [
-            "box",
-            "cyl",
-            "minSegments",
-            "text"
-          ],
+          "required": ["box", "cyl", "minSegments", "text"],
           "properties": {
             "box": {
               "type": "number"
@@ -533,15 +439,7 @@
         "port": {
           "description": "the cream pipe port of the device family",
           "type": "object",
-          "required": [
-            "radius",
-            "length",
-            "offset",
-            "bevel",
-            "bore",
-            "boreLength",
-            "boreOffset"
-          ],
+          "required": ["radius", "length", "offset", "bevel", "bore", "boreLength", "boreOffset"],
           "properties": {
             "radius": {
               "type": "number"
@@ -570,30 +468,16 @@
     },
     "flat": {
       "type": "object",
-      "required": [
-        "roles",
-        "lip",
-        "art"
-      ],
+      "required": ["roles", "lip", "art"],
       "properties": {
         "roles": {
           "type": "object",
-          "required": [
-            "light",
-            "dark"
-          ],
+          "required": ["light", "dark"],
           "properties": {
             "light": {
               "description": "flat roles: p body, s body lip, n secondary, m secondary lip, r recess, c detail",
               "type": "object",
-              "required": [
-                "p",
-                "s",
-                "n",
-                "m",
-                "r",
-                "c"
-              ],
+              "required": ["p", "s", "n", "m", "r", "c"],
               "properties": {
                 "p": {
                   "type": "string",
@@ -624,14 +508,7 @@
             "dark": {
               "description": "flat roles: p body, s body lip, n secondary, m secondary lip, r recess, c detail",
               "type": "object",
-              "required": [
-                "p",
-                "s",
-                "n",
-                "m",
-                "r",
-                "c"
-              ],
+              "required": ["p", "s", "n", "m", "r", "c"],
               "properties": {
                 "p": {
                   "type": "string",
@@ -671,12 +548,7 @@
     },
     "canvas": {
       "type": "object",
-      "required": [
-        "size",
-        "margin",
-        "optical",
-        "trimThreshold"
-      ],
+      "required": ["size", "margin", "optical", "trimThreshold"],
       "properties": {
         "size": {
           "type": "integer"
@@ -694,13 +566,7 @@
     },
     "gate": {
       "type": "object",
-      "required": [
-        "whiteLevel",
-        "whiteMaxPct",
-        "opaqueAlpha",
-        "edgePx",
-        "minAspect"
-      ],
+      "required": ["whiteLevel", "whiteMaxPct", "opaqueAlpha", "edgePx", "minAspect"],
       "properties": {
         "whiteLevel": {
           "type": "number"
@@ -721,16 +587,7 @@
     },
     "diagram": {
       "type": "object",
-      "required": [
-        "samples",
-        "grid",
-        "foot",
-        "pipeZ",
-        "pipeR",
-        "tileFont",
-        "fullFont",
-        "board"
-      ],
+      "required": ["samples", "grid", "foot", "pipeZ", "pipeR", "tileFont", "fullFont", "board", "labels"],
       "properties": {
         "samples": {
           "type": "integer"
@@ -755,13 +612,7 @@
         },
         "board": {
           "type": "object",
-          "required": [
-            "thickness",
-            "thicknessScene",
-            "topRole",
-            "underRole",
-            "groupRole"
-          ],
+          "required": ["thickness", "thicknessScene", "topRole", "underRole", "groupRole"],
           "properties": {
             "thickness": {
               "type": "number"
@@ -779,16 +630,42 @@
               "type": "string"
             }
           }
+        },
+        "labels": {
+          "description": "burnt-in diagram labels (overlay.ts): pills with ink text, leader lines",
+          "type": "object",
+          "required": ["font", "ink", "inkDark", "edgeInk", "pill", "pillStroke"],
+          "properties": {
+            "font": {
+              "type": "string"
+            },
+            "ink": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "inkDark": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "edgeInk": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "pill": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "pillStroke": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            }
+          }
         }
       }
     },
     "animation": {
       "type": "object",
-      "required": [
-        "samples",
-        "storySamples",
-        "fps"
-      ],
+      "required": ["samples", "storySamples", "fps"],
       "properties": {
         "samples": {
           "type": "integer"
@@ -803,11 +680,7 @@
     },
     "gallery": {
       "type": "object",
-      "required": [
-        "background",
-        "ink",
-        "link"
-      ],
+      "required": ["background", "ink", "link"],
       "properties": {
         "background": {
           "type": "string",
@@ -825,10 +698,7 @@
     },
     "prompt": {
       "type": "object",
-      "required": [
-        "chroma",
-        "palette"
-      ],
+      "required": ["chroma", "palette"],
       "properties": {
         "chroma": {
           "type": "string",
@@ -836,16 +706,7 @@
         },
         "palette": {
           "type": "object",
-          "required": [
-            "red",
-            "redDeep",
-            "coral",
-            "navy",
-            "navyDeep",
-            "slate",
-            "cream",
-            "white"
-          ],
+          "required": ["red", "redDeep", "coral", "navy", "navyDeep", "slate", "cream", "white"],
           "properties": {
             "red": {
               "type": "string",

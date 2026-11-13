@@ -101,7 +101,9 @@ async function png(before: string, after: string) {
     if (over) bad++
     console.log(`${over ? "FAIL" : "ok  "} ${r.f.padEnd(34)} mean=${r.mean.toFixed(3)} max=${r.max}`)
   }
-  console.log(bad ? `PNG: ${bad} of ${rows.length} beyond noise (mean > ${maxMean})` : `PNG: ${rows.length} within noise`)
+  console.log(
+    bad ? `PNG: ${bad} of ${rows.length} beyond noise (mean > ${maxMean})` : `PNG: ${rows.length} within noise`,
+  )
   return bad
 }
 

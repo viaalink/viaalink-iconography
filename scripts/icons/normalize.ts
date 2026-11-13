@@ -15,7 +15,10 @@ for (const dir of dirs) {
     for (const f of files) {
       if (!f.endsWith(".png") || f.endsWith(".raw.png")) continue
       const p = `${dir}/${mode}/${f}`
-      await Bun.write(p, await squareIcon(Buffer.from(await Bun.file(p).arrayBuffer()), undefined, !f.startsWith("scene-")))
+      await Bun.write(
+        p,
+        await squareIcon(Buffer.from(await Bun.file(p).arrayBuffer()), undefined, !f.startsWith("scene-")),
+      )
       console.log(`square ${p}`)
     }
   }
