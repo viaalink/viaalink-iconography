@@ -36,12 +36,17 @@ way.
 Every round of images goes through the same loop, which Kelvin designed:
 
 1. **Generate** a round of candidates (`just icons-render`).
-2. **Share** it: the gallery (`tools/icon-gallery`) runs on Viaalink's own machine and is published through
-   Viaalink's own Relay at a shared URL, so colleagues, testers and outside reviewers can look.
-3. **Judge**: on `/approve` every image gets approved, needs work, rejected or regenerate, with a note
-   (`local/icons/reviews.json`). A human approves.
-4. **Feed back**: `just icons-regen` renders the queue again with the notes as feedback, so a rejection
-   becomes the brief for the next attempt.
+2. **Share** it: `just review-round open <name>` snapshots the renders into a feedback round and starts the
+   gallery (`tools/icon-gallery`) on Viaalink's own machine, published through Viaalink's own Relay.
+   `just review-share` prints a random link with basic auth in it, so colleagues, testers and outside
+   reviewers can look. Each new round gets a new link and password.
+3. **Judge**: on `/approve` reviewers give each image a thumbs up, or a thumbs down with a comment, discuss in a
+   thread and request missing icons. A human approves: only the owner sets a verdict (approved, needs work,
+   rejected or regenerate, with a note), and the server checks that.
+4. **Feed back**: `just review-round close <name> --feed` writes `local/icons/feedback/<name>.json` and `.md`,
+   and `just icons-regen <out> local/icons/feedback/<name>.json` renders the regenerate and needs-work images
+   again with the notes and comments in the prompt, so a rejection becomes the brief for the next attempt.
+   A round closed with `--no-feed` stays a closed circle: its feedback is kept, but never fed.
 5. **Build in 3D**: an approved image is the target for a Blender model (`build.py`).
 6. **Back to 2D**: from that 3D object the flat twin is drawn as code (`flat.ts`): the same parts, the same
    colour roles (cream becomes sand, navy and red stay accents), checked side by side on one contact sheet.

@@ -113,6 +113,75 @@ How the set was made, with AI agents as executor and art director: [docs/HOW-WE-
 Which ideas, choices and rejections came from the human: [docs/HUMAN-DIRECTION.md](docs/HUMAN-DIRECTION.md).
 The working rules the agents follow: [docs/skill/SKILL.md](docs/skill/SKILL.md); real task files: [docs/tasks](docs/tasks).
 
+## Feedback rounds
+
+A feedback round is a small internal review: you snapshot the current renders, share one link, people vote and
+comment, you decide, and the result can brief the next AI round. It is a test setup, not a website feature: the
+gallery runs on your own machine and is shared through your own Viaalink Relay.
+
+**Open a round.** This snapshots every icon (2.5D and flat, dark and light), draws a new random link and password,
+and starts the gallery:
+
+```sh
+just review-round open 2026-11-a            # a closed circle: feedback stays in the round
+just review-round open 2026-11-a --feed     # feed it into the next AI round when it closes
+just review-round open 2026-11-a relay lock # only these icons
+```
+
+**Share the link.** `just review-share` prints the link with the login in it, plus the plain address, user and
+password for browsers that drop a login from a link. It is the only command that shows the password.
+
+```
+https://reviewer:<password>@icons-<slug>.<your relay domain>/r/<slug>/approve?round=2026-11-a
+```
+
+The link is random on purpose. `tools/icon-gallery/tpl.env` asks via for `REVIEW_PASSWORD` and `REVIEW_SLUG` with
+the `getRandomString` macro; `via env init` writes them into the gitignored `.env`. The slug is part of the host
+(`project.tunnel.prefix` in `via.yaml`) and of the path: through the Relay the gallery answers 404 until a request
+has come in once through `/r/<slug>/`. Basic auth (`network.caddy.basic_auth` in `via.yaml`) sits in front of all of
+it. Opening a new round rotates the slug and password, so old links stop working (`--no-rotate` keeps them;
+`just review-rotate` rotates by hand). Without a Relay everything still works on http://127.0.0.1:5330.
+
+**What reviewers can do.** Anyone with the link enters a display name once (kept in a cookie with a random
+reviewer id) and can then:
+
+- give each image a 👍, or a 👎 with a required comment saying what should change;
+- comment on an icon and reply to comments, and delete their own comments;
+- request an icon that does not exist yet (a name and what it should show);
+- see the top images by score.
+
+**What only the owner can do.** The owner is this machine (a direct request to 127.0.0.1 that did not come through
+a proxy) or a browser that opened `/owner?key=<local/icons/owner.key>` once. The server checks this on every write;
+a request that came through Caddy or the Relay is never treated as local, whatever its headers claim. The owner
+sets a verdict per image (approved, needs work, rejected, queue for regeneration) with a note, deletes any
+comment, and opens or closes rounds. Verdicts are also written to `local/icons/reviews.json`, so the gallery's
+choice of main version follows them. The old version picker is still at `/versions`.
+
+**Close the round and feed the next one.**
+
+```sh
+just review-round close 2026-11-a --feed     # freeze it and write the feedback for the next AI round
+just review-round close 2026-11-a --no-feed  # closed circle: freeze and archive, nothing is fed
+just review-feedback 2026-11-a               # rewrite the feedback files at any time
+just icons-regen local/icons/rounds/25d-r12 local/icons/feedback/2026-11-a.json --dry-run   # see the prompts
+just icons-regen local/icons/rounds/25d-r12 local/icons/feedback/2026-11-a.json             # render them
+```
+
+Without a flag, `close` asks, with the round's own setting as the default. Closing writes
+`local/icons/feedback/<round>.json` and a readable `<round>.md`: images to regenerate or that need work, with their
+notes and comments as the feedback text; approved images as the "build in Blender" list; rejected images; and the
+requested new icons. `icons-regen` (render.ts `--feedback-file`) renders the icons to regenerate again with that
+text added to the prompt as "IMPORTANT FEEDBACK TO ADDRESS". A round closed with `--no-feed` stays readable in the
+gallery and in the `.md`, and `icons-regen` refuses its file.
+
+All round data lives in `local/icons/review/` (one JSON file per round), which git ignores.
+
+**Reuse it for your brand.** The data model and store are brand-free: `scripts/review/types.ts`,
+`scripts/review/store.ts` and `scripts/review/feedback.ts`. What a round contains is decided in one place,
+`scripts/review/snapshot.ts` (which render rounds count as current). The page takes its colours from your theme.
+Copy `tools/icon-gallery/tpl.env` and the `basic_auth` and `tunnel.prefix` lines of its `via.yaml`, and run
+`via config validate` after every change.
+
 ## Make it your brand
 
 Everything that is brand or look lives in **one file**: [`theme/brand.json`](theme/brand.json) (checked against
