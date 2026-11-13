@@ -37,6 +37,19 @@ const c = await b.newContext({
   viewport: { width: 1280, height: 900 },
 })
 const p = await c.newPage()
+await step(
+  "the share link WITH the login in the URL loads the round (Chrome blocks relative fetch from such pages)",
+  async () => {
+    const c0 = await b.newContext()
+    const p0 = await c0.newPage()
+    const u = new URL(`${HOST}/r/${env.REVIEW_SLUG}/approve?round=${ROUND}`)
+    u.username = env.REVIEW_USER
+    u.password = env.REVIEW_PASSWORD
+    await p0.goto(u.href, { waitUntil: "networkidle" })
+    await expect(p0.locator(".card").first()).toBeVisible()
+    await c0.close()
+  },
+)
 await step("open the shared link (real HTTPS, basic auth, random slug)", async () => {
   await p.goto(`${HOST}/r/${env.REVIEW_SLUG}/approve?round=${ROUND}`, { waitUntil: "networkidle" })
   await expect(p.locator("#nameform")).toBeVisible()

@@ -241,10 +241,18 @@ async function bestIcon(
  *  page's own :root block, so a theme change recolours the gallery without editing the HTML. */
 const P = THEME.prompt.palette
 const THEME_CSS = `<style id="theme">:root{--red:${P.red};--red-deep:${P.redDeep};--coral:${P.coral};--navy:${P.navy};--deep:${P.navyDeep};--slate:${P.slate};--cream:${P.cream}}</style>`
+/** A shared link carries the login (https://user:pass@host/...). Chrome then refuses every relative fetch() from
+ *  that page ("Request cannot be constructed from a URL that includes credentials") and hides the login from
+ *  scripts, so relative fetch URLs are made absolute against location.origin (which never holds the login);
+ *  the browser keeps sending the login it just used for this site. */
+const STRIP_LOGIN = `<script>(()=>{const f=window.fetch.bind(window);window.fetch=(u,o)=>f(typeof u==="string"&&!/^[a-z]+:/i.test(u)?location.origin+(u.startsWith("/")?u:"/"+u):u,o)})()</script>`
 const page = async (f: string) =>
-  new Response((await Bun.file(join(import.meta.dir, f)).text()).replace("</head>", `${THEME_CSS}</head>`), {
-    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" },
-  })
+  new Response(
+    (await Bun.file(join(import.meta.dir, f)).text()).replace("</head>", `${STRIP_LOGIN}${THEME_CSS}</head>`),
+    {
+      headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" },
+    },
+  )
 
 /**
  * One row per icon/scene/doll, no duplicates: is the 2.5D done in Blender (canonical round
