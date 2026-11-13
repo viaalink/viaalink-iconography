@@ -55,30 +55,43 @@ library must cover real IT architecture (users, networks, firewalls, load balanc
 clusters, databases, caches, queues, APIs, monitoring) and work where people actually draw: Mermaid,
 draw.io and Visio, and Blender itself.
 
-### 4. Human judgement decides; machines do the work
+### 4. The loop: human judgement decides, machines do the work
 
-The method is part of the vision. Kelvin designed the generator behind this set at ASD Engineering in 2025.
-It first ran on OpenAI and was moved to OpenRouter when access was blocked, so it no longer depends on one
-provider. For Viaalink the roles are clear:
+The heart of the vision is not one icon but **the loop that makes them**, and that loop is designed to be
+honest: every image is judged by people, in the open, until it earns its place. Kelvin designed it.
 
-- **AI explores.** For every new icon, ideas are first written out and sketched in the house style. They are
-  options to choose from, never final art.
-- **The human chooses.** Every icon in this set was approved, and many were rejected first: a realistic
-  apple, a flat GitHub mark that read as a monster, a Caddy sculpture that did not fit the family. Each
-  rejection sharpened the rules above.
-- **The machine builds and checks.** The chosen idea is modelled in Blender, rendered, measured by a colour
-  gate and reviewed by eye before it is kept.
+1. **Generate.** The generator Kelvin built in 2025 at ASD Engineering, first on OpenAI and moved to
+   OpenRouter when access was blocked, produces a round of candidates in the house style.
+2. **Share.** Every round is published as a gallery, served by Viaalink from its own machine through its own
+   Relay, at a shared URL. Anyone with the link can look: colleagues, testers, outside eyes. It is the same
+   way Viaalink asks its users to share their own apps.
+3. **Judge.** On the approval page each image gets a verdict (approved, needs work, rejected, regenerate)
+   with a note. Kelvin's verdict is the one that counts; outside reactions and independent reviewers feed
+   into it.
+4. **Feed back.** The notes go back into the generator as feedback for the next round, so a rejection is
+   never lost: it becomes the brief for the next attempt.
+5. **Build in depth.** An approved image becomes the target for a real 3D design. It is modelled in Blender,
+   so from then on it can be rebuilt exactly, in light and dark, flat and in depth.
+6. **Judge again.** The 3D result goes through the same loop: rendered, measured by a colour gate, reviewed
+   by eye, scored by an independent reviewer, shared, approved or sent back.
 
-Taste is not delegated. Even colour is looked at, not trusted: when the brand red looked orange, the cause
-was found, once on a screen and once in how films were encoded.
+The numbers show it is a loop and not a single pass. Between 9 and 13 November 2026 the set went through
+twelve AI rounds, eight Blender rounds, nine rounds of flat twins and three concept rounds, in 144 commits.
+Many icons were rejected before they were kept: a realistic apple, a flat GitHub mark that read as a monster,
+a Caddy sculpture that did not fit the family. Each rejection sharpened the rules above. Taste is never
+delegated. Even colour is looked at, not trusted: when the brand red looked orange, the cause was found,
+once on a screen and once in how films were encoded.
+
+The same loop is what comes next for everyone. On viaalink.com, signed-in users will be able to vote on
+icons, comment and request new ones. Their votes and requests become the input for the next round, which
+becomes the next 3D design.
 
 ### 5. Open, with care
 
 What can help others is shared: the icons, the pipeline, the rules and the way of working, all here in the
 open. Viaalink's own mark and other companies' marks are protected, and the internal film and voice tools
 stay private. Viaalink hosts its own tools on its own infrastructure, and the repository shows how without
-giving away where. Everyone can use the set; signed-in users will be able to vote on icons, comment and ask
-for new ones on viaalink.com. Nothing was published before Kelvin had read it.
+giving away where. Everyone can use the set. Nothing was published before Kelvin had read it.
 
 ## Who did what
 
@@ -86,6 +99,7 @@ for new ones on viaalink.com. Nothing was published before Kelvin had read it.
 |---|---|
 | The vision: one owned, consistent world of objects that explains Viaalink | Turning each part of it into code and models |
 | The original generator, and its move to OpenRouter | The Blender pipeline, flat twins, gate, pack, diagrams, animations |
+| The loop: generate, share, judge, feed back, build in 3D, judge again | Running each step of the loop, round after round |
 | The house rules, and every approval and rejection | Concept sketches, renders, contact sheets, review by eye |
 | What the set must cover, and for whom | Gap lists and expert reviews, as input for his decisions |
 | Openness, licensing and community | Packaging, documentation, the repository and the release |
