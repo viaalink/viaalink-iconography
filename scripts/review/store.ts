@@ -102,7 +102,7 @@ export class ReviewStore {
   async list(): Promise<Round[]> {
     if (!(await exists(this.roundsDir))) return []
     const out: Round[] = []
-    for (const f of (await readdir(this.roundsDir)).filter((f) => f.endsWith(".json")))
+    for (const f of (await readdir(this.roundsDir)).filter((f) => f.endsWith(".json") && !f.endsWith(".hashes.json")))
       out.push(JSON.parse(await readFile(join(this.roundsDir, f), "utf8")))
     return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   }

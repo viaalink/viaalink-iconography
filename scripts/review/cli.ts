@@ -1,7 +1,8 @@
 /**
  * Feedback rounds from the command line (the justfile recipes call this; run from the repo root).
  *
- *   bun scripts/review/cli.ts round open <name> [--feed] [--no-rotate] [icon ...]
+ *   bun scripts/review/cli.ts round open <name> [--feed] [--no-rotate] [--changed [--since <round>]] [icon ...]
+ *     --changed: only icons whose renders changed since the last round (or --since <round>), by content hash
  *   bun scripts/review/cli.ts round close <name> [--feed | --no-feed]
  *   bun scripts/review/cli.ts round list
  *   bun scripts/review/cli.ts feedback [round]
@@ -117,8 +118,44 @@ async function share(roundArg?: string) {
     )
 }
 
+/** sha256 of every render a round shows (key → hash), so a later round can show only what changed. */
+async function renderHashes(roundsDir: string, snap: Awaited<ReturnType<typeof snapshot>>) {
+  const out: Record<string, string> = {}
+  for (const icon of snap)
+    for (const [style, modes] of Object.entries(icon.images))
+      for (const key of Object.values(modes ?? {})) {
+        const rel = key.replace(/^round:/, "")
+        const file = join(roundsDir, `${rel}.${style === "flat" ? "svg" : "png"}`)
+        const buf = await Bun.file(file)
+          .arrayBuffer()
+          .catch(() => null)
+        if (buf) out[key] = new Bun.CryptoHasher("sha256").update(buf).digest("hex")
+      }
+  return out
+}
+const hashFile = (dir: string, round: string) => join(dir, `${round}.hashes.json`)
+async function writeHashes(dir: string, round: string, h: Record<string, string>) {
+  await Bun.write(hashFile(dir, round), JSON.stringify(h))
+}
+async function readHashes(dir: string, round: string): Promise<Record<string, string>> {
+  const f = Bun.file(hashFile(dir, round))
+  if (!(await f.exists())) throw new Error(`round ${round} has no render hashes`)
+  return f.json()
+}
+/** The newest other round that recorded render hashes. */
+async function lastHashedRound(dir: string, except: string) {
+  const { readdir, stat } = await import("node:fs/promises")
+  const files = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".hashes.json"))
+  const rounds = files.map((f) => f.slice(0, -".hashes.json".length)).filter((r) => r !== except)
+  const timed = await Promise.all(rounds.map(async (r) => ({ r, t: (await stat(hashFile(dir, r))).mtimeMs })))
+  return timed.sort((a, b) => b.t - a.t)[0]?.r
+}
+
 async function main() {
   const [cmd, sub, ...rest] = process.argv.slice(2)
+  const si = rest.indexOf("--since")
+  const sinceArg = si >= 0 ? rest[si + 1] : undefined
+  if (si >= 0) rest.splice(si, 2)
   const flags = new Set(rest.filter((a) => a.startsWith("--")))
   const names = rest.filter((a) => !a.startsWith("--"))
   const store = reviewStore()
@@ -133,7 +170,21 @@ async function main() {
     const [name, ...icons] = names
     if (!name || !ROUND_NAME.test(name)) throw new Error("round name: letters, digits, dot, dash, underscore")
     if (sub === "open") {
-      const r = await store.open(name, await snapshot(join(ROOT, "local/icons/rounds"), icons), flags.has("--feed"))
+      const roundsDir = join(ROOT, "local/icons/rounds")
+      let snap = await snapshot(roundsDir, icons)
+      const hashes = await renderHashes(roundsDir, snap)
+      if (flags.has("--changed")) {
+        const since = sinceArg ?? (await lastHashedRound(store.roundsDir, name))
+        if (!since) throw new Error("--changed: no earlier round with render hashes; open a full round first")
+        const before = await readHashes(store.roundsDir, since)
+        snap = snap.filter((icon) =>
+          Object.values(icon.images).some((m) => Object.values(m ?? {}).some((k) => hashes[k] !== before[k])),
+        )
+        console.log(`--changed since ${since}: ${snap.length} icons changed`)
+        if (!snap.length) return console.log("nothing changed: no round opened")
+      }
+      const r = await store.open(name, snap, flags.has("--feed"))
+      await writeHashes(store.roundsDir, name, hashes)
       console.log(
         `round ${r.name} open: ${r.icons.length} icons, ${r.feed ? "feeds the next generation run" : "closed circle (not fed unless closed with --feed)"}`,
       )

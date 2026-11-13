@@ -126,7 +126,12 @@ and starts the gallery:
 just review-round open 2026-11-a            # a closed circle: feedback stays in the round
 just review-round open 2026-11-a --feed     # feed it into the next AI round when it closes
 just review-round open 2026-11-a relay lock # only these icons
+just review-round open 2026-11-b --changed   # only icons whose renders changed since the last round
+just review-round open 2026-11-c --changed --since 2026-11-a
 ```
+
+The usual rhythm: one round with every icon, then rounds with only what changed. Every round records a content
+hash of each render it shows, so `--changed` compares the files themselves, not their names or dates.
 
 **Share the link.** `just review-share` prints the link with the login in it, plus the plain address, user and
 password for browsers that drop a login from a link. It is the only command that shows the password.
