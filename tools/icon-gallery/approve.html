@@ -476,7 +476,7 @@
       }
 
       function tile(icon, img) {
-        const sel = pick[icon.name] === img.key
+        const sel = data.me.owner && data.round.status === "open" && pick[icon.name] === img.key
         const can = writable()
         return `<div class="tile ${sel ? "sel" : ""}" data-pick="${esc(icon.name)}" data-key="${esc(img.key)}">
           <img class="on-${img.mode}" src="${esc(img.url)}" alt="${esc(icon.name)} ${STYLE[img.style]} ${img.mode}" loading="lazy" />
