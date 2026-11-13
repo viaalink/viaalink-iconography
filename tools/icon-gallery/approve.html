@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Icon Feedback</title>
+    <meta name="description" content="Vote, comment and request icons in a feedback round." />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      /* Brand colours (--red, --coral, --navy, --deep, --slate, --cream) come from the theme:
+         the server injects them after this block. Only UI state colours are local. */
+      :root {
+        --ok: #1f8a5b;
+        --wait: #b7791f;
+        --bg: var(--cream);
+        --bg-2: color-mix(in srgb, var(--cream) 40%, white);
+        --ink: var(--navy);
+        --muted: color-mix(in srgb, var(--navy) 62%, var(--cream));
+        --line: color-mix(in srgb, var(--navy) 14%, var(--cream));
+        --accent: var(--red);
+        --sans: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: var(--deep);
+          --bg-2: var(--slate);
+          --ink: var(--cream);
+          --muted: color-mix(in srgb, var(--cream) 62%, var(--deep));
+          --line: color-mix(in srgb, var(--cream) 16%, var(--deep));
+          --accent: var(--coral);
+          --ok: #4cc38a;
+          --wait: #e3a948;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: var(--deep);
+        --bg-2: var(--slate);
+        --ink: var(--cream);
+        --muted: color-mix(in srgb, var(--cream) 62%, var(--deep));
+        --line: color-mix(in srgb, var(--cream) 16%, var(--deep));
+        --accent: var(--coral);
+        --ok: #4cc38a;
+        --wait: #e3a948;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.5 var(--sans);
+      }
+      .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 16px 16px 64px;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        align-items: center;
+        font-size: 14px;
+      }
+      nav a {
+        color: inherit;
+      }
+      a {
+        color: var(--accent);
+      }
+      .theme {
+        margin-left: auto;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        border-radius: 999px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
+      }
+      h1 {
+        margin: 16px 0 4px;
+        font-size: clamp(26px, 4vw, 38px);
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 12px;
+        align-items: center;
+      }
+      .pill {
+        display: inline-block;
+        font: 600 12px var(--sans);
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--muted) 16%, transparent);
+        color: var(--ink);
+      }
+      .pill.open,
+      .pill.approved {
+        color: var(--ok);
+        background: color-mix(in srgb, var(--ok) 14%, transparent);
+      }
+      .pill.closed,
+      .pill.rejected {
+        color: var(--muted);
+      }
+      .pill.needs-work {
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+      }
+      .pill.regenerate {
+        color: var(--wait);
+        background: color-mix(in srgb, var(--wait) 16%, transparent);
+      }
+      details.how {
+        margin: 12px 0;
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 14px;
+      }
+      details.how summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      details.how ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+      }
+      .panel {
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin: 12px 0;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      input,
+      textarea,
+      select {
+        font: 14px var(--sans);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: var(--bg);
+        color: var(--ink);
+        min-width: 0;
+      }
+      textarea {
+        width: 100%;
+        min-height: 64px;
+        resize: vertical;
+      }
+      button {
+        font: 14px var(--sans);
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--ink);
+        border-radius: 8px;
+        padding: 6px 12px;
+        cursor: pointer;
+        min-height: 36px;
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--cream);
+        font-weight: 600;
+      }
+      button[aria-pressed="true"] {
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+        font-weight: 600;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .top {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 4px 0 8px;
+      }
+      .top a {
+        flex: 0 0 auto;
+        width: 84px;
+        text-align: center;
+        font: 11px var(--mono);
+        color: var(--ink);
+        text-decoration: none;
+      }
+      .top img {
+        width: 84px;
+        height: 84px;
+        object-fit: contain;
+        padding: 8px;
+        border-radius: 10px;
+        display: block;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 16px 0;
+        align-items: center;
+      }
+      .controls input {
+        flex: 1 1 200px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--bg-2);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        min-width: 0;
+      }
+      .card h2 {
+        margin: 0 0 10px;
+        font: 600 15px var(--mono);
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .tile {
+        min-width: 0;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 4px;
+      }
+      .tile.sel {
+        border-color: var(--accent);
+      }
+      .tile img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+        padding: 12%;
+        border-radius: 10px;
+        display: block;
+      }
+      .on-dark {
+        background: var(--deep);
+      }
+      .on-light {
+        background: var(--cream);
+        outline: 1px solid var(--line);
+      }
+      .cap {
+        font: 11px var(--mono);
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        gap: 4px;
+        margin: 4px 2px;
+      }
+      .votes {
+        display: flex;
+        gap: 6px;
+      }
+      .votes button {
+        flex: 1;
+        padding: 4px 6px;
+      }
+      .why {
+        margin-top: 8px;
+      }
+      .owner {
+        margin-top: 10px;
+        border-top: 1px dashed var(--line);
+        padding-top: 10px;
+      }
+      .owner .row button {
+        padding: 4px 10px;
+      }
+      .thread {
+        margin-top: 10px;
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+        font-size: 14px;
+      }
+      .c {
+        margin: 6px 0;
+      }
+      .c .reply {
+        margin-left: 18px;
+        border-left: 2px solid var(--line);
+        padding-left: 8px;
+      }
+      .c b {
+        font-weight: 600;
+      }
+      .c small {
+        color: var(--muted);
+        font: 11px var(--mono);
+      }
+      .c .acts button {
+        border: 0;
+        background: none;
+        color: var(--muted);
+        padding: 0 6px 0 0;
+        min-height: 0;
+        font-size: 12px;
+        text-decoration: underline;
+      }
+      .tag {
+        font: 600 10px var(--mono);
+        color: var(--accent);
+        margin-left: 4px;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 4px 0 0;
+      }
+      .msg {
+        position: fixed;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: var(--bg);
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 14px;
+        max-width: calc(100% - 32px);
+        display: none;
+      }
+      .reqs li {
+        margin: 2px 0;
+      }
+      @media (max-width: 420px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .wrap {
+          padding: 12px 12px 64px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav>
+        <a href="/"><b>Showcase</b></a>
+        <a href="/overview">Overview</a>
+        <a href="/versions">Versions</a>
+        <a href="/gallery">All rounds</a>
+        <button class="theme" id="theme" aria-label="Toggle light or dark">◐</button>
+      </nav>
+      <h1 id="title">Feedback round</h1>
+      <div class="sub" id="sub"></div>
+      <details class="how" id="how" open>
+        <summary>How this works</summary>
+        <ul>
+          <li>Every icon comes in two styles (2.5D and flat), each in a dark and a light edition.</li>
+          <li>👍 if it works. 👎 needs a short comment: what should change? Tap again to take a vote back.</li>
+          <li>Use the thread under each icon for remarks and replies, and the form below to ask for an icon we do not have.</li>
+          <li>The owner decides: approved, needs work, rejected or regenerate. Your votes and comments are the input.</li>
+        </ul>
+      </details>
+      <div id="me" class="panel"></div>
+      <div id="topwrap"></div>
+      <div class="controls">
+        <input id="q" type="search" placeholder="Find an icon" aria-label="Find an icon" />
+        <select id="filter" aria-label="Filter">
+          <option value="all">All icons</option>
+          <option value="down">With a thumbs down</option>
+          <option value="talk">With comments</option>
+          <option value="open">No verdict yet</option>
+          <option value="mine">Not voted by me</option>
+        </select>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="panel" id="requests"></div>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+    <script>
+      const VERDICT = { approved: "Approved", "needs-work": "Needs work", rejected: "Rejected", regenerate: "Regenerate" }
+      const STYLE = { "25d": "2.5D", flat: "Flat" }
+      let data = null
+      const draft = {} // text being written, by field id, kept across re-renders
+      const open = {} // "<key>" → thumbs-down box open; "reply:<id>" → reply box open
+      const pick = {} // icon → selected image key (owner controls act on it)
+      const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
+      const roundName = () => new URLSearchParams(location.search).get("round")
+      const writable = () => data?.round?.status === "open" && (data.me.name || data.me.owner)
+      const when = (t) => new Date(t).toLocaleString([], { dateStyle: "short", timeStyle: "short" })
+
+      function toast(t) {
+        const m = document.getElementById("msg")
+        m.textContent = t
+        m.style.display = "block"
+        clearTimeout(toast.t)
+        toast.t = setTimeout(() => (m.style.display = "none"), 3500)
+      }
+
+      async function post(route, body) {
+        const res = await fetch(`/api/review/${route}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ round: data?.round?.name, ...body }),
+        })
+        const out = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast(out.error ?? `error ${res.status}`)
+          return false
+        }
+        return true
+      }
+
+      const field = (id, placeholder, tag = "textarea", attrs = "") =>
+        tag === "textarea"
+          ? `<textarea data-draft="${esc(id)}" placeholder="${esc(placeholder)}" ${attrs}>${esc(draft[id])}</textarea>`
+          : `<input data-draft="${esc(id)}" placeholder="${esc(placeholder)}" value="${esc(draft[id])}" ${attrs} />`
+
+      function header() {
+        const r = data.round
+        document.getElementById("title").textContent = r ? `Feedback round ${r.name}` : "No feedback round yet"
+        const others = data.rounds.length > 1
+          ? `<select id="pickround" aria-label="Round">${data.rounds
+              .map((x) => `<option value="${esc(x.name)}" ${r && x.name === r.name ? "selected" : ""}>${esc(x.name)} (${x.status})</option>`)
+              .join("")}</select>`
+          : ""
+        document.getElementById("sub").innerHTML = r
+          ? `<span class="pill ${r.status}">${r.status === "open" ? "Open" : "Closed, read-only"}</span>
+             <span>${data.icons.length} icons</span>
+             <span>${r.feed ? "Feeds the next generation run" : "Closed circle: not fed into generation"}</span>
+             ${others}`
+          : `<span>The owner opens one with <code>just review-round open &lt;name&gt;</code>.</span>`
+        const me = data.me
+        document.getElementById("me").innerHTML = me.name
+          ? `<div class="row"><span>You are <b>${esc(me.name)}</b>${me.owner ? " (owner)" : ""}.</span>
+               <button data-act="rename">Change name</button></div>`
+          : `<form class="row" id="nameform"><label for="name">${me.owner ? "You are the owner. A name for your comments (optional):" : "Your name, shown with your votes and comments:"}</label>
+               ${field("name", "Your name", "input", 'id="name" maxlength="40" autocomplete="name"')}
+               <button class="primary">Save</button></form>`
+        if (me.owner && r)
+          document.getElementById("me").innerHTML += `<p class="note">Owner: tap an image to select it, then set a verdict below it.
+             ${r.status === "open" ? `<button data-act="close-round">Close round</button>` : `<button data-act="reopen-round">Reopen round</button>`}</p>`
+      }
+
+      function topStrip() {
+        const el = document.getElementById("topwrap")
+        if (!data.top?.length) return (el.innerHTML = "")
+        const url = (t) => data.icons.find((i) => i.name === t.icon)?.images.find((x) => x.key === t.key)?.url
+        el.innerHTML = `<div class="panel"><b>Top by score</b><div class="top">${data.top
+          .map(
+            (t) => `<a href="#icon-${esc(t.icon)}" title="${esc(t.icon)} ${STYLE[t.style]} ${t.mode}">
+              <img class="on-${t.mode}" src="${esc(url(t))}" alt="" loading="lazy" />${esc(t.icon)}<br />${t.votes.score > 0 ? "+" : ""}${t.votes.score} · ${t.votes.voters}</a>`,
+          )
+          .join("")}</div></div>`
+      }
+
+      function tile(icon, img) {
+        const sel = pick[icon.name] === img.key
+        const can = writable()
+        return `<div class="tile ${sel ? "sel" : ""}" data-pick="${esc(icon.name)}" data-key="${esc(img.key)}">
+          <img class="on-${img.mode}" src="${esc(img.url)}" alt="${esc(icon.name)} ${STYLE[img.style]} ${img.mode}" loading="lazy" />
+          <div class="cap"><span>${STYLE[img.style]} · ${img.mode}</span>${img.verdict ? `<span class="pill ${img.verdict.verdict}">${VERDICT[img.verdict.verdict]}</span>` : ""}</div>
+          <div class="votes">
+            <button data-vote="1" data-key="${esc(img.key)}" aria-pressed="${img.mine === 1}" ${can ? "" : "disabled"} aria-label="Thumbs up">👍 ${img.votes.up}</button>
+            <button data-vote="-1" data-key="${esc(img.key)}" aria-pressed="${img.mine === -1}" ${can ? "" : "disabled"} aria-label="Thumbs down">👎 ${img.votes.down}</button>
+          </div>
+          ${img.verdict?.note ? `<p class="note">${esc(img.verdict.note)}</p>` : ""}
+        </div>`
+      }
+
+      function comments(icon) {
+        const all = data.comments.filter((c) => c.icon === icon.name)
+        const label = (key) => {
+          const im = icon.images.find((x) => x.key === key)
+          return im ? `${STYLE[im.style]} ${im.mode}` : ""
+        }
+        const one = (c) => `<div class="c" id="c-${esc(c.id)}">
+            <div><b>${esc(c.name)}</b>${c.owner ? '<span class="tag">OWNER</span>' : ""} <small>${when(c.at)}${c.item ? ` · ${label(c.item)}` : ""}${c.down ? " · 👎" : ""}</small></div>
+            <div>${esc(c.text)}</div>
+            <div class="acts">${writable() ? `<button data-act="reply" data-id="${esc(c.id)}">Reply</button>` : ""}${
+              writable() && (c.mine || data.me.owner) ? `<button data-act="delete" data-id="${esc(c.id)}">Delete</button>` : ""
+            }</div>
+            ${open[`reply:${c.id}`] ? `<div class="why">${field(`reply:${c.id}`, "Your reply")}<div class="row"><button class="primary" data-act="send-reply" data-id="${esc(c.id)}" data-icon="${esc(icon.name)}">Reply</button><button data-act="cancel-reply" data-id="${esc(c.id)}">Cancel</button></div></div>` : ""}
+            <div class="reply">${all.filter((x) => x.parentId === c.id).map(one).join("")}</div>
+          </div>`
+        return `<div class="thread">${all.filter((c) => !c.parentId).map(one).join("") || '<span class="note">No comments yet.</span>'}
+          ${writable() ? `<div class="why">${field(`comment:${icon.name}`, "A remark about this icon")}<div class="row"><button data-act="comment" data-icon="${esc(icon.name)}">Comment</button></div></div>` : ""}</div>`
+      }
+
+      function ownerBar(icon) {
+        if (!data.me.owner || data.round.status !== "open") return ""
+        const img = icon.images.find((x) => x.key === pick[icon.name]) ?? icon.images[0]
+        const cur = img.verdict?.verdict
+        const nid = `note:${img.key}`
+        if (draft[nid] === undefined) draft[nid] = img.verdict?.note ?? ""
+        return `<div class="owner"><div class="note">Verdict for <b>${STYLE[img.style]} ${img.mode}</b>${img.earlier ? ` (earlier: ${VERDICT[img.earlier.verdict]})` : ""}</div>
+          ${field(nid, "Note (what to change, or why)")}
+          <div class="row">${Object.entries(VERDICT)
+            .filter(([k]) => k !== "regenerate")
+            .map(([k, v]) => `<button data-verdict="${k}" data-key="${esc(img.key)}" aria-pressed="${cur === k}">${v}</button>`)
+            .join("")}
+            <button data-verdict="regenerate" data-key="${esc(img.key)}" aria-pressed="${cur === "regenerate"}">Queue for regeneration</button>
+            ${cur ? `<button data-verdict="" data-key="${esc(img.key)}">Clear</button>` : ""}</div></div>`
+      }
+
+      function card(icon) {
+        pick[icon.name] ??= icon.images[0]?.key
+        const downBox = icon.images
+          .filter((im) => open[im.key])
+          .map(
+            (im) => `<div class="why"><label class="note">👎 ${STYLE[im.style]} ${im.mode}: what should change? (required)</label>
+              ${field(`down:${im.key}`, "For example: the arrow reads as a plus at 24 px")}
+              <div class="row"><button class="primary" data-act="send-down" data-key="${esc(im.key)}">Send 👎</button><button data-act="cancel-down" data-key="${esc(im.key)}">Cancel</button></div></div>`,
+          )
+          .join("")
+        return `<article class="card" id="icon-${esc(icon.name)}"><h2>${esc(icon.name)}</h2>
+          <div class="tiles">${icon.images.map((im) => tile(icon, im)).join("")}</div>
+          ${downBox}${ownerBar(icon)}${comments(icon)}</article>`
+      }
+
+      function visible(icon) {
+        const q = document.getElementById("q").value.trim().toLowerCase()
+        if (q && !icon.name.includes(q)) return false
+        const f = document.getElementById("filter").value
+        if (f === "down") return icon.images.some((x) => x.votes.down > 0)
+        if (f === "talk") return data.comments.some((c) => c.icon === icon.name)
+        if (f === "open") return icon.images.some((x) => !x.verdict)
+        if (f === "mine") return icon.images.every((x) => !x.mine)
+        return true
+      }
+
+      function requests() {
+        const el = document.getElementById("requests")
+        if (!data.round) return (el.innerHTML = "")
+        el.innerHTML = `<b>Request an icon</b>
+          <ul class="reqs">${data.requests.map((q) => `<li><b>${esc(q.name)}</b>: ${esc(q.shows)} <small class="note">(${esc(q.by)})</small></li>`).join("") || '<li class="note">No requests yet.</li>'}</ul>
+          ${
+            writable()
+              ? `<div class="row">${field("req:name", "Icon name, e.g. invoice", "input", 'maxlength="60" aria-label="Icon name"')}</div>
+                 <div class="why">${field("req:shows", "What should it show?")}</div>
+                 <button data-act="request">Send request</button>`
+              : ""
+          }`
+      }
+
+      function render() {
+        header()
+        if (!data.round) return (document.getElementById("grid").innerHTML = "")
+        topStrip()
+        document.getElementById("grid").innerHTML = data.icons.filter(visible).map(card).join("")
+        requests()
+      }
+
+      async function load() {
+        const r = roundName()
+        const res = await fetch(`/api/review/round${r ? `?round=${encodeURIComponent(r)}` : ""}`)
+        if (!res.ok) return toast((await res.json().catch(() => ({}))).error ?? "could not load the round")
+        data = await res.json()
+        render()
+      }
+
+      document.addEventListener("input", (e) => {
+        const id = e.target.dataset?.draft
+        if (id !== undefined) draft[id] = e.target.value
+        if (e.target.id === "q") render()
+      })
+      document.addEventListener("change", (e) => {
+        if (e.target.id === "filter") render()
+        if (e.target.id === "pickround") {
+          history.replaceState(null, "", `?round=${encodeURIComponent(e.target.value)}`)
+          load()
+        }
+      })
+      document.addEventListener("submit", async (e) => {
+        if (e.target.id !== "nameform") return
+        e.preventDefault()
+        if (await post("me", { name: draft.name ?? "" })) load()
+      })
+      document.addEventListener("click", async (e) => {
+        const t = e.target.closest("button, .tile")
+        if (!t) return
+        if (t.matches(".tile")) {
+          if (!data.me.owner) return
+          pick[t.dataset.pick] = t.dataset.key
+          return render()
+        }
+        e.stopPropagation()
+        const { act, key, id, icon } = t.dataset
+        if (t.dataset.vote) {
+          const img = data.icons.flatMap((i) => i.images).find((x) => x.key === key)
+          const v = Number(t.dataset.vote)
+          if (img.mine === v) return (await post("vote", { key, value: 0 })) && load()
+          if (v === -1) return (open[key] = true), render()
+          return (await post("vote", { key, value: 1 })) && load()
+        }
+        if (t.dataset.verdict !== undefined) {
+          const v = t.dataset.verdict || null
+          const ok = await post("verdict", { key, verdict: v, note: draft[`note:${key}`] ?? "" })
+          if (ok) toast(v ? `${VERDICT[v]} saved` : "verdict cleared")
+          return ok && load()
+        }
+        if (act === "send-down") {
+          const text = (draft[`down:${key}`] ?? "").trim()
+          if (text.length < 3) return toast("A thumbs down needs a comment: what should change?")
+          if (await post("vote", { key, value: -1, comment: text })) {
+            delete open[key]
+            delete draft[`down:${key}`]
+            load()
+          }
+          return
+        }
+        if (act === "cancel-down") return delete open[key], render()
+        if (act === "comment") {
+          if (await post("comment", { icon, text: draft[`comment:${icon}`] ?? "" })) {
+            delete draft[`comment:${icon}`]
+            load()
+          }
+          return
+        }
+        if (act === "reply") return (open[`reply:${id}`] = true), render()
+        if (act === "cancel-reply") return delete open[`reply:${id}`], render()
+        if (act === "send-reply") {
+          if (await post("comment", { icon, parentId: id, text: draft[`reply:${id}`] ?? "" })) {
+            delete open[`reply:${id}`]
+            delete draft[`reply:${id}`]
+            load()
+          }
+          return
+        }
+        if (act === "delete") return confirm("Delete this comment and its replies?") && (await post("comment-delete", { id })) && load()
+        if (act === "request") {
+          if (await post("request", { name: draft["req:name"] ?? "", shows: draft["req:shows"] ?? "" })) {
+            delete draft["req:name"]
+            delete draft["req:shows"]
+            toast("Request sent, thank you")
+            load()
+          }
+          return
+        }
+        if (act === "rename") return (data.me.name = null), render()
+        if (act === "close-round") {
+          const feed = confirm("Feed this round into the next generation run?\nOK = feed, Cancel = closed circle (archive only)")
+          return (await post("round-state", { action: "close", feed })) && load()
+        }
+        if (act === "reopen-round") return (await post("round-state", { action: "open" })) && load()
+      })
+      try {
+        if (localStorage.getItem("via-icons-howto") === "seen") document.getElementById("how").open = false
+        localStorage.setItem("via-icons-howto", "seen")
+      } catch {}
+      load()
+    </script>
+    <script>
+      // ◐ toggles light/dark (remembered per browser); without it the page follows the system.
+      {
+        const root = document.documentElement
+        try {
+          const t = localStorage.getItem("via-icons-theme")
+          if (t) root.dataset.theme = t
+        } catch {}
+        document.getElementById("theme").addEventListener("click", () => {
+          const dark = root.dataset.theme
+            ? root.dataset.theme === "dark"
+            : matchMedia("(prefers-color-scheme: dark)").matches
+          root.dataset.theme = dark ? "light" : "dark"
+          try {
+            localStorage.setItem("via-icons-theme", root.dataset.theme)
+          } catch {}
+        })
+      }
+    </script>
+  </body>
+</html>
