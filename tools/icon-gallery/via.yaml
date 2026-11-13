@@ -1,29 +1,40 @@
 # via.yaml: the icon gallery, served and shared with Viaalink (https://viaalink.com/cli).
 #
-#   cd tools/icon-gallery && via up      → http://127.0.0.1:5330
-#                                          and, with a Viaalink Relay, a public read-only address:
-#                                          icons.<your relay domain>
+#   cd tools/icon-gallery && via up      → http://127.0.0.1:5330 (this machine: owner, no login)
+#                                          and, with a Viaalink Relay, a shared address:
+#                                          https://icons-<slug>.<your relay domain>/r/<slug>/approve
 #   via config validate                  (after every change)
 #
 # This is how Viaalink hosts its own gallery: the server runs on our own machine and is
 # published through our own Relay, with no cloud in between. Which Relay and which domain
 # is your own setup (via relay add), so nothing about ours is in this file.
 #
-# Shows local/icons/rounds/* (design rounds) and the packs; reviews are written to
-# local/icons/reviews.json and can only be written from 127.0.0.1.
+# Feedback rounds (README "Feedback rounds"): the shared address is random on purpose and behind
+# basic auth. tpl.env holds the macros; `via env init` writes REVIEW_USER, REVIEW_PASSWORD and
+# REVIEW_SLUG into .env (gitignored); `just review-round open <name>` rotates the last two and
+# `just review-share` prints the link. Through the Relay every page needs the /r/<slug>/ path once
+# (server.ts answers 404 otherwise); only this machine or the owner key can set verdicts.
 version: 1
 project:
   name: viaalink-icons
   domain: localhost
   project_root: gallery
+  env_template: tpl.env
   tunnel:
     preferred: true
-    prefix: icons
+    prefix: icons-${{ env.REVIEW_SLUG }}
 features:
   auto_detect_services: false
   auto_onboard_detected: false
   tunnel_mode: automatic
 network:
+  caddy:
+    basic_auth:
+      enabled: true
+      username: ${{ env.REVIEW_USER }}
+      password: ${{ env.REVIEW_PASSWORD }}
+      realm: Icon review
+      routes: ["tunnel", "host", "path"]
   services:
     gallery:
       name: Viaalink icon gallery

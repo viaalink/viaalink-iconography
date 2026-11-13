@@ -38,9 +38,40 @@ icons-pack *args:
 icons-render out *args:
 	bun scripts/icons/render.ts --out {{out}} {{args}}
 
-# The gallery (showcase, overview, approval) on http://127.0.0.1:5330, published via your Viaalink Relay
+# Render again from a closed feedback round: its notes and comments go into the prompt (--dry-run: prompts only)
+icons-regen out feedback *args:
+	bun scripts/icons/render.ts --out {{out}} --feedback-file {{feedback}} {{args}}
+
+# Secrets come from tools/icon-gallery/tpl.env (via macros) into its gitignored .env.
+# The gallery (showcase, overview, feedback round) on http://127.0.0.1:5330; via your Relay behind basic auth on a random address
 icons-gallery:
-	cd tools/icon-gallery && via config validate && via up
+	cd tools/icon-gallery && via env init >/dev/null && via config validate && (via net apply --caddy --tunnel >/dev/null 2>&1 || echo "no Relay route applied: the gallery stays local") && via up
+
+#   just review-round open <name> [--feed] [--no-rotate] [icon ...]   snapshot the renders, rotate the link, start the gallery
+#   just review-round close <name> [--feed | --no-feed]               freeze it and write the feedback (asks when no flag)
+#   just review-round list
+# Feedback rounds (README "Feedback rounds"): open, close or list
+review-round action name="" *flags:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	case "{{action}}" in
+	  open) bun scripts/review/cli.ts round open {{name}} {{flags}} && just icons-gallery ;;
+	  close) bun scripts/review/cli.ts round close {{name}} {{flags}} ;;
+	  list) bun scripts/review/cli.ts round list ;;
+	  *) echo "usage: just review-round open|close|list <name> [flags]" >&2; exit 1 ;;
+	esac
+
+# The shareable link of a round (default: the newest open one), login included; the only place the password is shown
+review-share round="":
+	bun scripts/review/cli.ts share {{round}}
+
+# Compile a round's verdicts, notes, thumbs-down reasons and requests → local/icons/feedback/<round>.{json,md}
+review-feedback round="":
+	bun scripts/review/cli.ts feedback {{round}}
+
+# New random slug and password for the share link (old links stop working)
+review-rotate:
+	bun scripts/review/cli.ts rotate
 
 # Refactor guard: dump every flat SVG string (light, dark, themeable, mono, badge) → <out>/<kind>/<name>.svg
 icons-check-dump out:
