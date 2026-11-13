@@ -66,6 +66,23 @@ async function rotate() {
   if (!env.REVIEW_SLUG || !env.REVIEW_PASSWORD)
     throw new Error("via env init did not set REVIEW_SLUG / REVIEW_PASSWORD")
   console.log("rotated the share link: new slug and password (run `just review-share` to see the link)")
+  moveTunnel(env.REVIEW_SLUG)
+}
+
+/**
+ * A running tunnel keeps the prefix it was registered under (via CLI < 4.x: the stored prefix wins over the
+ * declared one), so after a rotation this gallery's own tunnel is stopped and applied again under the new
+ * prefix. Touches only the `gallery` service of this project; without a Relay it just reports that.
+ */
+function moveTunnel(slug: string) {
+  const run = (args: string[]) =>
+    Bun.spawnSync(["via", ...args], { cwd: GALLERY, stdout: "pipe", stderr: "pipe" }).exitCode === 0
+  if (!publicOrigin()) return console.log("no tunnel running: the new link goes live with `just icons-gallery`")
+  run(["net", "expose", "stop", "--id=gallery"])
+  const ok = run(["net", "apply", "--caddy", "--tunnel", "--ids", "gallery"])
+  const now = publicOrigin()
+  if (ok && now?.includes(`icons-${slug}.`)) console.log("tunnel moved to the new link")
+  else console.log("the tunnel did not move to the new link: run `just icons-gallery` and check `via net urls`")
 }
 
 /** `via env init` in the gallery directory: adds missing keys from tpl.env, keeps existing values. */
