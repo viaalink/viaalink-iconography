@@ -1,7 +1,7 @@
 """Animate a saved diagram or scene (W-140, owner: "animations, GIFs, small videos for the product videos").
 
-  blender -b local/icons/diagrams/<name>/<name>.blend -P scripts/icons/blender/animate.py -- --out <dir> [--frames 96] [--fps 24] [--samples 24] [--scale 50]
-        [--camera none|push|orbit] [--webm]
+  blender -b local/icons/diagrams/<name>/<name>.blend -P scripts/icons/blender/animate.py -- --out <dir>
+        [--frames 96] [--fps 24] [--samples 24] [--scale 50] [--camera none|push|orbit] [--webm]
   (just icons-animate <name>)
 
 Film clips (owner 2026-11-12: "use Blender to animate the 3D objects and use that in the video
@@ -17,6 +17,7 @@ seamlessly; a pipe's arrow cone stays where it is. Frames go to <out>/frames/, t
 <out>/<name>.mp4 (H.264) and <out>/<name>.gif (palette, loops). Light edition (the .blend is saved
 after the light pass).
 """
+
 import math
 import os
 import subprocess
@@ -25,6 +26,10 @@ import sys
 import bpy
 from mathutils import Matrix, Vector
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # scripts/icons
+import theme  # noqa: E402  (the one theme loader, scripts/icons/theme.py)
+
+THEME = theme.load()
 argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 
 
@@ -34,8 +39,8 @@ def opt(k, d):
 
 OUT = opt("out", "local/icons/anim")
 FRAMES = int(opt("frames", "96"))
-FPS = int(opt("fps", "24"))
-SAMPLES = int(opt("samples", "24"))
+FPS = int(opt("fps", str(THEME["animation"]["fps"])))
+SAMPLES = int(opt("samples", str(THEME["animation"]["samples"])))
 SCALE = int(opt("scale", "50"))
 CAMERA = opt("camera", "none")
 PERIOD = int(opt("period", str(FRAMES)))  # frames per packet trip; FRAMES (default) = seamless loop
@@ -107,7 +112,11 @@ for k, tb in enumerate(tubes):
             u = ((f - 1) / PERIOD + j / len(riders) + k * 0.13) % 1.0
             r.location = point_at(pts, u * total)
             r.keyframe_insert("location", frame=f)
-        for fc in r.animation_data.action.fcurves if r.animation_data.action and hasattr(r.animation_data.action, "fcurves") else []:
+        for fc in (
+            r.animation_data.action.fcurves
+            if r.animation_data.action and hasattr(r.animation_data.action, "fcurves")
+            else []
+        ):
             for kp in fc.keyframe_points:
                 kp.interpolation = "LINEAR"
     moved += 1
@@ -118,8 +127,12 @@ lab_file = os.path.join(os.path.dirname(bpy.data.filepath), "labels.json")
 pre = {}  # label anchors projected with the still's camera, before any re-framing
 if os.path.exists(lab_file):
     import json
+
     from bpy_extras.object_utils import world_to_camera_view
-    for l in json.load(open(lab_file))["labels"]:
+
+    with open(lab_file) as fh:
+        stills = json.load(fh)["labels"]
+    for l in stills:
         if "w" in l:
             v = world_to_camera_view(scene, cam, Vector(l["w"]))
             pre[l["text"]] = (v.x, 1 - v.y)
@@ -127,7 +140,12 @@ old_scale, old_aspect = cam.data.ortho_scale, scene.render.resolution_x / scene.
 if FIT > 0:
     scene.render.resolution_y = int(round(scene.render.resolution_x / FIT / 4)) * 4  # even after scaling
     bpy.context.view_layer.update()
-    pts = [o.matrix_world @ Vector(c) for o in objs if o.type in ("MESH", "CURVE", "FONT") and not o.hide_render for c in o.bound_box]
+    pts = [
+        o.matrix_world @ Vector(c)
+        for o in objs
+        if o.type in ("MESH", "CURVE", "FONT") and not o.hide_render
+        for c in o.bound_box
+    ]
     R = cam.matrix_world.to_3x3()
     right, up, back = R @ Vector((1, 0, 0)), R @ Vector((0, 1, 0)), R @ Vector((0, 0, 1))
     rs, us_ = [p.dot(right) for p in pts], [p.dot(up) for p in pts]
@@ -138,7 +156,12 @@ if FIT > 0:
     cam.location = cam.location + up * 0.3
 if CAMERA in ("push", "orbit") and cam is not None:
     bpy.context.view_layer.update()
-    pts = [o.matrix_world @ Vector(c) for o in objs if o.type in ("MESH", "CURVE", "FONT") and not o.hide_render for c in o.bound_box]
+    pts = [
+        o.matrix_world @ Vector(c)
+        for o in objs
+        if o.type in ("MESH", "CURVE", "FONT") and not o.hide_render
+        for c in o.bound_box
+    ]
     centre = sum(pts, Vector()) / max(1, len(pts))
     loc0, rot0, scale0 = cam.location.copy(), cam.rotation_euler.copy(), cam.data.ortho_scale
     R = cam.matrix_world.to_3x3()
@@ -165,15 +188,23 @@ if CAMERA in ("push", "orbit") and cam is not None:
             cam.data.keyframe_insert("ortho_scale", frame=f)
 
 if WEBM and os.path.exists(lab_file):
-    labs = [l for l in json.load(open(lab_file))["labels"] if "w" in l]
+    with open(lab_file) as fh:
+        labs = [l for l in json.load(fh)["labels"] if "w" in l]
     # dx/dy: the still's screen offset of the label from its anchor (its layout pass moved it),
     # converted to this framing (ortho scale and aspect), so labels sit where the still has them
     sx = old_scale / cam.data.ortho_scale if FIT > 0 else 1.0
     new_aspect = scene.render.resolution_x / scene.render.resolution_y
     sy = sx * new_aspect / old_aspect
-    track = [{"text": l["text"], "kind": l["kind"],
-              "dx": round((l["x"] - pre[l["text"]][0]) * sx, 4), "dy": round((l["y"] - pre[l["text"]][1]) * sy, 4), "xy": []}
-             for l in labs]
+    track = [
+        {
+            "text": l["text"],
+            "kind": l["kind"],
+            "dx": round((l["x"] - pre[l["text"]][0]) * sx, 4),
+            "dy": round((l["y"] - pre[l["text"]][1]) * sy, 4),
+            "xy": [],
+        }
+        for l in labs
+    ]
     for f in range(1, FRAMES + 1):
         scene.frame_set(f)
         for l, t_ in zip(labs, track):
@@ -181,8 +212,16 @@ if WEBM and os.path.exists(lab_file):
             t_["xy"].append([round(v.x, 4), round(1 - v.y, 4)])
     scene.frame_set(1)
     os.makedirs(OUT, exist_ok=True)
-    json.dump({"fps": FPS, "frames": FRAMES, "aspect": scene.render.resolution_x / scene.render.resolution_y, "labels": track},
-              open(f"{OUT}/labels-anim.json", "w"))
+    with open(f"{OUT}/labels-anim.json", "w") as f:
+        json.dump(
+            {
+                "fps": FPS,
+                "frames": FRAMES,
+                "aspect": scene.render.resolution_x / scene.render.resolution_y,
+                "labels": track,
+            },
+            f,
+        )
 
 scene.cycles.samples = SAMPLES
 scene.cycles.use_denoising = True
@@ -198,16 +237,77 @@ bpy.ops.render.render(animation=True)
 
 mp4, gif = f"{OUT}/{NAME}.mp4", f"{OUT}/{NAME}.gif"
 pattern = f"{OUT}/frames/f%04d.png"
-BG = opt("bg", "f4efe8")  # page cream (light edition)
+BG = opt("bg", THEME["pages"]["video"].lstrip("#"))  # page cream (light edition)
 on_bg = f"color=c=0x{BG}:s={W}x{H}:r={FPS}[bg];[bg][0:v]overlay=shortest=1:format=auto"
-subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", pattern, "-filter_complex",
-                on_bg + ",format=yuv420p", "-c:v", "libx264", "-crf", "18", "-movflags", "+faststart", mp4], check=True)
-subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", pattern, "-filter_complex",
-                on_bg + ",fps=20,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4",
-                "-loop", "0", gif], check=True)
+subprocess.run(
+    [
+        "ffmpeg",
+        "-y",
+        "-loglevel",
+        "error",
+        "-framerate",
+        str(FPS),
+        "-i",
+        pattern,
+        "-filter_complex",
+        on_bg + ",format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "18",
+        "-movflags",
+        "+faststart",
+        mp4,
+    ],
+    check=True,
+)
+subprocess.run(
+    [
+        "ffmpeg",
+        "-y",
+        "-loglevel",
+        "error",
+        "-framerate",
+        str(FPS),
+        "-i",
+        pattern,
+        "-filter_complex",
+        on_bg
+        + ",fps=20,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];"
+        + "[b][p]paletteuse=dither=bayer:bayer_scale=4",
+        "-loop",
+        "0",
+        gif,
+    ],
+    check=True,
+)
 if WEBM:
     webm = f"{OUT}/{NAME}.webm"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", pattern, "-filter_complex",
-                    on_bg + ",format=yuv420p", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "30", "-row-mt", "1", "-deadline", "good", webm], check=True)
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-framerate",
+            str(FPS),
+            "-i",
+            pattern,
+            "-filter_complex",
+            on_bg + ",format=yuv420p",
+            "-c:v",
+            "libvpx-vp9",
+            "-b:v",
+            "0",
+            "-crf",
+            "30",
+            "-row-mt",
+            "1",
+            "-deadline",
+            "good",
+            webm,
+        ],
+        check=True,
+    )
     print(f"ok   {webm}")
 print(f"ok   {mp4} {gif}")

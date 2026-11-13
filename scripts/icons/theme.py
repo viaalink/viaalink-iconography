@@ -104,7 +104,9 @@ def resolve(theme, rel):
 def palettes(theme):
     """{mode: {role: hex}} for the 2.5D materials."""
     hexes = theme["colors25d"]["hex"]
-    return {mode: {role: hexes[name] for role, name in roles.items()} for mode, roles in theme["colors25d"]["roles"].items()}
+    return {
+        mode: {role: hexes[name] for role, name in roles.items()} for mode, roles in theme["colors25d"]["roles"].items()
+    }
 
 
 if __name__ == "__main__":  # python3 scripts/icons/theme.py [file]: validate a theme

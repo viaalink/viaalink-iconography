@@ -22,6 +22,7 @@ Story spec (JSON, times in seconds):
              {"at": 8, "fail": "r2"}],
    "camera": [{"at": 0, "focus": ["web", "modem"]}, {"at": 3.5, "focus": "all"}]}
 """
+
 import json
 import math
 import os
@@ -32,6 +33,10 @@ import bpy
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # scripts/icons
+import theme  # noqa: E402  (the one theme loader, scripts/icons/theme.py)
+
+THEME = theme.load()
 argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 
 
@@ -39,16 +44,21 @@ def opt(k, d):
     return argv[argv.index(f"--{k}") + 1] if f"--{k}" in argv else d
 
 
-STORY = json.load(open(opt("story", "")))
+def read_json(path):
+    with open(path) as f:
+        return json.load(f)
+
+
+STORY = read_json(opt("story", ""))
 OUT = opt("out", "local/icons/anim/story")
-FPS = int(opt("fps", "24"))
-SAMPLES = int(opt("samples", "10"))
+FPS = int(opt("fps", str(THEME["animation"]["fps"])))
+SAMPLES = int(opt("samples", str(THEME["animation"]["storySamples"])))
 SCALE = int(opt("scale", "60"))
 FIT = float(opt("fit", "2.26"))
 FRAMES = int(STORY.get("seconds", 10) * FPS)
 NAME = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
 _spec = f"scripts/icons/blender/diagrams/{STORY['diagram']}.json"
-SPEC = json.load(open(_spec if os.path.exists(_spec) else f"scripts/icons/blender/scenes/{STORY['diagram']}.json"))
+SPEC = read_json(_spec if os.path.exists(_spec) else f"scripts/icons/blender/scenes/{STORY['diagram']}.json")
 
 
 def auto_story(spec, seconds):
@@ -161,7 +171,9 @@ for nid, objs in groups.items():
 for b in beats:
     if b.get("grow") in rigs:
         e, f0 = rigs[b["grow"]], F(b["at"])
-        key_scale(e, [(f0, 1.0), (f0 + int(1.2 * FPS), b.get("to", 1.35)), (f0 + int(1.5 * FPS), b.get("to", 1.35) * 0.96)])
+        key_scale(
+            e, [(f0, 1.0), (f0 + int(1.2 * FPS), b.get("to", 1.35)), (f0 + int(1.5 * FPS), b.get("to", 1.35) * 0.96)]
+        )
     if b.get("pulse") in rigs:
         e, f = rigs[b["pulse"]], F(b["at"])
         while f + FPS <= FRAMES:
@@ -209,7 +221,9 @@ for key, objs in edges.items():
     tubes = [o for o in objs if o.type == "CURVE"]
     for tb in tubes:  # the pipe draws itself from its source; a pipe into a failed node retracts
         tb.data.bevel_factor_mapping_end = "SPLINE"
-        for f, v in [(1, 0.0), (F(t), 0.0), (F(t + 0.6), 1.0)] + ([(F(t_end), 1.0), (F(t_end + 0.6), 0.0)] if t_end else []):
+        for f, v in [(1, 0.0), (F(t), 0.0), (F(t + 0.6), 1.0)] + (
+            [(F(t_end), 1.0), (F(t_end + 0.6), 0.0)] if t_end else []
+        ):
             tb.data.bevel_factor_end = v
             tb.data.keyframe_insert("bevel_factor_end", frame=f)
     for o in objs:  # collars, arrow, the static packet: pop in when the pipe arrives
@@ -219,7 +233,9 @@ for key, objs in edges.items():
             o.hide_render = True
             continue
         s0 = o.scale.copy()
-        for f, v in [(1, 0.001), (F(t + 0.45), 0.001), (F(t + 0.65), 1.0)] + ([(F(t_end), 1.0), (F(t_end + 0.4), 0.001)] if t_end else []):
+        for f, v in [(1, 0.001), (F(t + 0.45), 0.001), (F(t + 0.65), 1.0)] + (
+            [(F(t_end), 1.0), (F(t_end + 0.4), 0.001)] if t_end else []
+        ):
             o.scale = s0 * v
             o.keyframe_insert("scale", frame=f)
     if tubes and flow_at is not None:
@@ -230,7 +246,15 @@ PERIOD = int(STORY.get("period", 2.0) * FPS)
 bpy.ops.mesh.primitive_uv_sphere_add(radius=0.13, segments=24, ring_count=12)
 proto = bpy.context.object
 proto.name = "packet"
-src_mat = next((o.active_material for objs in edges.values() for o in objs if o.name.split(".")[2].startswith("Sphere") and o.active_material), None)
+src_mat = next(
+    (
+        o.active_material
+        for objs in edges.values()
+        for o in objs
+        if o.name.split(".")[2].startswith("Sphere") and o.active_material
+    ),
+    None,
+)
 if src_mat:
     proto.data.materials.append(src_mat)
 proto.hide_render = True
@@ -284,7 +308,7 @@ for c in STORY.get("camera", [{"at": 0, "focus": "all"}]):
     frame_on(ids)
     shots.append((F(c["at"]), cam.location.copy(), cam.data.ortho_scale))
 for i, (f, loc, sc) in enumerate(shots):
-    for ff in ([f] if i == 0 else [f]):
+    for ff in [f] if i == 0 else [f]:
         cam.location, cam.data.ortho_scale = loc, sc
         cam.keyframe_insert("location", frame=ff)
         cam.data.keyframe_insert("ortho_scale", frame=ff)
@@ -296,7 +320,7 @@ for i, (f, loc, sc) in enumerate(shots):
 
 # ---- labels ---------------------------------------------------------------------------------
 lab_file = os.path.join(os.path.dirname(bpy.data.filepath), "labels.json")
-labs = [l for l in json.load(open(lab_file))["labels"] if "w" in l] if os.path.exists(lab_file) else []
+labs = [l for l in read_json(lab_file)["labels"] if "w" in l] if os.path.exists(lab_file) else []
 by_text = {}
 for n in SPEC["nodes"]:
     if n.get("label"):
@@ -330,9 +354,27 @@ for f in range(1, FRAMES + 1):
         t["xy"].append([round(v.x, 4), round(1 - v.y, 4)])
 scene.frame_set(1)
 os.makedirs(OUT, exist_ok=True)
-json.dump({"fps": FPS, "frames": FRAMES, "aspect": scene.render.resolution_x / scene.render.resolution_y,
-           "labels": [{"text": t["text"], "kind": t["kind"], "on": t["on"], "off": t["off"], "dx": 0, "dy": -0.02, "xy": t["xy"]}
-                      for t in track]}, open(f"{OUT}/labels-anim.json", "w"))
+with open(f"{OUT}/labels-anim.json", "w") as f:
+    json.dump(
+        {
+            "fps": FPS,
+            "frames": FRAMES,
+            "aspect": scene.render.resolution_x / scene.render.resolution_y,
+            "labels": [
+                {
+                    "text": t["text"],
+                    "kind": t["kind"],
+                    "on": t["on"],
+                    "off": t["off"],
+                    "dx": 0,
+                    "dy": -0.02,
+                    "xy": t["xy"],
+                }
+                for t in track
+            ],
+        },
+        f,
+    )
 
 # ---- render ---------------------------------------------------------------------------------
 scene.cycles.samples = SAMPLES
@@ -348,9 +390,52 @@ print(f"story {NAME}: {len(rigs)} nodes, {len(edges)} pipes, {len(edge_alive)} l
 bpy.ops.render.render(animation=True)
 
 pattern = f"{OUT}/frames/f%04d.png"
-on_bg = f"color=c=0x{opt('bg', 'f4efe8')}:s={W}x{H}:r={FPS}[bg];[bg][0:v]overlay=shortest=1:format=auto"
-subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", pattern, "-filter_complex",
-                on_bg + ",format=yuv420p", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "30", "-row-mt", "1", f"{OUT}/{NAME}.webm"], check=True)
-subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", pattern, "-filter_complex",
-                on_bg + ",format=yuv420p", "-c:v", "libx264", "-crf", "18", "-movflags", "+faststart", f"{OUT}/{NAME}.mp4"], check=True)
+BG = opt("bg", THEME["pages"]["video"].lstrip("#"))  # page cream (light edition)
+on_bg = f"color=c=0x{BG}:s={W}x{H}:r={FPS}[bg];[bg][0:v]overlay=shortest=1:format=auto"
+subprocess.run(
+    [
+        "ffmpeg",
+        "-y",
+        "-loglevel",
+        "error",
+        "-framerate",
+        str(FPS),
+        "-i",
+        pattern,
+        "-filter_complex",
+        on_bg + ",format=yuv420p",
+        "-c:v",
+        "libvpx-vp9",
+        "-b:v",
+        "0",
+        "-crf",
+        "30",
+        "-row-mt",
+        "1",
+        f"{OUT}/{NAME}.webm",
+    ],
+    check=True,
+)
+subprocess.run(
+    [
+        "ffmpeg",
+        "-y",
+        "-loglevel",
+        "error",
+        "-framerate",
+        str(FPS),
+        "-i",
+        pattern,
+        "-filter_complex",
+        on_bg + ",format=yuv420p",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "18",
+        "-movflags",
+        "+faststart",
+        f"{OUT}/{NAME}.mp4",
+    ],
+    check=True,
+)
 print(f"ok   {OUT}/{NAME}.webm {OUT}/{NAME}.mp4")

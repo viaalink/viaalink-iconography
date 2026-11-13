@@ -1,0 +1,20 @@
+# Python lint + format (ruff). Blender scripts run inside Blender's own Python: `bpy`, `bmesh` and
+# `mathutils` exist only there, and some imports follow a sys.path tweak (E402).
+line-length = 120
+target-version = "py311"
+extend-exclude = ["local", "node_modules"]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "C4", "SIM"]
+ignore = [
+  "E402",  # imports after sys.path setup (Blender scripts load scripts/icons/theme.py that way)
+  "E731",  # small lambdas as local helpers are the house style in the modelling code
+  "E741",  # l / I / O as loop names in geometry code
+  "B905",  # zip(pts, pts[1:]): pairwise walks are uneven by design, strict= would only add noise
+]
+
+[lint.isort]
+known-third-party = ["bpy", "bmesh", "mathutils", "bpy_extras"]
+
+[format]
+quote-style = "double"

@@ -16,6 +16,7 @@ diagram reads like a flowchart. Edges are pipes: they leave a node on the side f
 other node, run straight or as a Z with rounded bends, and carry two packets plus an arrow
 cone toward the target. Same model + palette swap for light and dark, like the icons.
 """
+
 import json
 import math
 import os
@@ -41,11 +42,13 @@ def opt(k, d):
 SPEC = opt("spec", "")
 OUT = opt("out", "local/icons/diagrams/tmp")
 MODE = opt("mode", "both")
-SAMPLES = int(opt("samples", "64"))
-GRID = 3.7  # world units between grid cells
-FOOT = 1.45  # max node footprint (icons are normalised to this)
-PIPE_Z = 0.3  # pipe centre height above the board
-PIPE_R = 0.09
+LOOK = B["THEME"]["diagram"]  # the diagram look lives in the theme (theme/brand.json "diagram")
+BOARD = LOOK["board"]
+SAMPLES = int(opt("samples", str(LOOK["samples"])))
+GRID = LOOK["grid"]  # world units between grid cells
+FOOT = LOOK["foot"]  # max node footprint (icons are normalised to this)
+PIPE_Z = LOOK["pipeZ"]  # pipe centre height above the board
+PIPE_R = LOOK["pipeR"]
 AZ = math.radians(B["AZIMUTH"])
 RIGHT = Vector((math.cos(AZ), math.sin(AZ), 0))  # screen right, on the ground
 AWAY = Vector((-math.sin(AZ), math.cos(AZ), 0))  # screen up, on the ground
@@ -53,8 +56,21 @@ NODE_TURN = {"relay": 0}  # relay ports are now on ±X like icon_caddy
 # Devices built with two cream side ports on ±X (owner 2026-11-12: "2 ports, plus sockets in the diagram").
 # A pipe that meets such a device from a side WITHOUT a port gets a matching socket there, so a hub with
 # four pipes shows four ports and an icon on its own keeps its clean two-port silhouette.
-DEVICE_PORTS = {"relay", "caddy", "firewall", "vm", "api", "monitoring", "switch", "modem", "router",
-                "server", "nas", "certstore", "dns"}
+DEVICE_PORTS = {
+    "relay",
+    "caddy",
+    "firewall",
+    "vm",
+    "api",
+    "monitoring",
+    "switch",
+    "modem",
+    "router",
+    "server",
+    "nas",
+    "certstore",
+    "dns",
+}
 
 
 def socket_for(node, end, out):
@@ -71,6 +87,8 @@ def socket_for(node, end, out):
     c = B["cyl"](PIPE_R * 1.8 * k, 0.26 * k, tuple(end + out * 0.08 * k), "s", 0.04, verts=48)
     c.rotation_euler = out.to_track_quat("Z", "Y").to_euler()
     return c
+
+
 # Layout frame: "iso" (default) runs columns along world +X (down-right on screen) and rows along
 # world -Y (down-left), like the desk scenes; "screen" makes rows horizontal on screen.
 U, V = Vector((1, 0, 0)), Vector((0, -1, 0))
@@ -79,6 +97,7 @@ U, V = Vector((1, 0, 0)), Vector((0, -1, 0))
 def set_layout(kind):
     global U, V
     U, V = (RIGHT, -AWAY) if kind == "screen" else (Vector((1, 0, 0)), Vector((0, -1, 0)))
+
 
 D2R = math.radians
 DOLLS = None
@@ -167,7 +186,12 @@ def place_node(n):
     centre = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
     target = grid_point(*n["at"])
     turn = n.get("turn", NODE_TURN.get(n.get("icon", ""), 0))
-    M = Matrix.Translation(target) @ Matrix.Rotation(D2R(turn), 4, "Z") @ Matrix.Scale(k, 4) @ Matrix.Translation(-centre)
+    M = (
+        Matrix.Translation(target)
+        @ Matrix.Rotation(D2R(turn), 4, "Z")
+        @ Matrix.Scale(k, 4)
+        @ Matrix.Translation(-centre)
+    )
     for o in objs:
         if o.parent is None:
             o.matrix_world = M @ o.matrix_world
@@ -209,7 +233,10 @@ CR, CU = CAM @ Vector((1, 0, 0)), CAM @ Vector((0, 1, 0))  # screen right / scre
 
 
 def arc_pts(c, u, w, R):
-    return [c + u * (R * math.cos(math.radians(-50 + 100 * k / 12))) + w * (R * math.sin(math.radians(-50 + 100 * k / 12))) for k in range(13)]
+    return [
+        c + u * (R * math.cos(math.radians(-50 + 100 * k / 12))) + w * (R * math.sin(math.radians(-50 + 100 * k / 12)))
+        for k in range(13)
+    ]
 
 
 def waves(at, d, role="c", z=1.15, radii=(0.22, 0.38, 0.54), clear=None):
@@ -226,6 +253,7 @@ def waves(at, d, role="c", z=1.15, radii=(0.22, 0.38, 0.54), clear=None):
         mouth, rb, h, aim = clear
         step = aim.normalized() * 0.04
         reach = min(aim.length * 0.55, 1.2)  # never further than about halfway to the recorder
+
         def on_upper_body(c):
             for R in radii:
                 for p in arc_pts(c, u, w, R):
@@ -233,11 +261,19 @@ def waves(at, d, role="c", z=1.15, radii=(0.22, 0.38, 0.54), clear=None):
                     if abs(q.dot(CR)) < rb + 0.08 and -0.45 * h < q.dot(CU) < 0.3 * h:
                         return True
             return False
+
         moved = 0.0
         while on_upper_body(c) and moved < reach:
             c, moved = c + step, moved + 0.04
     for i, R in enumerate(radii):
-        arc = [tuple(c + u * (R * math.cos(math.radians(-50 + 100 * k / 12))) + w * (R * math.sin(math.radians(-50 + 100 * k / 12)))) for k in range(13)]
+        arc = [
+            tuple(
+                c
+                + u * (R * math.cos(math.radians(-50 + 100 * k / 12)))
+                + w * (R * math.sin(math.radians(-50 + 100 * k / 12)))
+            )
+            for k in range(13)
+        ]
         B["tube"](arc, 0.05 - i * 0.006, role)
 
 
@@ -251,9 +287,30 @@ def collars(pts, inset, r, skip=(False, False)):
         c.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
 
 
-def pipe(ext_a, ext_b, centre_a, centre_b, cable=False, speech=False, wireless=False, height=1.4,
-         target_height=1.0, body=1.0, offset=1.0, packet=0.45, arrow=0.78, route=None, nwaves=2,
-         hub_a=False, hub_b=False, wave_at=0.42, bare_a=False, bare_b=False, port_a=None, port_b=None):
+def pipe(
+    ext_a,
+    ext_b,
+    centre_a,
+    centre_b,
+    cable=False,
+    speech=False,
+    wireless=False,
+    height=1.4,
+    target_height=1.0,
+    body=1.0,
+    offset=1.0,
+    packet=0.45,
+    arrow=0.78,
+    route=None,
+    nwaves=2,
+    hub_a=False,
+    hub_b=False,
+    wave_at=0.42,
+    bare_a=False,
+    bare_b=False,
+    port_a=None,
+    port_b=None,
+):
     """Route a pipe between two nodes on the screen-aligned grid."""
     ua, wa = centre_a.dot(U), centre_a.dot(V)
     ub, wb = centre_b.dot(U), centre_b.dot(V)
@@ -292,7 +349,7 @@ def pipe(ext_a, ext_b, centre_a, centre_b, cable=False, speech=False, wireless=F
                 at = at + CR * (1 if sx >= 0 else -1) * hr * 1.1
             waves(Vector((at.x, at.y, 0)), aim, z=at.z, radii=(0.2, 0.32, 0.44))
         else:  # wireless: waves leaving the source and arriving at the target
-            for f in ((wave_at,) if nwaves == 1 else (0.3, 0.62)):  # edge meta "waves": 1 = one set, at "waveAt"
+            for f in (wave_at,) if nwaves == 1 else (0.3, 0.62):  # edge meta "waves": 1 = one set, at "waveAt"
                 waves(a + d * f, d, role="p", z=PIPE_Z + 0.3, radii=(0.2, 0.34, 0.48))  # red: radio, not voice
         return [a + Vector((0, 0, PIPE_Z)), b + Vector((0, 0, PIPE_Z))]
     if cable:  # scene cable: on the desk, visible, collars at both ends (like the desk-scene cables)
@@ -306,6 +363,7 @@ def pipe(ext_a, ext_b, centre_a, centre_b, cable=False, speech=False, wireless=F
         cone.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
         B["finish"](cone, "s")
         return pts
+
     # a pipe running along a device's own ports enters the port at the port's height: the last stretch
     # ramps from the pipe height to it (owner: "perfect the connection logic"); port_* = (axis, z)
     def ramp(pts, port):
@@ -317,19 +375,26 @@ def pipe(ext_a, ext_b, centre_a, centre_b, cable=False, speech=False, wireless=F
         if flat.length < 1e-6 or abs(flat.normalized().dot(axis)) < 0.5 or abs(z - PIPE_Z) < 0.02:
             return pts
         run = min(0.55, flat.length * 0.45)
-        p0 = pts[0].copy(); p0.z = z
+        p0 = pts[0].copy()
+        p0.z = z
         mid = pts[0] + flat.normalized() * run
-        p1 = mid.copy(); p1.z = z
-        p2 = pts[0] + flat.normalized() * (run * 1.8); p2.z = PIPE_Z
+        p1 = mid.copy()
+        p1.z = z
+        p2 = pts[0] + flat.normalized() * (run * 1.8)
+        p2.z = PIPE_Z
         return [p0, p1, p2] + pts[1:]
+
     pts = ramp(pts, port_a)
     pts = list(reversed(ramp(list(reversed(pts)), port_b)))
     pts = fillet(pts, rad=0.22)
     B["tube"]([tuple(p) for p in pts], PIPE_R, "p")
     # owner 2026-11-13 "perfect the connection logic": a pipe into a device ends IN its port (or the socket the
     # diagram adds), so no extra collar or cuff at that end; other ends keep their cream ring
-    ends = [e for e, hub, bare in (((pts[0], pts[1] - pts[0]), hub_a, bare_a), ((pts[-1], pts[-2] - pts[-1]), hub_b, bare_b))
-            if not hub and not bare]
+    ends = [
+        e
+        for e, hub, bare in (((pts[0], pts[1] - pts[0]), hub_a, bare_a), ((pts[-1], pts[-2] - pts[-1]), hub_b, bare_b))
+        if not hub and not bare
+    ]
     if not (hub_a or hub_b):
         collars(pts, 0.05, PIPE_R, skip=(bare_a, bare_b))
     for p, d in ends:  # collars at the ports (none into a junction: agy r6, they clipped the tee)
@@ -385,7 +450,8 @@ def free_spot(anchor, text, size, node_objs, prefer):
         u, wv = au + du, aw + dw
         r = (u - w / 2, u + w / 2, wv - h / 2, wv + h / 2)
         hit = any(not (r[1] < b[0] or r[0] > b[1] or r[3] < b[2] or r[2] > b[3]) for b in blocks + PLACED) or any(
-            r[0] - 0.15 < q.dot(RIGHT) < r[1] + 0.15 and r[2] - 0.15 < q.dot(AWAY) < r[3] + 0.15 for q in PIPE_PTS)
+            r[0] - 0.15 < q.dot(RIGHT) < r[1] + 0.15 and r[2] - 0.15 < q.dot(AWAY) < r[3] + 0.15 for q in PIPE_PTS
+        )
         if not hit:
             PLACED.append(r)
             return RIGHT * u + AWAY * wv
@@ -402,26 +468,34 @@ def wrap(text, limit=11):
     return text[:cut] + "\n" + text[cut + 1 :]
 
 
-def fit_board(rects, t=0.34, step=0.05, rad=0.55):
+def fit_board(rects, t=BOARD["thickness"], step=0.05, rad=0.55):
     """A board shaped to the diagram (agy r5: a rectangle leaves empty corners round an L or a
     branch): the union of rounded strips round the nodes and pipes, in the (u, w) grid frame,
     traced to one outline, corners filleted, extruded like the rectangular board."""
-    u0 = min(r[0] for r in rects); u1 = max(r[1] for r in rects)
-    w0 = min(r[2] for r in rects); w1 = max(r[3] for r in rects)
+    u0 = min(r[0] for r in rects)
+    u1 = max(r[1] for r in rects)
+    w0 = min(r[2] for r in rects)
+    w1 = max(r[3] for r in rects)
     nu, nw = int((u1 - u0) / step) + 3, int((w1 - w0) / step) + 3
+
     def filled(i, j):
         if i < 0 or j < 0 or i >= nu or j >= nw:
             return False
         u, w = u0 + (i - 1 + 0.5) * step, w0 + (j - 1 + 0.5) * step
         return any(r[0] <= u <= r[1] and r[2] <= w <= r[3] for r in rects)
+
     grid = [[filled(i, j) for j in range(nw)] for i in range(nu)]
     nxt = {}
     for i in range(nu):  # boundary edges, counter-clockwise round filled cells
         for j in range(nw):
             if not grid[i][j]:
                 continue
-            for (di, dj), a, b in (((0, -1), (i, j), (i + 1, j)), ((1, 0), (i + 1, j), (i + 1, j + 1)),
-                                   ((0, 1), (i + 1, j + 1), (i, j + 1)), ((-1, 0), (i, j + 1), (i, j))):
+            for (di, dj), a, b in (
+                ((0, -1), (i, j), (i + 1, j)),
+                ((1, 0), (i + 1, j), (i + 1, j + 1)),
+                ((0, 1), (i + 1, j + 1), (i, j + 1)),
+                ((-1, 0), (i, j + 1), (i, j)),
+            ):
                 ii, jj = i + di, j + dj
                 if not (0 <= ii < nu and 0 <= jj < nw and grid[ii][jj]):
                     nxt[a] = b
@@ -431,8 +505,14 @@ def fit_board(rects, t=0.34, step=0.05, rad=0.55):
         loop.append(p)
         p = nxt[p]
     pts = [(u0 + (i - 1) * step, w0 + (j - 1) * step) for i, j in loop]
-    keep = [q for k, q in enumerate(pts)  # corners only
-            if (pts[k - 1][0] - q[0]) * (pts[(k + 1) % len(pts)][1] - q[1]) - (pts[k - 1][1] - q[1]) * (pts[(k + 1) % len(pts)][0] - q[0]) != 0]
+    keep = [
+        q
+        for k, q in enumerate(pts)  # corners only
+        if (pts[k - 1][0] - q[0]) * (pts[(k + 1) % len(pts)][1] - q[1])
+        - (pts[k - 1][1] - q[1]) * (pts[(k + 1) % len(pts)][0] - q[0])
+        != 0
+    ]
+
     def jogs(q, short=0.4):  # drop the tiny steps left where strips are offset by a cell or two
         while len(q) > 4:
             L = [math.dist(q[k], q[(k + 1) % len(q)]) for k in range(len(q))]
@@ -441,13 +521,14 @@ def fit_board(rects, t=0.34, step=0.05, rad=0.55):
                 break
             q = [x for idx, x in enumerate(q) if idx not in (k, (k + 1) % len(q))]
         return q
+
     keep = jogs(keep)
     ring = [Vector((u, w, 0)) for u, w in keep]
     ring = ring + ring[:2]
     sm = fillet(ring, rad=rad, steps=10)[1:-1]
     prof = [tuple((U * q.x + V * q.y).to_2d()) for q in sm]
-    top = B["plate"](prof, t, (0, 0, -t), "c", edge=0.12, clean=True)  # concave caps: no shading creases
-    under = B["plate"](prof, t * 0.6, (0, 0, -t - t * 0.85), "p", edge=0.08, clean=True)
+    top = B["plate"](prof, t, (0, 0, -t), BOARD["topRole"], edge=0.12, clean=True)  # concave caps: no shading creases
+    under = B["plate"](prof, t * 0.6, (0, 0, -t - t * 0.85), BOARD["underRole"], edge=0.08, clean=True)
     return [top, under]
 
 
@@ -456,10 +537,17 @@ def hull_board(footprints, margin=0.6, thick=False, rad=1.3):
     rectangle left the front corner empty and shrank the props). Same top/underside build as board()."""
     pts = []
     for u0, u1, w0, w1 in footprints:  # footprint corners pushed out by the margin; corners rounded below
-        pts += [(u0 - margin, w0 - margin), (u1 + margin, w0 - margin), (u1 + margin, w1 + margin), (u0 - margin, w1 + margin)]
-    pts = sorted(set((round(u, 4), round(w, 4)) for u, w in pts))
+        pts += [
+            (u0 - margin, w0 - margin),
+            (u1 + margin, w0 - margin),
+            (u1 + margin, w1 + margin),
+            (u0 - margin, w1 + margin),
+        ]
+    pts = sorted({(round(u, 4), round(w, 4)) for u, w in pts})
+
     def cross(o, a, b):
         return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
     lo, hi = [], []
     for p_ in pts:
         while len(lo) >= 2 and cross(lo[-2], lo[-1], p_) <= 0:
@@ -483,9 +571,11 @@ def hull_board(footprints, margin=0.6, thick=False, rad=1.3):
     ring = [Vector((u, w, 0)) for u, w in hull]
     ring = fillet(ring + ring[:2], rad=rad, steps=14)[1:-1]  # big round corners
     prof = [tuple((U * q.x + V * q.y).to_2d()) for q in ring]
-    t = 0.62 if thick else 0.34
-    top = B["plate"](prof, t, (0, 0, -t), "c", edge=0.3 if thick else 0.12, clean=True)
-    under = B["plate"](prof, t * 0.6, (0, 0, -t - t * 0.85), "p", edge=0.2 if thick else 0.08, clean=True)
+    t = BOARD["thicknessScene"] if thick else BOARD["thickness"]
+    top = B["plate"](prof, t, (0, 0, -t), BOARD["topRole"], edge=0.3 if thick else 0.12, clean=True)
+    under = B["plate"](
+        prof, t * 0.6, (0, 0, -t - t * 0.85), BOARD["underRole"], edge=0.2 if thick else 0.08, clean=True
+    )
     return [top, under]
 
 
@@ -499,11 +589,15 @@ def board(objs, margin=0.9, thick=False):
     c = U * ((u0 + u1) / 2) + V * ((w0 + w1) / 2)
     W, D = u1 - u0, w1 - w0
     ang = math.atan2(U.y, U.x)
-    t = 0.62 if thick else 0.34  # scenes: a chunky desk tile like the approved desk scenes
-    W = D = max(W, D) if thick else None or W
-    W, D = u1 - u0, w1 - w0
-    top = B["box"]((W, D, t), (c.x, c.y, -t / 2), "c", 0.3 if thick else 0.18, rot=(0, 0, ang))
-    under = B["box"]((W - 0.08, D - 0.08, t * 0.6), (c.x, c.y, -t - t * 0.25), "p", 0.2 if thick else 0.12, rot=(0, 0, ang))
+    t = BOARD["thicknessScene"] if thick else BOARD["thickness"]  # scenes: a chunky desk tile like the desk scenes
+    top = B["box"]((W, D, t), (c.x, c.y, -t / 2), BOARD["topRole"], 0.3 if thick else 0.18, rot=(0, 0, ang))
+    under = B["box"](
+        (W - 0.08, D - 0.08, t * 0.6),
+        (c.x, c.y, -t - t * 0.25),
+        BOARD["underRole"],
+        0.2 if thick else 0.12,
+        rot=(0, 0, ang),
+    )
     return [top, under]
 
 
@@ -519,7 +613,11 @@ def frame(width=1600, height=1000, tight=False):
     right, up, back = R @ Vector((1, 0, 0)), R @ Vector((0, 1, 0)), R @ Vector((0, 0, 1))
     if tight:  # diagrams: centre on the bounding box, not the vertex mean (which wastes a side)
         rs, us_ = [p.dot(right) for p in pts], [p.dot(up) for p in pts]
-        centre = centre + right * ((min(rs) + max(rs)) / 2 - centre.dot(right)) + up * ((min(us_) + max(us_)) / 2 - centre.dot(up))
+        centre = (
+            centre
+            + right * ((min(rs) + max(rs)) / 2 - centre.dot(right))
+            + up * ((min(us_) + max(us_)) / 2 - centre.dot(up))
+        )
     er = max(abs((p - centre).dot(right)) for p in pts)
     eu = max(abs((p - centre).dot(up)) for p in pts)
     cam.location = centre + back * 40
@@ -545,8 +643,8 @@ def frame(width=1600, height=1000, tight=False):
 # the frame; far spots get a leader line. Edge labels are optional (dropped at tile size when no
 # spot is close to their pipe) unless the edge says "tile": "need"; a node label can say
 # "short" (tile text), "tile": false (hidden on tiles) or "side": "in"/"out" (callout side).
-TILE_F = 0.036  # label font, as a share of the image width
-FULL_F = 0.0125  # enlarged view: 15 px on a 1200 px diagram (overlay.ts draws width/70)
+TILE_F = LOOK["tileFont"]  # label font, as a share of the image width
+FULL_F = LOOK["fullFont"]  # enlarged view: 15 px on a 1200 px diagram (overlay.ts draws width/70)
 TILE_SRC = []  # per node label: node id, short text, tile flag (same order as the node LABELS)
 
 
@@ -572,6 +670,7 @@ def tile_layout(out, sc, nodes, edge_mids, spec, font=None, full=False):
     """full=True: the same placement for the enlarged view (FULL_F, full texts) → x/y, flead."""
     font = font or TILE_F
     from bpy_extras.object_utils import world_to_camera_view as w2c
+
     aspect = sc.render.resolution_x / sc.render.resolution_y
     bpy.context.view_layer.update()
 
@@ -599,16 +698,32 @@ def tile_layout(out, sc, nodes, edge_mids, spec, font=None, full=False):
     for l, src in zip(node_labels, TILE_SRC):
         n = spec_nodes[src["node"]]
         side = n.get("side", "out" if round(n["at"][0] + n["at"][1]) % 2 == 0 else "in")
-        items.append({"l": l, "text": l["text"] if full else (src["short"] or l["text"]), "anchor": boxes[src["node"]],
-                      "need": True, "skip": src["tile"] is False and not full, "side": perp if side == "out" else -perp,
-                      "sidecost": 0.25 if "side" in n else 0.06})
+        items.append(
+            {
+                "l": l,
+                "text": l["text"] if full else (src["short"] or l["text"]),
+                "anchor": boxes[src["node"]],
+                "need": True,
+                "skip": src["tile"] is False and not full,
+                "side": perp if side == "out" else -perp,
+                "sidecost": 0.25 if "side" in n else 0.06,
+            }
+        )
     for l, (p, meta) in zip([l for l in out if l["kind"] == "edge"], edge_mids):
         v = w2c(sc, sc.camera, p)
         a = (v.x - 0.004, v.x + 0.004, 1 - v.y - 0.006, 1 - v.y + 0.006)
         es = meta.get("side")  # edge meta "side": "out"/"in" pins the label to one side of the chain
-        items.append({"l": l, "text": l["text"] if full else (meta.get("short") or l["text"]), "anchor": a, "edge": not es,
-                      **({"side": perp if es == "out" else -perp, "sidecost": 0.25, "free": True} if es else {}),
-                      "need": full or meta.get("tile") == "need", "skip": meta.get("tile") is False and not full})
+        items.append(
+            {
+                "l": l,
+                "text": l["text"] if full else (meta.get("short") or l["text"]),
+                "anchor": a,
+                "edge": not es,
+                **({"side": perp if es == "out" else -perp, "sidecost": 0.25, "free": True} if es else {}),
+                "need": full or meta.get("tile") == "need",
+                "skip": meta.get("tile") is False and not full,
+            }
+        )
     steps = 140 if full else 90
     cands = [((i + 0.5) / steps, (j + 0.5) / steps) for i in range(steps) for j in range(steps)]
 
@@ -623,7 +738,10 @@ def tile_layout(out, sc, nodes, edge_mids, spec, font=None, full=False):
             acx, acy = (a[0] + a[1]) / 2, (a[2] + a[3]) / 2
             best, bc = None, 1e9
             pad = font * 0.25
-            for relaxed in (False, True):  # a node label that finds no clear spot is placed anyway (agy r6: "Your AI" vanished)
+            for relaxed in (
+                False,
+                True,
+            ):  # a node label that finds no clear spot is placed anyway (agy r6: "Your AI" vanished)
                 for cx, cy in cands:
                     r = (cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2)
                     if r[0] < 0.015 or r[1] > 0.985 or r[2] < 0.02 or r[3] > 0.98:
@@ -633,10 +751,17 @@ def tile_layout(out, sc, nodes, edge_mids, spec, font=None, full=False):
                     if any(overlaps(r, b, font * 0.15) for b in boxes.values()):
                         continue
                     d = rect_gap(r, a)
-                    if not relaxed and "side" in it and not it.get("free") and any(rect_gap(r, b) < d + font * 0.42 for b in boxes.values() if b is not a):
+                    if (
+                        not relaxed
+                        and "side" in it
+                        and not it.get("free")
+                        and any(rect_gap(r, b) < d + font * 0.42 for b in boxes.values() if b is not a)
+                    ):
                         continue  # it would sit nearer another node and read as that node's label
                     cost = d * 4 + (0.02 if cy < acy else 0)  # near the node; below it reads best
-                    cost += 0.08 * sum(1 for px, py in pipe if r[0] - pad < px < r[1] + pad and r[2] - pad < py < r[3] + pad)  # off the pipes
+                    cost += 0.08 * sum(
+                        1 for px, py in pipe if r[0] - pad < px < r[1] + pad and r[2] - pad < py < r[3] + pad
+                    )  # off the pipes
                     if it.get("edge") and Vector((cx - acx, cy - acy)).dot(perp) < 0:
                         cost += 0.04  # edge labels above their pipe, node labels mostly below: no [Relay] [MCP] pairs
                     cost += 0.01 * abs(cx - acx)  # centred under/over its node
@@ -657,8 +782,13 @@ def tile_layout(out, sc, nodes, edge_mids, spec, font=None, full=False):
             total += bc
         return total, res
 
-    orders = [items, list(reversed(items)), sorted(items, key=lambda i: -len(i["text"])),
-              sorted(items, key=lambda i: not i["need"]), sorted(items, key=lambda i: bool(i.get("edge") or i.get("free")))]
+    orders = [
+        items,
+        list(reversed(items)),
+        sorted(items, key=lambda i: -len(i["text"])),
+        sorted(items, key=lambda i: not i["need"]),
+        sorted(items, key=lambda i: bool(i.get("edge") or i.get("free"))),
+    ]
     total, res = min((place(o) for o in orders), key=lambda t: t[0])
     for it in items:
         r = res[id(it)]
@@ -678,7 +808,8 @@ def tile_layout(out, sc, nodes, edge_mids, spec, font=None, full=False):
 
 
 def main():
-    spec = json.load(open(SPEC))
+    with open(SPEC) as f:
+        spec = json.load(f)
     name = os.path.splitext(os.path.basename(SPEC))[0]
     modes = ["dark", "light"] if MODE == "both" else [MODE]
     B["SAMPLES"] = SAMPLES
@@ -695,7 +826,6 @@ def main():
         ext[n["id"]] = screen_extent(objs)
         lo, hi = bounds(objs)
         centres[n["id"]] = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, 0))
-    everything = [o for objs in nodes.values() for o in objs]
     heights = {k: bounds(v)[1].z for k, v in nodes.items()}
     ports = {}  # device id -> (port axis, port centre z): the outermost parts along the model's own X
     for n in spec["nodes"]:
@@ -706,8 +836,10 @@ def main():
         meshes = [o for o in renderable(nodes[n["id"]]) if o.type == "MESH"]
         if not meshes:
             continue
-        def reach(o):
-            return max(abs((o.matrix_world @ Vector(c) - centres[n["id"]]).dot(axis)) for c in o.bound_box)
+
+        def reach(o, centre=centres[n["id"]], axis=axis):
+            return max(abs((o.matrix_world @ Vector(c) - centre).dot(axis)) for c in o.bound_box)
+
         far = max(meshes, key=reach)
         lo, hi = bounds([far])
         ports[n["id"]] = (axis, (lo.z + hi.z) / 2)
@@ -736,15 +868,30 @@ def main():
         if meta.get("style") == "face":
             continue
         before_edge = set(bpy.data.objects)
-        pts = pipe(ext[a], ext[b], centres[a], centres[b], cable=scene, speech=meta.get("style") == "speech",
-                   wireless=meta.get("style") == "wireless", height=heights[a], target_height=heights[b],
-                   body=spec_by_id[a].get("scale", 1.0), offset=meta.get("offset", 1.0),
-                   packet=meta.get("packet", 0.45), arrow=meta.get("arrow", 0.78), route=meta.get("route"),
-                   nwaves=meta.get("waves", 2), hub_a=bool(spec_by_id[a].get("hub")), hub_b=bool(spec_by_id[b].get("hub")),
-                   wave_at=meta.get("waveAt", 0.42),
-                   bare_a=not scene and spec_by_id[a].get("icon") in DEVICE_PORTS,
-                   bare_b=not scene and spec_by_id[b].get("icon") in DEVICE_PORTS,
-                   port_a=None if scene else ports.get(a), port_b=None if scene else ports.get(b))
+        pts = pipe(
+            ext[a],
+            ext[b],
+            centres[a],
+            centres[b],
+            cable=scene,
+            speech=meta.get("style") == "speech",
+            wireless=meta.get("style") == "wireless",
+            height=heights[a],
+            target_height=heights[b],
+            body=spec_by_id[a].get("scale", 1.0),
+            offset=meta.get("offset", 1.0),
+            packet=meta.get("packet", 0.45),
+            arrow=meta.get("arrow", 0.78),
+            route=meta.get("route"),
+            nwaves=meta.get("waves", 2),
+            hub_a=bool(spec_by_id[a].get("hub")),
+            hub_b=bool(spec_by_id[b].get("hub")),
+            wave_at=meta.get("waveAt", 0.42),
+            bare_a=not scene and spec_by_id[a].get("icon") in DEVICE_PORTS,
+            bare_b=not scene and spec_by_id[b].get("icon") in DEVICE_PORTS,
+            port_a=None if scene else ports.get(a),
+            port_b=None if scene else ports.get(b),
+        )
         if not scene and len(pts) > 1:  # sockets where a pipe meets a device from a portless side
             socket_for(spec_by_id[a], pts[0], (pts[1] - pts[0]).normalized())
             socket_for(spec_by_id[b], pts[-1], (pts[-2] - pts[-1]).normalized())
@@ -762,14 +909,34 @@ def main():
             front = min((o.matrix_world @ Vector(k)).dot(AWAY) for o in renderable(nodes[n["id"]]) for k in o.bound_box)
             base = c - AWAY * (c.dot(AWAY) - front)
             n["label"] = wrap(n["label"])
-            spot = free_spot(base, n["label"], 0.38, list(nodes.values()),
-                             [(0, -0.45), (0, -0.85), (1.0, -0.45), (-1.0, -0.45), (1.0, -0.85), (-1.0, -0.85), (0, -1.25), (1.4, 0), (-1.4, 0)])
+            spot = free_spot(
+                base,
+                n["label"],
+                0.38,
+                list(nodes.values()),
+                [
+                    (0, -0.45),
+                    (0, -0.85),
+                    (1.0, -0.45),
+                    (-1.0, -0.45),
+                    (1.0, -0.85),
+                    (-1.0, -0.85),
+                    (0, -1.25),
+                    (1.4, 0),
+                    (-1.4, 0),
+                ],
+            )
             LABELS.append({"text": n["label"].replace("\n", " "), "kind": "node", "at": tuple(spot)})
             TILE_SRC.append({"node": n["id"], "short": n.get("short"), "tile": n.get("tile", True)})
     for p, text in edge_labels:
         text = wrap(text)
-        spot = free_spot(Vector((p.x, p.y, 0)), text, 0.28, list(nodes.values()),
-                         [(0, -0.62), (0, -0.95), (0.8, -0.62), (-0.8, -0.62), (0, 0.62)])
+        spot = free_spot(
+            Vector((p.x, p.y, 0)),
+            text,
+            0.28,
+            list(nodes.values()),
+            [(0, -0.62), (0, -0.95), (0.8, -0.62), (-0.8, -0.62), (0, 0.62)],
+        )
         LABELS.append({"text": text.replace("\n", " "), "kind": "edge", "at": tuple(spot)})
     # spec "groups": [{"nodes": [...], "label": "...", "pad": 0.35}] — things that run in ONE box (owner
     # 2026-11-12: "Caddy also inside the Relay" on the NAS). A navy recess in the board under those
@@ -784,12 +951,17 @@ def main():
         ring = [Vector((u0, w0, 0)), Vector((u1, w0, 0)), Vector((u1, w1, 0)), Vector((u0, w1, 0))]
         ring = fillet(ring + ring[:2], rad=g.get("round", 0.45), steps=10)[1:-1]
         prof = [tuple((U * q.x + V * q.y).to_2d()) for q in ring]
-        B["plate"](prof, 0.03, (0, 0, -0.025), g.get("role", "r"), edge=0.012, clean=True)
+        B["plate"](prof, 0.03, (0, 0, -0.025), g.get("role", BOARD["groupRole"]), edge=0.012, clean=True)
         if g.get("label"):
             base = U * ((u0 + u1) / 2) + V * w1  # the front edge (w grows toward the viewer)
             text = wrap(g["label"])
-            spot = free_spot(Vector((base.x, base.y, 0)), text, 0.28, list(nodes.values()),
-                             [(0, -0.3), (0, -0.65), (0.8, -0.3), (-0.8, -0.3), (0, -1.0)])
+            spot = free_spot(
+                Vector((base.x, base.y, 0)),
+                text,
+                0.28,
+                list(nodes.values()),
+                [(0, -0.3), (0, -0.65), (0.8, -0.3), (-0.8, -0.3), (0, -1.0)],
+            )
             LABELS.append({"text": text.replace("\n", " "), "kind": "edge", "at": tuple(spot)})
     if spec.get("board") == "fit":
         # an even-width ribbon: one half-width round every node centre and along every pipe
@@ -808,7 +980,7 @@ def main():
     elif spec.get("board", "hull" if scene else "rect") == "hull":
         hull_board([screen_extent(v) for v in nodes.values()], margin=spec.get("boardPad", 0.6), thick=scene)
     else:
-        board([o for o in bpy.context.scene.objects], margin=spec.get("boardPad", 0.45 if scene else 0.65), thick=scene)
+        board(list(bpy.context.scene.objects), margin=spec.get("boardPad", 0.45 if scene else 0.65), thick=scene)
     B["CURRENT"] = ""
     B["light_and_camera"]()
     frame(1024, 1024, tight=True) if scene else frame(tight=True)
@@ -823,21 +995,41 @@ def main():
             bpy.ops.render.render(write_still=True)
         print(f"ok   {name}/{mode}")
     from bpy_extras.object_utils import world_to_camera_view
+
     sc = bpy.context.scene
     out = []
     for l in LABELS:
         v = world_to_camera_view(sc, sc.camera, Vector(l["at"]))
         # "w": the label's world point, so animate.py can re-project it per frame (moving camera)
-        out.append({"text": l["text"], "kind": l["kind"], "x": round(v.x, 4), "y": round(1 - v.y, 4),
-                    "w": [round(c, 4) for c in l["at"]]})
+        out.append(
+            {
+                "text": l["text"],
+                "kind": l["kind"],
+                "x": round(v.x, 4),
+                "y": round(1 - v.y, 4),
+                "w": [round(c, 4) for c in l["at"]],
+            }
+        )
     if LABELS:
         tile_layout(out, sc, nodes, edge_mids, spec, FULL_F, full=True)
         tile_layout(out, sc, nodes, edge_mids, spec)
     os.makedirs(OUT, exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(f"{OUT}/{name}.blend"), compress=True)  # for the animation pass
+    bpy.ops.wm.save_as_mainfile(
+        filepath=os.path.abspath(f"{OUT}/{name}.blend"), compress=True
+    )  # for the animation pass
     res = sc.render
-    json.dump({"title": spec.get("title", ""), "aspect": round(res.resolution_x / res.resolution_y, 4), "tileFont": TILE_F, "fullFont": FULL_F,
-               "labels": out}, open(f"{OUT}/labels.json", "w"), indent=1)
+    with open(f"{OUT}/labels.json", "w") as f:
+        json.dump(
+            {
+                "title": spec.get("title", ""),
+                "aspect": round(res.resolution_x / res.resolution_y, 4),
+                "tileFont": TILE_F,
+                "fullFont": FULL_F,
+                "labels": out,
+            },
+            f,
+            indent=1,
+        )
 
 
 main()

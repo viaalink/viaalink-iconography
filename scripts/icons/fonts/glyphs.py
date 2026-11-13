@@ -2,9 +2,14 @@
 shapes instead of depending on the viewer's fonts.
   blender -b --factory-startup -P scripts/icons/fonts/glyphs.py -- SpaceGrotesk-Bold.ttf VIALNK out.json
 Paths are in em units: x from 0, baseline at y=0, y grows DOWN (SVG), cap height ~0.7."""
-import json, os, sys
+
+import json
+import os
+import sys
+
 import bpy
-argv = sys.argv[sys.argv.index("--") + 1:]
+
+argv = sys.argv[sys.argv.index("--") + 1 :]
 font_file, letters, out = argv
 here = os.path.dirname(os.path.abspath(__file__))
 font = bpy.data.fonts.load(os.path.join(here, font_file))
@@ -30,5 +35,6 @@ for ch in letters:
     xs = [p.co.x for sp in c.data.splines for p in sp.bezier_points]
     res[ch] = {"d": "".join(d), "x0": round(min(xs), 4), "x1": round(max(xs), 4)}
     bpy.data.objects.remove(c)
-json.dump({"font": font_file, "glyphs": res}, open(out, "w"), indent=1)
+with open(out, "w") as f:
+    json.dump({"font": font_file, "glyphs": res}, f, indent=1)
 print("ok", len(res), "glyphs")

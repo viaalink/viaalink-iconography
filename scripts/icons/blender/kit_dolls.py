@@ -31,6 +31,7 @@ Outfits:
   developer  s hoodie with p hood rim, small p laptop held at the waist, screen out
   client     c body, s folder under the arm (+X side) with a p band
 """
+
 import math
 import os
 import runpy
@@ -45,7 +46,14 @@ B = globals().get("B") or runpy.run_path(
 )
 B = B["box"].__globals__  # runpy returns a COPY; the live dict is what build.py's functions read (CURRENT)
 box, cyl, tube, plate, finish, rr_profile, smooth, torus = (
-    B["box"], B["cyl"], B["tube"], B["plate"], B["finish"], B["rr_profile"], B["smooth"], B["torus"]
+    B["box"],
+    B["cyl"],
+    B["tube"],
+    B["plate"],
+    B["finish"],
+    B["rr_profile"],
+    B["smooth"],
+    B["torus"],
 )
 D2R = math.radians
 FACE = (D2R(90), 0, 0)  # plate: profile XY -> XZ, extruded toward -Y
@@ -64,7 +72,9 @@ class Body:
         cx, cz = R - shoulder, H - shoulder
         for k in range(17):  # big round shoulder
             a = D2R(90 * k / 16)
-            p.append((max(cx, top) + shoulder * math.cos(a) * (R - max(cx, top)) / shoulder, cz + shoulder * math.sin(a)))
+            p.append(
+                (max(cx, top) + shoulder * math.cos(a) * (R - max(cx, top)) / shoulder, cz + shoulder * math.sin(a))
+            )
         p.append((0.0, H))
         self.prof = p
 
@@ -128,6 +138,7 @@ def lathe(prof, role, sy=1.0, n=72):
     finish(o, role)
     # consistent outward normals (pole fans are wound by hand)
     import bmesh
+
     bm = bmesh.new()
     bm.from_mesh(me)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -178,7 +189,17 @@ def smooth_path(pts, k=6):
         p0, p1, p2, p3 = P[i - 1], P[i], P[i + 1], P[i + 2]
         for j in range(k):
             t = j / k
-            out.append(tuple(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t ** 3)))
+            out.append(
+                tuple(
+                    0.5
+                    * (
+                        (2 * p1)
+                        + (-p0 + p2) * t
+                        + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+                        + (-p0 + 3 * p1 - 3 * p2 + p3) * t**3
+                    )
+                )
+            )
     out.append(tuple(P[-2]))
     return out
 
@@ -193,7 +214,7 @@ def neck_ring(body, z, r, role, off=None):
 
 
 # ---------------------------------------------------------------- outfits
-ADULT = dict(R=0.31, H=1.0, shoulder=0.27)
+ADULT = {"R": 0.31, "H": 1.0, "shoulder": 0.27}
 HEAD_R = 0.28
 
 
@@ -226,9 +247,15 @@ def straps(body, xs, role, r=0.055, zlow=0.42):
 
 def hoodie(body, rim_role, string_role=None):
     objs = [neck_ring(body, body.H - 0.03, 0.062, rim_role, 0.04)]
-    for x in ((-0.07, 0.07) if string_role else ()):  # drawstrings
+    for x in (-0.07, 0.07) if string_role else ():  # drawstrings
         top = body.surf(math.degrees(math.asin(x / 0.3)), body.H - 0.14, 0.03)
-        objs.append(tube([top, (top[0], top[1] - 0.02, top[2] - 0.13), (top[0], top[1] - 0.025, top[2] - 0.22)], 0.032, string_role))
+        objs.append(
+            tube(
+                [top, (top[0], top[1] - 0.02, top[2] - 0.13), (top[0], top[1] - 0.025, top[2] - 0.22)],
+                0.032,
+                string_role,
+            )
+        )
     return objs
 
 
@@ -257,7 +284,9 @@ TIE_ROLE = "p"  # brief said s; s is cream in dark mode and vanished on the crea
 def o_lawyer():
     body, objs = base("p")
     H = body.H
-    objs.append(inlay(body, [(-0.3, H + 0.1), (0.3, H + 0.1), (0.0, 0.4)], "c"))  # agy r11: wide shirt V so the red tie reads
+    objs.append(
+        inlay(body, [(-0.3, H + 0.1), (0.3, H + 0.1), (0.0, 0.4)], "c")
+    )  # agy r11: wide shirt V so the red tie reads
     tie = [(0.0, H - 0.06), (0.07, H - 0.13), (0.045, 0.64), (0.0, 0.57), (-0.045, 0.64), (-0.07, H - 0.13)]
     objs.append(inlay(body, tie, TIE_ROLE, 0.03))
     return objs
@@ -270,7 +299,13 @@ def o_student():
     objs.append(cyl(0.22, 0.14, (0, 0, hz + 0.22), "p", 0.03))  # cap band on the head
     objs.append(box((0.62, 0.62, 0.06), (0, 0, hz + 0.31), "p", 0.025, rot=(0, 0, D2R(45))))  # board
     objs.append(sphere(0.045, (0, 0, hz + 0.35), "c"))
-    objs.append(tube([(0, 0, hz + 0.345), (0.22, -0.22, hz + 0.345), (0.25, -0.25, hz + 0.3), (0.25, -0.25, hz + 0.14)], 0.025, "c"))  # tassel cord
+    objs.append(
+        tube(
+            [(0, 0, hz + 0.345), (0.22, -0.22, hz + 0.345), (0.25, -0.25, hz + 0.3), (0.25, -0.25, hz + 0.14)],
+            0.025,
+            "c",
+        )
+    )  # tassel cord
     objs.append(cyl(0.05, 0.12, (0.25, -0.25, hz + 0.1), "c", 0.02))  # tassel
     return objs
 
@@ -281,13 +316,20 @@ def o_teacher():
     the book no longer looks like it is talking (agy r10)."""
     body, objs = base("s")
     y = -body.R * body.sy - 0.1
-    parts = [box((0.34, 0.12, 0.42), (0.03, y, 0.5), "c", 0.03),
-             box((0.38, 0.04, 0.46), (0.02, y - 0.075, 0.5), "p", 0.02),
-             box((0.38, 0.04, 0.46), (0.02, y + 0.075, 0.5), "p", 0.02),
-             box((0.05, 0.19, 0.46), (-0.165, y, 0.5), "p", 0.02)]
+    parts = [
+        box((0.34, 0.12, 0.42), (0.03, y, 0.5), "c", 0.03),
+        box((0.38, 0.04, 0.46), (0.02, y - 0.075, 0.5), "p", 0.02),
+        box((0.38, 0.04, 0.46), (0.02, y + 0.075, 0.5), "p", 0.02),
+        box((0.05, 0.19, 0.46), (-0.165, y, 0.5), "p", 0.02),
+    ]
     bpy.context.view_layer.update()
     c = Vector((0, y, 0.5))
-    M = Matrix.Translation(c) @ Matrix.Rotation(D2R(8), 4, "Z") @ Matrix.Rotation(D2R(-10), 4, "X") @ Matrix.Translation(-c)
+    M = (
+        Matrix.Translation(c)
+        @ Matrix.Rotation(D2R(8), 4, "Z")
+        @ Matrix.Rotation(D2R(-10), 4, "X")
+        @ Matrix.Translation(-c)
+    )
     for o in parts:
         o.matrix_world = M @ o.matrix_world
     return objs + parts
@@ -300,7 +342,7 @@ def o_parent():
     return objs
 
 
-CHILD_BODY = dict(R=0.31, H=0.6, shoulder=0.27)  # agy r14: shorter torso, full-size head = child
+CHILD_BODY = {"R": 0.31, "H": 0.6, "shoulder": 0.27}  # agy r14: shorter torso, full-size head = child
 CHILD_HEAD = 0.34  # agy r10: kids read as workers; a bigger head reads younger
 
 
@@ -347,13 +389,23 @@ def o_developer():
     objs += hoodie(body, "p")
     y0 = -body.R * body.sy - 0.14
     z0 = 0.46
-    parts = [box((0.56, 0.32, 0.06), (0, y0 + 0.06, z0), "p", 0.025),
-             box((0.56, 0.06, 0.4), (0, y0 - 0.1, z0 + 0.19), "p", 0.03)]
+    parts = [
+        box((0.56, 0.32, 0.06), (0, y0 + 0.06, z0), "p", 0.025),
+        box((0.56, 0.06, 0.4), (0, y0 - 0.1, z0 + 0.19), "p", 0.03),
+    ]
     parts.append(plate(rr_profile(0.46, 0.3, 0.04), 0.02, (0, y0 - 0.13, z0 + 0.21), "r", rot=FACE))
     for a, b in (((-0.16, 0.29), (-0.08, 0.23)), ((-0.08, 0.23), (-0.16, 0.17))):
         pa, pb = Vector((a[0], 0, z0 + a[1])), Vector((b[0], 0, z0 + b[1]))
         d = pb - pa
-        parts.append(box((d.length + 0.05, 0.03, 0.05), ((pa.x + pb.x) / 2, y0 - 0.15, (pa.z + pb.z) / 2), "g", 0.02, rot=(0, -math.atan2(d.z, d.x), 0)))
+        parts.append(
+            box(
+                (d.length + 0.05, 0.03, 0.05),
+                ((pa.x + pb.x) / 2, y0 - 0.15, (pa.z + pb.z) / 2),
+                "g",
+                0.02,
+                rot=(0, -math.atan2(d.z, d.x), 0),
+            )
+        )
     parts.append(box((0.16, 0.03, 0.05), (0.04, y0 - 0.15, z0 + 0.17), "g", 0.02))
     return objs + parts
 
@@ -379,7 +431,10 @@ def o_patient():
     """Patient: red body leaning on a cream crutch (agy r19: a red cross plaster made the patient
     read as medical staff, and the sling read as an unknown white shape)."""
     body, objs = base("p")
-    x0, x1 = -(body.R + 0.02), -(body.R + 0.3)  # on -X (faces the camera once the patient turns to the phone); pad in the armpit, foot splayed out
+    x0, x1 = (
+        -(body.R + 0.02),
+        -(body.R + 0.3),
+    )  # on -X (faces the camera once the patient turns to the phone); pad in the armpit, foot splayed out
     zt, zj = body.H - 0.1, 0.34
     lerp = lambda z: x0 + (x1 - x0) * (zt - z) / (zt - 0.04)
     for dy in (-0.09, 0.09):  # two rails, like a real crutch
@@ -436,6 +491,7 @@ def o_person(role="c"):
 # here because diagram.py places any name doll() knows; a scene node uses {"doll": "contract",
 # "turn": 0}: `turn` keeps the scene's face-the-recorder rule from turning the prop away.
 # Built at icon size (about 1.9 x 2.4), the same as report, so scale ~0.85 matches the icons.
+
 
 def _sheet(w, h, d, z0, paper="c"):
     """Upright document on a cream stand: red frame, sunk face filled with a paper plate."""
@@ -510,8 +566,20 @@ def p_chart():
     box((0.75, 0.34, 0.26), (0, 0, 2.38), "s", 0.1)  # clip
     box((0.36, 0.3, 0.22), (0, 0, 2.55), "s", 0.1)
     x, y, z = dev.at(-0.22, 0.27, 0.0)
-    cross = [(-0.06, -0.17), (0.06, -0.17), (0.06, -0.06), (0.17, -0.06), (0.17, 0.06), (0.06, 0.06), (0.06, 0.17),
-             (-0.06, 0.17), (-0.06, 0.06), (-0.17, 0.06), (-0.17, -0.06), (-0.06, -0.06)]
+    cross = [
+        (-0.06, -0.17),
+        (0.06, -0.17),
+        (0.06, -0.06),
+        (0.17, -0.06),
+        (0.17, 0.06),
+        (0.06, 0.06),
+        (0.06, 0.17),
+        (-0.06, 0.17),
+        (-0.06, 0.06),
+        (-0.17, 0.06),
+        (-0.17, -0.06),
+        (-0.06, -0.06),
+    ]
     box((0.5, 0.06, 0.5), (x, y - 0.02, z), "c", 0.08)  # cream badge: red on slate was too dark at 400 px (agy r13)
     plate([(px * 1.15, py * 1.15) for px, py in cross], 0.06, (x, y - 0.04, z), "k", rot=FACE, edge=0.02, clean=True)
     B["bar"](dev, 0.06, 0.3, 0.27, 0.06)
@@ -531,7 +599,11 @@ def p_camera():
     cyl(0.52, 0.16, (0.08, y0 - 0.06, 0.66), "s", 0.05, rot=FACE)  # lens rim
     cyl(0.42, 0.2, (0.08, y0 - 0.12, 0.66), "r", 0.04, rot=FACE)  # glass
     cyl(0.2, 0.06, (0.08, y0 - 0.23, 0.66), "k", 0.02, rot=FACE)  # inner ring
-    tube([(0.08 + 0.3 * math.cos(D2R(a)), y0 - 0.24, 0.66 + 0.3 * math.sin(D2R(a))) for a in range(110, 161, 5)], 0.03, "c")  # glint
+    tube(
+        [(0.08 + 0.3 * math.cos(D2R(a)), y0 - 0.24, 0.66 + 0.3 * math.sin(D2R(a))) for a in range(110, 161, 5)],
+        0.03,
+        "c",
+    )  # glint
     cyl(0.08, 0.05, (-0.68, y0 - 0.02, 1.05), "c", 0.02, rot=FACE)  # record lamp
 
 
@@ -576,7 +648,9 @@ def p_magnifier():
     for dz, w in ((0.13, 0.62), (-0.13, 0.42)):  # magnified text on the glass
         x0 = c.x - 0.31
         prof = B["stroke_outline"]([(0, 0), (w, 0)], 0.13)
-        plate(prof, 0.05, (x0, c.y - 0.04, c.z + dz), "k" if dz > 0 else "g", rot=FACE, edge=0.02, clean=True)  # the match, highlighted
+        plate(
+            prof, 0.05, (x0, c.y - 0.04, c.z + dz), "k" if dz > 0 else "g", rot=FACE, edge=0.02, clean=True
+        )  # the match, highlighted
     d = Vector((math.cos(D2R(-52)), 0, math.sin(D2R(-52))))
     s = c + d * (R + 0.1)
     e = Vector((0.55, 0.0, 0.3))
@@ -600,8 +674,18 @@ def p_chalkboard():
     box((0.5, 0.12, 0.06), (0.35, dev.face - 0.04, 0.72), "c", 0.02)  # chalk ledge
 
 
-PROPS = {"contract": p_contract, "contract-lock": lambda: p_contract("lock"), "contract-law": lambda: p_contract("check", True), "chart": p_chart, "checklist": p_checklist, "camera": p_camera,
-         "audiofolder": p_audiofolder, "magnifier": p_magnifier, "sessions": p_sessions, "chalkboard": p_chalkboard}
+PROPS = {
+    "contract": p_contract,
+    "contract-lock": lambda: p_contract("lock"),
+    "contract-law": lambda: p_contract("check", True),
+    "chart": p_chart,
+    "checklist": p_checklist,
+    "camera": p_camera,
+    "audiofolder": p_audiofolder,
+    "magnifier": p_magnifier,
+    "sessions": p_sessions,
+    "chalkboard": p_chalkboard,
+}
 
 
 OUTFITS = {
@@ -673,7 +757,7 @@ def _render(name, build, modes, out):
 
 
 def main():
-    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     opts, names, i = {}, [], 0
     while i < len(argv):
         if argv[i].startswith("--"):

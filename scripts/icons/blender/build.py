@@ -1,7 +1,8 @@
 """
 Deterministic 2.5D icons in Blender: one model per icon, colours by ROLE.
 
-  blender -b --factory-startup -P scripts/icons/blender/build.py -- --out <dir> [--mode dark|light|both] [--samples 96] [name ...]
+  blender -b --factory-startup -P scripts/icons/blender/build.py -- --out <dir>
+      [--mode dark|light|both] [--samples 96] [name ...]
 
 Same camera, light, bevel and palette for every icon, so the set is a family by
 construction and light/dark is only a palette swap on the same geometry.
@@ -11,12 +12,16 @@ Roles match the flat twins (scripts/icons/flat.ts):
 Writes <out>/<mode>/<name>.png (transparent, 1024 px). Normalise afterwards with
 `just icons-normalize <out>` so the margin matches the AI rounds.
 """
+
 import math
 import os
 import sys
 
 import bpy
 from mathutils import Vector
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # scripts/icons
+import theme  # noqa: E402  (the one theme loader, scripts/icons/theme.py)
 
 argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 
@@ -30,43 +35,47 @@ def opt(k, d):
     return d
 
 
+# ---------------------------------------------------------------- theme (the look lives in theme/brand.json)
+THEME = theme.load()  # $VIA_ICON_THEME, else theme/brand.json
+CAMERA = THEME["camera"]
+LIGHTS = THEME["lights"]
+RENDER = THEME["render"]
+MAT = THEME["materials"]
+SHAPE = THEME["shape"]
+PORT = SHAPE["port"]
+BRAND = THEME["brand"]
+
 OUT = opt("out", "local/icons/rounds/25d-b1-blender")
 MODE = opt("mode", "both")
-SAMPLES = int(opt("samples", "96"))
-AZIMUTH = float(opt("azimuth", "35"))
-KEY = float(opt("key", "740"))  # key light energy (calibrated with the `calib` model)
-WORLD = float(opt("world", "0.22"))
-GLOW = float(opt("glow", "0.15"))
-CREAM_ALBEDO = float(opt("cream", "0.88"))
-NAVY_LIFT = float(opt("navy", "2.4"))  # owner 2026-11-11: light-mode navy looked black; recesses (r) stay dark  # calibrated with `calib` (bun local/icons/sample.ts)  # emission of screen glyphs (role g)
+SAMPLES = int(opt("samples", str(RENDER["samples"])))
+AZIMUTH = float(opt("azimuth", str(CAMERA["azimuth"])))
+PITCH = CAMERA["pitch"]  # camera rotation about X: 60 = 30 degrees above the horizon (isometric)
+KEY = float(opt("key", str(LIGHTS["key"]["energy"])))  # key light energy (calibrated with the `calib` model)
+WORLD = float(opt("world", str(RENDER["world"]["strength"])))
+GLOW = float(opt("glow", str(MAT["glow"])))  # emission of screen glyphs (role g)
+CREAM_ALBEDO = float(opt("cream", str(MAT["creamAlbedo"])))  # calibrated with `calib`
+# owner 2026-11-11: light-mode navy looked black; recesses (r) stay dark
+NAVY_LIFT = float(opt("navy", str(MAT["navyLift"])))
 ICON_AZIMUTH = {}
 ICON_KEY_TURN = {}
 CURRENT = ""
 FROZEN: set = set()  # object names turn() must not move (diagram.py fills this per node)
 # Brand fonts (viaalink.com/brand), shipped with the pipeline (OFL, scripts/icons/fonts): IBM Plex Mono for
 # the `> via` prompts and other mono text, Space Grotesk for letters (owner 2026-11-13: use the brand fonts)
-FONTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fonts")
-FONT = opt("font", os.environ.get("VIA_ICON_FONT", os.path.join(FONTS, "IBMPlexMono-Bold.ttf")))
-SANS_FONT = os.path.join(FONTS, "SpaceGrotesk-Bold.ttf")
+FONT = opt("font", os.environ.get("VIA_ICON_FONT", theme.resolve(THEME, THEME["fonts"]["mono"])))
+SANS_FONT = theme.resolve(THEME, THEME["fonts"]["sans"])
+LOGO_SVG = theme.resolve(THEME, THEME["logo"]["mark3d"])
 NAMES = [a for a in argv if not a.startswith("--")]
 
 # ---------------------------------------------------------------- palette
-HEX = {
-    "red": "#F73F3F",
-    "redDeep": "#D62828",
-    "coral": "#FF6B6B",
-    "warm": "#E04A46",  # owner 2026-11-11: the red of the approved hero desk scene (lit ≈ #D84848, sides ≈ #A81818); salmon read pink
-    "navy": "#13223A",
-    "slate": "#1C2B45",
-    "cream": "#F6F3EE",
-}
-PALETTES = {
-    # g = screen glyph: cream that glows a little, so it reads cream on a shaded face
-    # owner 2026-11-11: "I like the old colours better" — the AI set used warm coral + cream on BOTH
-    # page colours, so light and dark share one palette (navy only in recesses)
-    "dark": {"p": HEX["warm"], "s": HEX["cream"], "r": HEX["slate"], "c": HEX["cream"], "g": HEX["cream"], "k": HEX["warm"]},
-    "light": {"p": HEX["warm"], "s": HEX["cream"], "r": HEX["slate"], "c": HEX["cream"], "g": HEX["cream"], "k": HEX["warm"]},
-}  # k = accent rim: contrasts with the secondary body in both modes (cream on navy, coral on cream)
+HEX = THEME["colors25d"]["hex"]
+# owner 2026-11-11: warm = the red of the approved hero desk scene (lit ≈ #D84848, sides ≈ #A81818); salmon read pink.
+# g = screen glyph: cream that glows a little, so it reads cream on a shaded face; k = accent rim: contrasts with
+# the secondary body in both modes. Owner 2026-11-11: "I like the old colours better": the AI set used warm coral
+# + cream on BOTH page colours, so light and dark share one palette (navy only in recesses).
+PALETTES = theme.palettes(THEME)
+CALIBRATED = HEX[THEME["colors25d"]["calibrated"]]  # lit cream top must land ON its hex, not above it
+LIFTED = HEX[THEME["colors25d"]["lifted"]]  # navy parts read navy on screen, not black
 
 
 def lin(h):
@@ -88,14 +97,15 @@ def material(role):
     m.use_nodes = True
     b = m.node_tree.nodes["Principled BSDF"]
     # agy 2026-11-11: matte, almost no white sheen (the sheen washed coral pink)
-    b.inputs["Roughness"].default_value = {"p": 0.78, "s": 0.82, "c": 0.82, "g": 0.85, "r": 0.72}.get(role.partition(":")[0], 0.8)
-    b.inputs["Coat Weight"].default_value = 0.0
-    b.inputs["Specular IOR Level"].default_value = {"p": 0.06, "s": 0.04, "c": 0.04, "g": 0.0, "r": 0.12}.get(role.partition(":")[0], 0.05)
+    base = role.partition(":")[0]
+    b.inputs["Roughness"].default_value = MAT["roughness"].get(base, MAT["roughness"]["default"])
+    b.inputs["Coat Weight"].default_value = MAT["coatWeight"]
+    b.inputs["Specular IOR Level"].default_value = MAT["specular"].get(base, MAT["specular"]["default"])
     if role == "g":  # screen glyphs: lit from inside, never grey
         b.inputs["Emission Strength"].default_value = GLOW
     if role == "g:flesh":  # the apple's bitten flesh sits on the shaded side: brighter self-light
-        b.inputs["Emission Strength"].default_value = 0.55
-    b.inputs["Coat Roughness"].default_value = 0.35
+        b.inputs["Emission Strength"].default_value = MAT["glowFlesh"]
+    b.inputs["Coat Roughness"].default_value = MAT["coatRoughness"]
     MATS[role] = m
     return m
 
@@ -107,9 +117,9 @@ def paint(mode):
         role, _, variant = key.partition(":")
         b = m.node_tree.nodes["Principled BSDF"]
         col = lin(PALETTES[mode][role])
-        if PALETTES[mode][role] == HEX["cream"]:  # lit cream top must land ON #F6F3EE, not above it
-            col = tuple(c * CREAM_ALBEDO * (0.86 if variant == "dim" else 1.0) for c in col[:3]) + (1.0,)
-        if role == "s" and PALETTES[mode][role] == HEX["navy"]:  # navy parts read navy on screen, not black
+        if PALETTES[mode][role] == CALIBRATED:  # lit cream top must land ON its hex, not above it
+            col = tuple(c * CREAM_ALBEDO * (MAT["creamDim"] if variant == "dim" else 1.0) for c in col[:3]) + (1.0,)
+        if role == "s" and PALETTES[mode][role] == LIFTED:  # navy parts read navy on screen, not black
             col = tuple(min(1.0, c * NAVY_LIFT) for c in col[:3]) + (1.0,)
         b.inputs["Base Color"].default_value = col
         b.inputs["Emission Color"].default_value = lin(PALETTES[mode][role])
@@ -120,7 +130,7 @@ def finish(o, role, bevel=0.0, segs=8):
     if bevel > 0:
         mod = o.modifiers.new("bevel", "BEVEL")
         mod.width = bevel
-        mod.segments = max(segs, 12)  # agy: no faceting on pill ends
+        mod.segments = max(segs, SHAPE["bevel"]["minSegments"])  # agy: no faceting on pill ends
         mod.limit_method = "ANGLE"
         mod.harden_normals = False
     o.data.materials.append(material(role))
@@ -129,7 +139,7 @@ def finish(o, role, bevel=0.0, segs=8):
     return o
 
 
-def box(size, loc, role, bevel=0.08, rot=(0, 0, 0)):
+def box(size, loc, role, bevel=SHAPE["bevel"]["box"], rot=(0, 0, 0)):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc, rotation=rot)
     o = bpy.context.object
     o.scale = size
@@ -137,14 +147,15 @@ def box(size, loc, role, bevel=0.08, rot=(0, 0, 0)):
     return finish(o, role, min(bevel, min(size) / 2 - 1e-3))
 
 
-def cyl(r, depth, loc, role, bevel=0.03, rot=(0, 0, 0), verts=64):
+def cyl(r, depth, loc, role, bevel=SHAPE["bevel"]["cyl"], rot=(0, 0, 0), verts=64):
     bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=depth, location=loc, rotation=rot, vertices=verts)
     return finish(bpy.context.object, role, min(bevel, depth / 2 - 1e-3), 6)
 
 
 def torus(R, r, loc, role, rot=(0, 0, 0)):
-    bpy.ops.mesh.primitive_torus_add(major_radius=R, minor_radius=r, location=loc, rotation=rot,
-                                     major_segments=96, minor_segments=32)
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=R, minor_radius=r, location=loc, rotation=rot, major_segments=96, minor_segments=32
+    )
     return finish(bpy.context.object, role)
 
 
@@ -181,7 +192,7 @@ def tube(points, r, role):
     for p, (x, y, z) in zip(sp.points, points):
         p.co = (x, y, z, 1)
     cu.bevel_depth = r
-    cu.bevel_resolution = 14
+    cu.bevel_resolution = SHAPE["tubeResolution"]
     cu.use_fill_caps = True
     o = bpy.data.objects.new("tube", cu)
     bpy.context.collection.objects.link(o)
@@ -189,7 +200,7 @@ def tube(points, r, role):
     return o
 
 
-def smooth(o, angle=40):
+def smooth(o, angle=SHAPE["smoothAngle"]):
     """Smooth by angle: keeps the boolean rims crisp without shading smudges."""
     bpy.ops.object.select_all(action="DESELECT")
     o.select_set(True)
@@ -204,7 +215,7 @@ def text(s, size, loc, rot, role, depth=0.02):
     t.data.font = bpy.data.fonts.load(FONT, check_existing=True)
     t.data.size = size
     t.data.extrude = depth
-    t.data.bevel_depth = 0.004
+    t.data.bevel_depth = SHAPE["bevel"]["text"]
     t.data.align_x = "LEFT"
     t.data.align_y = "CENTER"
     t.data.materials.append(material(role))
@@ -214,7 +225,12 @@ def text(s, size, loc, rot, role, depth=0.02):
 def rr_profile(w, h, r, n=12):
     """Rounded rectangle outline in XY, centred."""
     pts = []
-    for cx, cy, a0 in ((w / 2 - r, h / 2 - r, 0), (-w / 2 + r, h / 2 - r, 90), (-w / 2 + r, -h / 2 + r, 180), (w / 2 - r, -h / 2 + r, 270)):
+    for cx, cy, a0 in (
+        (w / 2 - r, h / 2 - r, 0),
+        (-w / 2 + r, h / 2 - r, 90),
+        (-w / 2 + r, -h / 2 + r, 180),
+        (w / 2 - r, -h / 2 + r, 270),
+    ):
         for k in range(n + 1):
             a = math.radians(a0 + 90 * k / n)
             pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
@@ -234,7 +250,12 @@ def keyhole_profile(R, w_top, w_bot, h, n=40):
 def rim(outer, inner, depth, loc, role="c", rot=(0, 0, 0)):
     """A thin raised frame (outer minus inner profile): the cream accent around a sunk port."""
     o = plate(outer, depth, loc, role, rot=rot, edge=0.012)
-    cut(o, plate(inner, depth * 4, loc, role, rot=rot) if rot == (0, 0, 0) else plate(inner, depth * 4, loc, role, rot=rot))
+    cut(
+        o,
+        plate(inner, depth * 4, loc, role, rot=rot)
+        if rot == (0, 0, 0)
+        else plate(inner, depth * 4, loc, role, rot=rot),
+    )
     return o
 
 
@@ -269,15 +290,18 @@ def round_corners(pts_r, n=16):
 
 def bubble_profile(w, h, r, tx0, tx1, tip_x, tip_y):
     """Rounded rectangle speech bubble with a bottom tail as one seamless 2D outline."""
-    return round_corners([
-        (-w / 2, -h / 2, r),
-        (tx0, -h / 2, 0.09),
-        (tip_x, tip_y, 0.09),
-        (tx1, -h / 2, 0.09),
-        (w / 2, -h / 2, r),
-        (w / 2, h / 2, r),
-        (-w / 2, h / 2, r),
-    ], 20)
+    return round_corners(
+        [
+            (-w / 2, -h / 2, r),
+            (tx0, -h / 2, 0.09),
+            (tip_x, tip_y, 0.09),
+            (tx1, -h / 2, 0.09),
+            (w / 2, -h / 2, r),
+            (w / 2, h / 2, r),
+            (-w / 2, h / 2, r),
+        ],
+        20,
+    )
 
 
 def plate(profile, depth, loc, role, rot=(0, 0, 0), edge=0.0, clean=False):
@@ -288,7 +312,9 @@ def plate(profile, depth, loc, role, rot=(0, 0, 0), edge=0.0, clean=False):
             pts.append(p)
     if len(pts) > 1 and math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1]) <= 1e-4:
         pts.pop()
-    area2 = sum(pts[i][0] * pts[(i + 1) % len(pts)][1] - pts[(i + 1) % len(pts)][0] * pts[i][1] for i in range(len(pts)))
+    area2 = sum(
+        pts[i][0] * pts[(i + 1) % len(pts)][1] - pts[(i + 1) % len(pts)][0] * pts[i][1] for i in range(len(pts))
+    )
     if area2 < 0:
         pts.reverse()
     profile = pts
@@ -307,6 +333,7 @@ def plate(profile, depth, loc, role, rot=(0, 0, 0), edge=0.0, clean=False):
     if clean:  # concave ngon caps (✦, check, bubbles) shade with creases: guard-inset and triangulate caps AFTER bevel
         if "bevel" in o.modifiers:
             import bmesh
+
             bpy.ops.object.select_all(action="DESELECT")
             o.select_set(True)
             bpy.context.view_layer.objects.active = o
@@ -346,8 +373,10 @@ def icon_cli():
     tilt = D2R(-6)
     hinge = Vector((0, 0.2, 0.22))
     R = __import__("mathutils").Euler((tilt, 0, 0)).to_matrix()
+
     def on_lid(x, y, z):  # lid-local (x across, y out of screen toward -Y, z up from hinge)
         return hinge + R @ Vector((x, y, z))
+
     rot = (D2R(90) + tilt, 0, 0)
     box((2.6, 0.3, 1.95), on_lid(0, 0, 0.98), "p", 0.12, rot=(tilt, 0, 0))
     plate(rr_profile(2.2, 1.55, 0.14), 0.02, on_lid(0, -0.15, 1.0), "r", rot=rot)
@@ -356,7 +385,7 @@ def icon_cli():
         cyl(0.075, 0.03, on_lid(-0.84 + k * 0.24, -0.17, 1.54), role, 0.014, rot=rot)
     box((2.08, 0.02, 0.035), on_lid(0, -0.17, 1.34), "g", 0.008, rot=(tilt, 0, 0))
     text(">", 0.58, on_lid(-0.88, -0.165, 0.81), rot, "g", 0.02)
-    t = text("via", 0.64, on_lid(-0.46, -0.165, 0.86), rot, "g", 0.02)
+    t = text(BRAND["cliWord"], 0.64, on_lid(-0.46, -0.165, 0.86), rot, "g", 0.02)
     bpy.context.view_layer.update()
     box((0.24, 0.03, 0.38), on_lid(-0.46 + t.dimensions.x + 0.30, -0.17, 0.90), "g", 0.014, rot=(tilt, 0, 0))
 
@@ -413,9 +442,12 @@ def viaalink_phone(cue=None, x=0.0, y=0.0, z0=None, stand=None):
     box((0.42, 0.12, 0.08), (x, ph.face + 0.03, z0 + 2.47), "p", 0.04)  # earpiece
     # 1. the real logo, cream, printed flat on the screen
     lx, ly, lz = ph.at(0, 0.33)
-    m = logo(ph.sw * 0.62, (lx, ph.floor - 0.035, lz), "g", 0.04, rot=FACE, soft=False)  # centred on its depth: sits proud of the screen plate
+    m = logo(
+        ph.sw * 0.62, (lx, ph.floor - 0.035, lz), "g", 0.04, rot=FACE, soft=False
+    )  # centred on its depth: sits proud of the screen plate
     # the SVG curve has duplicate points: as a raw curve it renders dark slits (agy). Mesh it clean.
     import bmesh
+
     bpy.ops.object.select_all(action="DESELECT")
     m.select_set(True)
     bpy.context.view_layer.objects.active = m
@@ -479,6 +511,16 @@ class Device:
         return (self.cx + u * self.sw, self.floor - out, self.cz + v * self.sh)
 
 
+def side_port(sx, W, z, y=0.0):
+    """The device family's cream pipe port (theme shape.port) on the -X (sx=-1) or +X (sx=1) side of a
+    body W wide: a short round bored cylinder, so pipes plug into it in diagrams."""
+    rot = (0, D2R(90), 0)
+    p = cyl(PORT["radius"], PORT["length"], (sx * (W / 2 + PORT["offset"]), y, z), "s", PORT["bevel"], rot=rot)
+    cut(p, cyl(PORT["bore"], PORT["boreLength"], (sx * (W / 2 + PORT["boreOffset"]), y, z), "s", 0, rot=rot))
+    smooth(p)
+    return p
+
+
 def stroke_outline(pts, w, n=16):
     """Outline of a thick polyline with round outer joins and round caps, as ONE closed 2D profile
     (agy: glyphs must be single smooth shapes, no overlapping capsules with seams)."""
@@ -488,9 +530,15 @@ def stroke_outline(pts, w, n=16):
     left, right = [], []
     for i, p in enumerate(P):
         if i == 0:
-            nrm = norm(P[1] - P[0]); left.append(p + nrm * h); right.append(p - nrm * h); continue
+            nrm = norm(P[1] - P[0])
+            left.append(p + nrm * h)
+            right.append(p - nrm * h)
+            continue
         if i == len(P) - 1:
-            nrm = norm(P[-1] - P[-2]); left.append(p + nrm * h); right.append(p - nrm * h); continue
+            nrm = norm(P[-1] - P[-2])
+            left.append(p + nrm * h)
+            right.append(p - nrm * h)
+            continue
         d1, d2 = (p - P[i - 1]).normalized(), (P[i + 1] - p).normalized()
         n1, n2 = norm(d1), norm(d2)
         m = (n1 + n2).normalized()
@@ -501,7 +549,11 @@ def stroke_outline(pts, w, n=16):
             left.extend(
                 Vector(q)
                 for q in round_corners(
-                    [(P[i - 1].x + n1.x * h, P[i - 1].y + n1.y * h, 0), (c_in.x, c_in.y, h * 0.45), (P[i + 1].x + n2.x * h, P[i + 1].y + n2.y * h, 0)],
+                    [
+                        (P[i - 1].x + n1.x * h, P[i - 1].y + n1.y * h, 0),
+                        (c_in.x, c_in.y, h * 0.45),
+                        (P[i + 1].x + n2.x * h, P[i + 1].y + n2.y * h, 0),
+                    ],
                     12,
                 )[1:-1]
             )
@@ -516,16 +568,26 @@ def stroke_outline(pts, w, n=16):
             right.extend(
                 Vector(q)
                 for q in round_corners(
-                    [(P[i - 1].x - n1.x * h, P[i - 1].y - n1.y * h, 0), (c_in.x, c_in.y, h * 0.45), (P[i + 1].x - n2.x * h, P[i + 1].y - n2.y * h, 0)],
+                    [
+                        (P[i - 1].x - n1.x * h, P[i - 1].y - n1.y * h, 0),
+                        (c_in.x, c_in.y, h * 0.45),
+                        (P[i + 1].x - n2.x * h, P[i + 1].y - n2.y * h, 0),
+                    ],
                     12,
                 )[1:-1]
             )
         else:
-            left.append(p + m * k); right.append(p - m * k)
+            left.append(p + m * k)
+            right.append(p - m * k)
+
     def cap(c, d, sign):
         nrm = norm(d)
         a0 = math.atan2(nrm.y, nrm.x)
-        return [c + Vector((math.cos(a0 + sign * math.pi * t / n), math.sin(a0 + sign * math.pi * t / n))) * h for t in range(1, n)]
+        return [
+            c + Vector((math.cos(a0 + sign * math.pi * t / n), math.sin(a0 + sign * math.pi * t / n))) * h
+            for t in range(1, n)
+        ]
+
     end = cap(P[-1], P[-1] - P[-2], -1)
     ring = left + end + right[::-1] + cap(P[0], P[0] - P[1], -1)
     return [(q.x, q.y) for q in ring]
@@ -536,7 +598,11 @@ def emboss(dev, pts_uv, w, role="g", depth=0.13):
     sw, sh = dev.sw, dev.sh
     loc = Vector(dev.at(0, 0, depth / 2 - 0.01))
     prof = stroke_outline([(u * sw, v * sh) for u, v in pts_uv], w)
-    return [plate(prof, depth, (loc.x, loc.y + depth / 2 - 0.01, loc.z), role, rot=FACE, edge=min(0.03, w * 0.25), clean=True)]
+    return [
+        plate(
+            prof, depth, (loc.x, loc.y + depth / 2 - 0.01, loc.z), role, rot=FACE, edge=min(0.03, w * 0.25), clean=True
+        )
+    ]
 
 
 def bar(dev, u0, u1, v, r=0.055, role="g"):
@@ -571,14 +637,26 @@ def arrow_profile(x_tail, x_wing, y_wing, x_tip, w, n=16):
     x_join = P_tip.x + n_in.x * h + t_join * u.x
     # round cap at upper wing tip P_up (from inner edge to outer edge)
     a_up = math.atan2(n_out.y, n_out.x)
-    cap_up = [(P_up.x + h * math.cos(a_up + math.pi * k / n), P_up.y + h * math.sin(a_up + math.pi * k / n)) for k in range(n, -1, -1)]
+    cap_up = [
+        (P_up.x + h * math.cos(a_up + math.pi * k / n), P_up.y + h * math.sin(a_up + math.pi * k / n))
+        for k in range(n, -1, -1)
+    ]
     # round nose at P_tip from +n_out to (n_out.x, -n_out.y)
     a_tip = math.atan2(n_out.y, n_out.x)
-    nose = [(P_tip.x + h * math.cos(a_tip - 2 * a_tip * k / n), P_tip.y + h * math.sin(a_tip - 2 * a_tip * k / n)) for k in range(n + 1)]
+    nose = [
+        (P_tip.x + h * math.cos(a_tip - 2 * a_tip * k / n), P_tip.y + h * math.sin(a_tip - 2 * a_tip * k / n))
+        for k in range(n + 1)
+    ]
     # round cap at lower wing tip P_dn (from outer edge to inner edge)
-    cap_dn = [(P_dn.x + h * math.cos(-a_up - math.pi * k / n), P_dn.y + h * math.sin(-a_up - math.pi * k / n)) for k in range(n + 1)]
+    cap_dn = [
+        (P_dn.x + h * math.cos(-a_up - math.pi * k / n), P_dn.y + h * math.sin(-a_up - math.pi * k / n))
+        for k in range(n + 1)
+    ]
     # round cap at shaft left end (x_tail, 0)
-    cap_tail = [(x_tail + h * math.cos(math.pi / 2 + math.pi * k / n), h * math.sin(math.pi / 2 + math.pi * k / n)) for k in range(n + 1)]
+    cap_tail = [
+        (x_tail + h * math.cos(math.pi / 2 + math.pi * k / n), h * math.sin(math.pi / 2 + math.pi * k / n))
+        for k in range(n + 1)
+    ]
     j_up = round_corners([(x_tail, h, 0), (x_join, h, h * 0.35), (cap_up[0][0], cap_up[0][1], 0)], 8)[1:-1]
     j_dn = round_corners([(cap_dn[-1][0], cap_dn[-1][1], 0), (x_join, -h, h * 0.35), (x_tail, -h, 0)], 8)[1:-1]
     pts = [*j_up, *cap_up, *nose, *cap_dn, *j_dn, *cap_tail[::-1]]
@@ -645,7 +723,9 @@ def icon_mcp_a():
     port = rr_profile(0.92, 0.92, 0.14)
     cut(sock, plate(port, 0.5, (0, 0.475 + 0.09, 0.75), "r", rot=FACE))
     plate(port, 0.02, (0, 0.475 + 0.092, 0.75), "r", rot=FACE)
-    rim(rr_profile(1.12, 1.12, 0.2), port, 0.035, (0, 0.475 + 0.005, 0.75), "k", rot=FACE)  # accent frame: the connect point
+    rim(
+        rr_profile(1.12, 1.12, 0.2), port, 0.035, (0, 0.475 + 0.005, 0.75), "k", rot=FACE
+    )  # accent frame: the connect point
     m = logo(0.88, (0, 1.0, 0.75 + H / 2 - 0.035), "p", 0.3, soft=False)
     stamp(sock, m)
     logo(0.88, (0, 1.0, 0.75 + H / 2 - 0.03), "p", 0.026, soft=False)  # coral inlay: contrast on cream
@@ -667,15 +747,19 @@ def icon_phone():
     lx, lz = x, z + 0.24
     box((0.38, 0.1, 0.3), (lx, yc - 0.05, lz), "p", 0.07)  # padlock body inside the card
     q = 0.1
-    tube([(lx - q, yc - 0.05, lz + 0.12), (lx - q, yc - 0.05, lz + 0.2)] + [
-        (lx - q * math.cos(math.pi * k / 10), yc - 0.05, lz + 0.2 + q * math.sin(math.pi * k / 10)) for k in range(1, 10)
-    ] + [(lx + q, yc - 0.05, lz + 0.2), (lx + q, yc - 0.05, lz + 0.12)], 0.035, "p")
+    tube(
+        [(lx - q, yc - 0.05, lz + 0.12), (lx - q, yc - 0.05, lz + 0.2)]
+        + [
+            (lx - q * math.cos(math.pi * k / 10), yc - 0.05, lz + 0.2 + q * math.sin(math.pi * k / 10))
+            for k in range(1, 10)
+        ]
+        + [(lx + q, yc - 0.05, lz + 0.2), (lx + q, yc - 0.05, lz + 0.12)],
+        0.035,
+        "p",
+    )
     cyl(0.045, 0.04, (lx, yc - 0.085, lz + 0.03), "c", 0.012, rot=FACE)  # keyhole dot
     for dz, w in ((-0.32, 0.56), (-0.50, 0.38)):
         box((w, 0.06, 0.07), (x - (0.56 - w) / 2, yc - 0.03, z + dz), "p", 0.03)
-
-
-LOGO_SVG = __import__("os").path.join(__import__("os").path.dirname(__file__), "logo-mark.svg")
 
 
 def logo(width, loc, role="c", depth=0.07, rot=(0, 0, 0), soft=True):
@@ -718,9 +802,7 @@ def icon_relay():
     glyph(dev, [(0.24, 0.22), (0.36, 0.0), (0.24, -0.22)], 0.07, "g")
     # two cream pipe ports on ±X, like icon_caddy
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, H / 2), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, H / 2), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, H / 2)
     # logo stamped into the top
     m = logo(1.08, (0, 0.0, H - 0.035), "p", 0.3, soft=False)
     stamp(dev.body, m)
@@ -731,6 +813,7 @@ def stamp(body, cutter_curve):
     """Press a curve shape (logo) into a body. Curves from SVG are not watertight, so
     clean the mesh first; a failed boolean would otherwise erase the whole body."""
     import bmesh
+
     bpy.ops.object.select_all(action="DESELECT")
     cutter_curve.select_set(True)
     bpy.context.view_layer.objects.active = cutter_curve
@@ -785,6 +868,7 @@ def stamp(body, cutter_curve):
 def turn(deg):
     """Rotate the whole model about Z (keeps the shared camera; used to match an approved pose)."""
     from mathutils import Matrix
+
     R = Matrix.Rotation(D2R(deg), 4, "Z")
     bpy.context.view_layer.update()  # matrix_world is stale for objects placed since the last update
     for o in bpy.context.scene.objects:
@@ -797,6 +881,7 @@ def icon_notetaker():
     Coral capsule whose upper half is a big sunk grille with three cream slots, a chunky
     U-yoke + stem + pedestal in the secondary role, minutes pad leaning front-right."""
     from mathutils import Matrix
+
     cyl(0.95, 0.3, (0, 0.1, 0.15), "s", 0.1)
     cyl(0.17, 0.5, (0, 0.1, 0.5), "s", 0.05)
     W = 1.08
@@ -811,7 +896,11 @@ def icon_notetaker():
             box((0.21, 0.12, 0.105), (x, face + 0.02, z), "c", 0.048)  # lit front: c, not g (gate)
     # chunky U-yoke around the lower capsule, legs ending at the pin centre with round caps
     R, z_pin = 0.74, 1.54
-    pts = [(-R, 0.1, z_pin), (-R, 0.1, 1.05)] + [(-R * math.cos(math.pi * k / 14), 0.1, 1.05 - 0.36 * math.sin(math.pi * k / 14)) for k in range(1, 14)] + [(R, 0.1, 1.05), (R, 0.1, z_pin)]
+    pts = (
+        [(-R, 0.1, z_pin), (-R, 0.1, 1.05)]
+        + [(-R * math.cos(math.pi * k / 14), 0.1, 1.05 - 0.36 * math.sin(math.pi * k / 14)) for k in range(1, 14)]
+        + [(R, 0.1, 1.05), (R, 0.1, z_pin)]
+    )
     tube(pts, 0.14, "s")
     for sx in (-1, 1):
         bpy.ops.mesh.primitive_uv_sphere_add(radius=0.14, location=(sx * R, 0.1, z_pin), segments=32, ring_count=16)
@@ -821,7 +910,11 @@ def icon_notetaker():
         # minutes pad leaning on the pedestal, front-right, facing the viewer
         objs = notepad((0.82, -0.8, 0.0), 0.82, 0.82, lean=16, thick=0.22)
         bpy.context.view_layer.update()
-        M = Matrix.Translation((0.85, -0.78, 0)) @ Matrix.Rotation(D2R(14), 4, "Z") @ Matrix.Translation((-0.85, 0.78, 0))
+        M = (
+            Matrix.Translation((0.85, -0.78, 0))
+            @ Matrix.Rotation(D2R(14), 4, "Z")
+            @ Matrix.Translation((-0.85, 0.78, 0))
+        )
         for o in objs:
             o.matrix_world = M @ o.matrix_world
 
@@ -838,6 +931,7 @@ def notepad(at, w, h, lean=0.0, lines=2, thick=0.16):
         z = z0 + h * (0.62 - 0.22 * k)
         objs.append(box((w * 0.5, 0.05, 0.09), (x0 - w * 0.02, y0 - thick / 2 - 0.04, z), "p", 0.04))
     from mathutils import Matrix
+
     bpy.context.view_layer.update()
     R = Matrix.Translation((x0, y0, z0)) @ Matrix.Rotation(D2R(-lean), 4, "X") @ Matrix.Translation((-x0, -y0, -z0))
     for o in objs:
@@ -859,7 +953,9 @@ def dotted_dome(c, R, face=-1, reach=0.82, dot=0.036, pitch=0.105):
         while x <= lim:
             if x * x + z * z <= lim * lim:
                 y = cy - math.sqrt(max(R * R - x * x - z * z, 0)) - dot * 0.3
-                bpy.ops.mesh.primitive_uv_sphere_add(radius=dot, location=(cx + x, y, cz + z), segments=12, ring_count=8)
+                bpy.ops.mesh.primitive_uv_sphere_add(
+                    radius=dot, location=(cx + x, y, cz + z), segments=12, ring_count=8
+                )
                 finish(bpy.context.object, "c")
             x += pitch
         z += pitch * 0.866
@@ -904,7 +1000,13 @@ def icon_notetaker_c():
     cyl(0.12, 0.6, (0, 0.2, 0.45), "p", 0.04)
     mic_head((0, 0.2, 1.55))
     R = 0.86
-    tube([(-R, 0.2, 1.55)] + [(-R * math.cos(math.pi * k / 16), 0.2, 1.55 - R * math.sin(math.pi * k / 16) * 0.85) for k in range(1, 16)] + [(R, 0.2, 1.55)], 0.11, "p")
+    tube(
+        [(-R, 0.2, 1.55)]
+        + [(-R * math.cos(math.pi * k / 16), 0.2, 1.55 - R * math.sin(math.pi * k / 16) * 0.85) for k in range(1, 16)]
+        + [(R, 0.2, 1.55)],
+        0.11,
+        "p",
+    )
     for x in (-R, R):
         cyl(0.17, 0.14, (x, 0.2, 1.55), "p", 0.05, rot=(0, D2R(90), 0))
     # minutes pad grounded front-right, cream sheet, secondary clip
@@ -920,10 +1022,15 @@ def icon_notetaker_d():
     pedestal; two stubby pill arms from the yoke shoulders, mitten hands holding the minutes
     pad low and front-right so the grille stays clear."""
     from mathutils import Matrix
+
     cyl(0.72, 0.24, (0, 0, 0.12), "s", 0.06)
     cyl(0.16, 0.26, (0, 0, 0.35), "s", 0.03)
     # squared U-yoke in XZ
-    pts = [(-0.64, 0, 1.28), (-0.64, 0, 0.7)] + [(-0.64 * math.cos(math.pi * k / 10), 0, 0.7 - 0.22 * math.sin(math.pi * k / 10)) for k in range(1, 10)] + [(0.64, 0, 0.7), (0.64, 0, 1.28)]
+    pts = (
+        [(-0.64, 0, 1.28), (-0.64, 0, 0.7)]
+        + [(-0.64 * math.cos(math.pi * k / 10), 0, 0.7 - 0.22 * math.sin(math.pi * k / 10)) for k in range(1, 10)]
+        + [(0.64, 0, 0.7), (0.64, 0, 1.28)]
+    )
     tube(pts, 0.105, "s")
     for x in (-0.56, 0.56):
         cyl(0.11, 0.1, (x, 0, 1.2), "s", 0.03, rot=(0, D2R(90), 0))
@@ -942,13 +1049,20 @@ def icon_notetaker_d():
         finish(bpy.context.object, "s")
     # notepad, tilted up toward the camera
     c = Vector((0.12, -0.6, 0.68))
-    parts = [box((0.78, 0.14, 0.86), tuple(c), "p", 0.09),
-             box((0.62, 0.05, 0.64), tuple(c + Vector((0, -0.08, -0.03))), "c", 0.05),
-             box((0.34, 0.1, 0.12), tuple(c + Vector((0, -0.02, 0.45))), "s", 0.04),
-             box((0.42, 0.05, 0.07), tuple(c + Vector((-0.04, -0.11, 0.1))), "p", 0.03),
-             box((0.28, 0.05, 0.07), tuple(c + Vector((-0.11, -0.11, -0.1))), "p", 0.03)]
+    parts = [
+        box((0.78, 0.14, 0.86), tuple(c), "p", 0.09),
+        box((0.62, 0.05, 0.64), tuple(c + Vector((0, -0.08, -0.03))), "c", 0.05),
+        box((0.34, 0.1, 0.12), tuple(c + Vector((0, -0.02, 0.45))), "s", 0.04),
+        box((0.42, 0.05, 0.07), tuple(c + Vector((-0.04, -0.11, 0.1))), "p", 0.03),
+        box((0.28, 0.05, 0.07), tuple(c + Vector((-0.11, -0.11, -0.1))), "p", 0.03),
+    ]
     bpy.context.view_layer.update()
-    M = Matrix.Translation(c) @ Matrix.Rotation(D2R(12), 4, "Z") @ Matrix.Rotation(D2R(-18), 4, "X") @ Matrix.Translation(-c)
+    M = (
+        Matrix.Translation(c)
+        @ Matrix.Rotation(D2R(12), 4, "Z")
+        @ Matrix.Rotation(D2R(-18), 4, "X")
+        @ Matrix.Translation(-c)
+    )
     for o in parts:
         o.matrix_world = M @ o.matrix_world
 
@@ -976,6 +1090,7 @@ def icon_link():
     """Two links of a chain under tension, left to right like the chain in the logo:
     long axis horizontal on screen, links pulled apart until their bends bite."""
     from mathutils import Matrix
+
     L, W, r = 2.2, 1.15, 0.2
     gap = L - 4 * r  # taut: B's bend presses into A's bend
     a = ring(stadium(L, W, 40), r, "p")  # 40 per bend: no facets on the silhouette
@@ -987,7 +1102,7 @@ def icon_link():
     M = Matrix.Rotation(D2R(AZIMUTH), 4, "Z")  # long axis = camera's right: horizontal on screen
     # then tilt it up 35° in the picture plane: rising left to right like the flat twin, and it
     # fills the square canvas instead of a thin strip (horizontal it covered 16%, the set ~40%)
-    view = Matrix.Rotation(D2R(AZIMUTH), 3, "Z") @ Matrix.Rotation(D2R(60), 3, "X") @ Vector((0, 0, 1))
+    view = Matrix.Rotation(D2R(AZIMUTH), 3, "Z") @ Matrix.Rotation(D2R(PITCH), 3, "X") @ Vector((0, 0, 1))
     M = Matrix.Rotation(D2R(35), 4, view) @ M
     for o in (a, b):
         o.matrix_world = M @ o.matrix_world
@@ -996,19 +1111,28 @@ def icon_link():
 def spark_profile(R, p=4.0, n=160):
     """Four-point AI spark (✦): an astroid-like curve with concave sides."""
     w = R * 0.25
-    return round_corners([
-        (R, 0, R * 0.09), (w, w, R * 0.5),
-        (0, R, R * 0.09), (-w, w, R * 0.5),
-        (-R, 0, R * 0.09), (-w, -w, R * 0.5),
-        (0, -R, R * 0.09), (w, -w, R * 0.5),
-    ], 24)
+    return round_corners(
+        [
+            (R, 0, R * 0.09),
+            (w, w, R * 0.5),
+            (0, R, R * 0.09),
+            (-w, w, R * 0.5),
+            (-R, 0, R * 0.09),
+            (-w, -w, R * 0.5),
+            (0, -R, R * 0.09),
+            (w, -w, R * 0.5),
+        ],
+        24,
+    )
 
 
 def icon_ai_a():
     """Agent (owner): an AI robot head — rounded head whose face is a screen with '>' and ✦,
     ear bolts on the sides and an antenna with a ball on top."""
     head = Device(1.9, 1.6, 1.25, "p", screen=(0.24, 0.24, 0.24, 0.24), z0=0.0, bevel=0.26)
-    chev = stroke_outline([(-0.32 * head.sw, 0.16 * head.sh), (-0.16 * head.sw, 0.0), (-0.32 * head.sw, -0.16 * head.sh)], 0.15)
+    chev = stroke_outline(
+        [(-0.32 * head.sw, 0.16 * head.sh), (-0.16 * head.sw, 0.0), (-0.32 * head.sw, -0.16 * head.sh)], 0.15
+    )
     plate(chev, 0.04, (head.cx, head.floor + 0.01, head.cz), "g", rot=FACE, edge=0.008, clean=True)
     x, _, z = head.at(0.18, 0.0)
     plate(spark_profile(0.26, 2.7), 0.04, (x, head.floor + 0.01, z), "g", rot=FACE, edge=0.008, clean=True)
@@ -1027,7 +1151,10 @@ def bust(dev, u, v, scale=1.0, role="g"):
     rc = 0.05 * scale
     shoulders = round_corners(
         [(0.32 * scale, 0.0, rc)]
-        + [(0.32 * scale * math.cos(t), 0.2 * scale * math.sin(t), 0.0) for t in [math.pi * k / 72 for k in range(14, 59)]]
+        + [
+            (0.32 * scale * math.cos(t), 0.2 * scale * math.sin(t), 0.0)
+            for t in [math.pi * k / 72 for k in range(14, 59)]
+        ]
         + [(-0.32 * scale, 0.0, rc)],
         12,
     )
@@ -1038,7 +1165,15 @@ def icon_social():
     """Viaalink Social: canonical Viaalink phone with ONE big chat bubble beside it."""
     viaalink_phone(x=-0.42)
     bx, by, bz = 0.94, -0.28, 1.72
-    plate(bubble_profile(1.30, 0.94, 0.26, -0.42, -0.08, -0.52, -0.76), 0.36, (bx, by + 0.18, bz), "s", rot=FACE, edge=0.08, clean=True)
+    plate(
+        bubble_profile(1.30, 0.94, 0.26, -0.42, -0.08, -0.52, -0.76),
+        0.36,
+        (bx, by + 0.18, bz),
+        "s",
+        rot=FACE,
+        edge=0.08,
+        clean=True,
+    )
     for k in (-0.31, 0.0, 0.31):
         cyl(0.095, 0.08, (bx + k, by - 0.20, bz), "p", 0.03, rot=FACE)
 
@@ -1054,9 +1189,16 @@ def padlock(x, y, z, s=1.0, role="c", hole="r", rim_role=None, shackle=None):
     w, d, h = 0.56 * s, 0.3 * s, 0.46 * s
     body = box((w, d, h), (x, y, z), role, 0.1 * s)
     q = 0.16 * s
-    tube([(x - q, y, z + h * 0.3), (x - q, y, z + h * 0.5)] + [(x + px, y, z + h * 0.5 + pz) for px, _, pz in arc(q, 0)] + [(x + q, y, z + h * 0.5), (x + q, y, z + h * 0.3)], 0.055 * s, shackle or role)
+    tube(
+        [(x - q, y, z + h * 0.3), (x - q, y, z + h * 0.5)]
+        + [(x + px, y, z + h * 0.5 + pz) for px, _, pz in arc(q, 0)]
+        + [(x + q, y, z + h * 0.5), (x + q, y, z + h * 0.3)],
+        0.055 * s,
+        shackle or role,
+    )
     if hole and s >= 0.4:
         import bmesh
+
         bpy.ops.object.select_all(action="DESELECT")
         body.select_set(True)
         bpy.context.view_layer.objects.active = body
@@ -1098,7 +1240,7 @@ def padlock(x, y, z, s=1.0, role="c", hole="r", rim_role=None, shackle=None):
         smooth(body)
 
 
-WORLD_JSON = __import__("os").path.join(__import__("os").path.dirname(__file__), "..", "world-land.json")
+WORLD_JSON = os.path.join(os.path.dirname(__file__), "..", "world-land.json")
 
 
 def _in_poly(lon, lat, poly):
@@ -1124,14 +1266,19 @@ def land_shell(c, R, role="c:dim", lift=0.004, thick=0.022, segs=480, rings=240)
     where their centre is land (minus inland seas); the coastline is then relaxed so it reads
     as a smooth outline instead of a pixel staircase, and the land gets a little thickness."""
     import json
+
     import bmesh
-    W = json.load(open(WORLD_JSON))
+
+    with open(WORLD_JSON) as f:
+        W = json.load(f)
     polys = [p for p in W["land"].values() if p]
     seas = list(W["seas"].values())
     box_of = lambda p: (min(x for x, _ in p), max(x for x, _ in p), min(y for _, y in p), max(y for _, y in p))
     pb = [(p, box_of(p)) for p in polys]
     sb = [(p, box_of(p)) for p in seas]
-    hit = lambda lon, lat, lst: any(b[0] <= lon <= b[1] and b[2] <= lat <= b[3] and _in_poly(lon, lat, p) for p, b in lst)
+    hit = lambda lon, lat, lst: any(
+        b[0] <= lon <= b[1] and b[2] <= lat <= b[3] and _in_poly(lon, lat, p) for p, b in lst
+    )
     bpy.ops.mesh.primitive_uv_sphere_add(radius=R + lift, location=(0, 0, 0), segments=segs, ring_count=rings)
     o = bpy.context.object
     bm = bmesh.new()
@@ -1166,6 +1313,7 @@ def icon_globe():
     Europe facing the viewer with a small red marker on the Netherlands, a subtle red grid
     (thin raised equator + meridian), the cream half-ring holder on the +X side, stem, foot."""
     from mathutils import Matrix
+
     c = Vector((0, 0, 1.6))
     R = 0.98
     bpy.ops.mesh.primitive_uv_sphere_add(radius=R, location=tuple(c), segments=96, ring_count=48)
@@ -1183,7 +1331,7 @@ def icon_globe():
     # the map faces the viewer: Europe in the centre of the view, north up on screen. (The
     # holder keeps the classic 20° lean; at icon size the pins read as the stand, not as poles.)
     az = D2R(ICON_AZIMUTH.get(CURRENT or "globe", AZIMUTH))
-    cam = Matrix.Rotation(az, 3, "Z") @ Matrix.Rotation(D2R(60), 3, "X")
+    cam = Matrix.Rotation(az, 3, "Z") @ Matrix.Rotation(D2R(PITCH), 3, "X")
     to_cam = -(cam @ Vector((0, 0, -1)))
     up = cam @ Vector((0, 1, 0))
     europe = geo(8, 47)
@@ -1204,7 +1352,9 @@ def icon_globe():
     pole = T @ Vector((0, 0, 1))
     H = R + 0.2
     eq = T @ Vector((math.cos(D2R(25)), math.sin(D2R(25)), 0))
-    pts = [tuple(c + eq * (H * math.sin(math.pi * k / 32)) - pole * (H * math.cos(math.pi * k / 32))) for k in range(33)]
+    pts = [
+        tuple(c + eq * (H * math.sin(math.pi * k / 32)) - pole * (H * math.cos(math.pi * k / 32))) for k in range(33)
+    ]
     tube(pts, 0.1, "s")
     for sgn, end in ((-1, pts[0]), (1, pts[-1])):
         bpy.ops.mesh.primitive_uv_sphere_add(radius=0.1, location=end, segments=32, ring_count=16)
@@ -1230,16 +1380,28 @@ def icon_browser():
     x, y, z = dev.at(0, 0.36)
     box((dev.sw * 0.86, 0.1, 0.13), (x, y - 0.04, z), "g", 0.06)
     x, y, z = dev.at(-0.24, -0.12)
-    tile = box((0.86, 0.12, 0.74), (x, y - 0.05, z), "c", 0.08)
+    box((0.86, 0.12, 0.74), (x, y - 0.05, z), "c", 0.08)
     tile_front = y - 0.11
-    plate([(-0.32, -0.22), (-0.08, 0.06), (0.06, -0.08), (0.14, 0.0), (0.32, -0.22)], 0.022, (x, tile_front + 0.02, z), "r", rot=FACE)
+    plate(
+        [(-0.32, -0.22), (-0.08, 0.06), (0.06, -0.08), (0.14, 0.0), (0.32, -0.22)],
+        0.022,
+        (x, tile_front + 0.02, z),
+        "r",
+        rot=FACE,
+    )
     sun_prof = [(0.075 * math.cos(2 * math.pi * k / 32), 0.075 * math.sin(2 * math.pi * k / 32)) for k in range(32)]
     plate(sun_prof, 0.022, (x + 0.2, tile_front + 0.02, z + 0.17), "r", rot=FACE)
     for v, u1 in ((0.12, 0.42), (-0.04, 0.34), (-0.2, 0.26)):
         bar(dev, 0.06, u1, v, 0.042)
     x, y, z = dev.at(0.17, -0.36)
     box((0.42, 0.12, 0.16), (x, y - 0.05, z), "p", 0.07)
-    arrow = round_corners([(px * 0.75, py * 0.75, 0.025) for px, py in [(0, 0), (0, -0.62), (0.15, -0.48), (0.26, -0.7), (0.37, -0.65), (0.26, -0.43), (0.46, -0.42)]], 12)
+    arrow = round_corners(
+        [
+            (px * 0.75, py * 0.75, 0.025)
+            for px, py in [(0, 0), (0, -0.62), (0.15, -0.48), (0.26, -0.7), (0.37, -0.65), (0.26, -0.43), (0.46, -0.42)]
+        ],
+        12,
+    )
     x, y, z = dev.at(0.25, -0.25)  # the tip on the red button, clear of the text lines and inside the frame
     plate(arrow, 0.08, (x, y - 0.2, z), "c", rot=FACE, edge=0.015, clean=True)
 
@@ -1259,23 +1421,36 @@ def gear_profile(R, r, n=8, steps=6):
 def icon_config():
     """via.yaml: coral sheet with a folded corner, sunk dark page with config lines,
     a cream sheet behind it."""
-    import bmesh
+
     W, Hh, D, cf = 1.8, 2.3, 0.36, 0.55
     z = Hh / 2 + 0.02
+
     def dogear(w, h, c):
         return [(-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2 - c), (w / 2 - c, h / 2), (-w / 2, h / 2)]
+
     box((1.55, 0.2, 2.0), (-0.3, 0.45, z + 0.12), "s", 0.12)  # sheet behind
     body = plate(dogear(W, Hh, cf), D, (0, D / 2, z), "p", rot=FACE, edge=0.1)
     face = -D / 2
     inner = dogear(W - 0.36, Hh - 0.36, cf - 0.22)
     cut(body, plate(inner, 0.6, (0, face + 0.06, z), "r", rot=FACE))
     plate(inner, 0.02, (0, face + 0.062, z), "r", rot=FACE)
-    corner_cut = [(W / 2 - cf + 0.06, Hh / 2 + 0.05), (W / 2 - cf + 0.06, Hh / 2 - cf + 0.06), (W / 2 + 0.05, Hh / 2 - cf + 0.06), (W / 2 + 0.05, Hh / 2 + 0.05)]
+    corner_cut = [
+        (W / 2 - cf + 0.06, Hh / 2 + 0.05),
+        (W / 2 - cf + 0.06, Hh / 2 - cf + 0.06),
+        (W / 2 + 0.05, Hh / 2 - cf + 0.06),
+        (W / 2 + 0.05, Hh / 2 + 0.05),
+    ]
     cut(body, plate(corner_cut, D * 0.5, (0, face + 0.08, z), "p", rot=FACE))
     smooth(body)
     fold = round_corners([(W / 2 - cf, Hh / 2, 0), (W / 2 - cf, Hh / 2 - cf, 0.08), (W / 2, Hh / 2 - cf, 0)], 12)
     plate(fold, 0.10, (0, face + 0.09, z), "c", rot=FACE, edge=0.03, clean=True)
-    for zz, x0, L in ((0.42, -0.5, 0.55), (0.18, -0.32, 0.75), (-0.06, -0.32, 0.55), (-0.3, -0.5, 0.42), (-0.54, -0.32, 0.42)):
+    for zz, x0, L in (
+        (0.42, -0.5, 0.55),
+        (0.18, -0.32, 0.75),
+        (-0.06, -0.32, 0.55),
+        (-0.3, -0.5, 0.42),
+        (-0.54, -0.32, 0.42),
+    ):
         box((L, 0.12, 0.12), (x0 + L / 2, face + 0.0, z + zz), "g", 0.055)
     # blind review: the lines alone read as a log or a Gantt chart; a gear badge says "settings"
     gc = (0.62, face + 0.04, z - 0.74)
@@ -1314,7 +1489,9 @@ def icon_config():
 def icon_check():
     """Chunky asymmetric checkmark standing on a cream disc."""
     cyl(0.95, 0.36, (0, 0, 0.18), "s", 0.10)
-    prof = stroke_outline([(-0.6, 0.08), (-0.2, -0.34), (0.86, 0.9)], 0.46, n=28)  # short leg, long leg: a tick, not a V
+    prof = stroke_outline(
+        [(-0.6, 0.08), (-0.2, -0.34), (0.86, 0.9)], 0.46, n=28
+    )  # short leg, long leg: a tick, not a V
     plate(prof, 0.5, (0.0, 0.25, 0.92), "p", rot=FACE, edge=0.065, clean=True)
 
 
@@ -1338,11 +1515,34 @@ def icon_chat():
     plate(rr_profile(1.35, 0.95, 0.24), 0.32, (bx, 0.45 + 0.16, bz), "s", rot=FACE, edge=0.075, clean=True)
     dev = Device(2.0, 1.45, 0.42, "p", screen=(0.2, 0.2, 0.2, 0.2), x=-0.2, z0=0.45)
     bpy.data.objects.remove(dev.body, do_unlink=True)
-    dev.body = plate(bubble_profile(2.0, 1.45, 0.26, -0.72, -0.3, -0.76, -1.1), 0.42, (-0.2, 0.21, 0.45 + 1.45 / 2), "p", rot=FACE, edge=0.08, clean=True)
+    dev.body = plate(
+        bubble_profile(2.0, 1.45, 0.26, -0.72, -0.3, -0.76, -1.1),
+        0.42,
+        (-0.2, 0.21, 0.45 + 1.45 / 2),
+        "p",
+        rot=FACE,
+        edge=0.08,
+        clean=True,
+    )
     prof = rr_profile(dev.sw, dev.sh, min(dev.sw, dev.sh) * 0.1)
-    cut(dev.body, plate(rr_profile(dev.sw + 0.01, dev.sh + 0.01, min(dev.sw, dev.sh) * 0.1), 0.6, (dev.cx, dev.floor, dev.cz), "r", rot=FACE))
+    cut(
+        dev.body,
+        plate(
+            rr_profile(dev.sw + 0.01, dev.sh + 0.01, min(dev.sw, dev.sh) * 0.1),
+            0.6,
+            (dev.cx, dev.floor, dev.cz),
+            "r",
+            rot=FACE,
+        ),
+    )
     smooth(dev.body)
-    sleeve = plate(rr_profile(dev.sw + 0.08, dev.sh + 0.08, min(dev.sw, dev.sh) * 0.12), 0.055, (dev.cx, dev.floor, dev.cz), "r", rot=FACE)
+    sleeve = plate(
+        rr_profile(dev.sw + 0.08, dev.sh + 0.08, min(dev.sw, dev.sh) * 0.12),
+        0.055,
+        (dev.cx, dev.floor, dev.cz),
+        "r",
+        rot=FACE,
+    )
     cut(sleeve, plate(prof, 0.3, (dev.cx, dev.floor + 0.05, dev.cz), "r", rot=FACE))
     bar(dev, -0.3, 0.28, 0.16, 0.06)
     bar(dev, -0.3, 0.06, -0.12, 0.06)
@@ -1402,14 +1602,17 @@ def icon_files():
     thickness, paper sticking out between them, share glyph embossed on the front panel)."""
     W, T = 2.5, 0.24
     # back flap + top-left folder tab as ONE profile, flush on the left edge
-    flap = round_corners([
-        (-W / 2, 0.0, 0.14),
-        (W / 2, 0.0, 0.14),
-        (W / 2, 1.85, 0.14),
-        (-W / 2 + 1.0, 1.85, 0.1),
-        (-W / 2 + 0.88, 2.15, 0.12),
-        (-W / 2, 2.15, 0.12),
-    ], 16)
+    flap = round_corners(
+        [
+            (-W / 2, 0.0, 0.14),
+            (W / 2, 0.0, 0.14),
+            (W / 2, 1.85, 0.14),
+            (-W / 2 + 1.0, 1.85, 0.1),
+            (-W / 2 + 0.88, 2.15, 0.12),
+            (-W / 2, 2.15, 0.12),
+        ],
+        16,
+    )
     plate(flap, T, (0, 0.14 + T / 2, 0), "p", rot=FACE, edge=0.08, clean=True)
     # cream paper sheet sitting between back flap and front panel, sticking out above front
     box((1.75, 0.1, 1.4), (0.1, 0.0, 1.25), "c", 0.05)
@@ -1540,9 +1743,7 @@ def icon_server():
     face = -D / 2
     box((W - 0.28, D - 0.28, 1.60), (0, 0, 1.10), "r", 0.06)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, 1.10), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, 1.10), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, 1.10)
     for i in range(3):
         cz = 0.36 + i * 0.74
         box((W, D, H), (0, 0, cz), "p", 0.14)
@@ -1587,7 +1788,9 @@ def toy_bust(x, y, z, scale=1.0, role="p"):
         12,
     )
     plate(sh, D, (x, y + D / 2, z), role, rot=FACE, edge=0.07 * scale, clean=True)
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.25 * scale, location=(x, y, z + 0.67 * scale), segments=48, ring_count=24)
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        radius=0.25 * scale, location=(x, y, z + 0.67 * scale), segments=48, ring_count=24
+    )
     finish(bpy.context.object, role)
 
 
@@ -1599,8 +1802,9 @@ def icon_team():
     toy_bust(-0.92, 0.0, 0.16, 1.0, "p")
     toy_bust(0.92, 0.0, 0.16, 1.0, "p")
 
+
 # ---------------------------------------------------------------- platform marks (W-140)
-BRANDS = __import__("os").path.join(__import__("os").path.dirname(__file__), "..", "brands")
+BRANDS = os.path.join(os.path.dirname(__file__), "..", "brands")
 
 
 def brand_mark(name, width, center, depth, role, rot=FACE, bevel=0.0):
@@ -1608,6 +1812,7 @@ def brand_mark(name, width, center, depth, role, rot=FACE, bevel=0.0):
     on `center` (its depth centred there too). The mark's shape is used unaltered: imported,
     extruded, meshed (duplicate SVG points removed so it renders without slits), one colour."""
     import bmesh
+
     before = set(bpy.data.objects)
     bpy.ops.import_curve.svg(filepath=__import__("os").path.join(BRANDS, f"{name}.svg"))
     parts = [o for o in bpy.data.objects if o not in before]
@@ -1690,8 +1895,22 @@ def apple_model(x=0.0, y=0.0, z=0.0, s=1.0):
     real concave bite (sphere cutter) with cream flesh inside, a slate stem and a curved,
     pointed slate leaf."""
     H = 1.16  # taller than wide
-    prof = [(0, 0.12), (0.18, 0.03), (0.4, 0.0), (0.62, 0.1), (0.8, 0.34), (0.9, 0.66), (0.9, 1.0),
-            (0.84, 1.26), (0.68, 1.44), (0.48, 1.5), (0.3, 1.42), (0.14, 1.28), (0, 1.2)]
+    prof = [
+        (0, 0.12),
+        (0.18, 0.03),
+        (0.4, 0.0),
+        (0.62, 0.1),
+        (0.8, 0.34),
+        (0.9, 0.66),
+        (0.9, 1.0),
+        (0.84, 1.26),
+        (0.68, 1.44),
+        (0.48, 1.5),
+        (0.3, 1.42),
+        (0.14, 1.28),
+        (0, 1.2),
+    ]
+
     def catmull(pts, n=8):  # smooth the profile so the silhouette has no corners
         out = []
         P = [pts[0]] + pts + [pts[-1]]
@@ -1699,9 +1918,20 @@ def apple_model(x=0.0, y=0.0, z=0.0, s=1.0):
             p0, p1, p2, p3 = P[i - 1], P[i], P[i + 1], P[i + 2]
             for k in range(n):
                 t = k / n
-                out.append(tuple(0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t * t
-                                       + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t ** 3) for j in (0, 1)))
+                out.append(
+                    tuple(
+                        0.5
+                        * (
+                            2 * p1[j]
+                            + (-p0[j] + p2[j]) * t
+                            + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t * t
+                            + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t**3
+                        )
+                        for j in (0, 1)
+                    )
+                )
         return out + [pts[-1]]
+
     prof = catmull(prof)
     prof[0] = (0, prof[0][1])
     body = lathe([(max(0.0, r) * s, zz * H * s) for r, zz in prof], "p", segs=160, loc=(x, y, z))
@@ -1740,8 +1970,10 @@ def apple_model(x=0.0, y=0.0, z=0.0, s=1.0):
                 pz = v * hw + 0.3 * L * u * u  # blade in the vertical plane, sweeping up
                 py = side * T - 0.35 * v * v * hw  # cupped across its width
                 verts.append((px, py, pz))
+
     def vid(i, v, sd):
         return (i * 3 + (v + 1)) * 2 + sd
+
     for i in range(n):
         for v in (-1, 0):
             for sd in (0, 1):
@@ -1834,20 +2066,27 @@ def icon_github():
     curling tentacles with glyph tips, in red."""
     ellipsoid((0, 0, 1.95), (0.88, 0.72, 0.72), "p")  # head
     for sx in (-1, 1):
-        bpy.ops.mesh.primitive_cone_add(radius1=0.34, radius2=0.08, depth=0.42, location=(sx * 0.5, 0.05, 2.5), rotation=(0, D2R(sx * 14), 0), vertices=48)
+        bpy.ops.mesh.primitive_cone_add(
+            radius1=0.34,
+            radius2=0.08,
+            depth=0.42,
+            location=(sx * 0.5, 0.05, 2.5),
+            rotation=(0, D2R(sx * 14), 0),
+            vertices=48,
+        )
         finish(bpy.context.object, "p", 0.03)
     # cream face plate with navy eyes (validation: the navy band read as a ninja mask)
     ellipsoid((0, -0.46, 1.86), (0.62, 0.3, 0.46), "c:dim")
     for sx in (-1, 1):
         ellipsoid((sx * 0.24, -0.74, 1.9), (0.1, 0.05, 0.15), "r")
     ellipsoid((0, 0, 1.3), (0.42, 0.38, 0.32), "p")  # neck
-    for k, a in enumerate((-70, -35, 0, 35, 70)):
+    for a in (-70, -35, 0, 35, 70):
         ar = D2R(a)
         d = Vector((math.sin(ar), -math.cos(ar) * 0.6, 0))
         pts = []
         for t in [i / 14 for i in range(15)]:
             r = 0.25 + 0.85 * t
-            pts.append(tuple(Vector((0, 0, 1.2 - 1.15 * t + 0.6 * t ** 3)) + d * r))  # down, then curling up
+            pts.append(tuple(Vector((0, 0, 1.2 - 1.15 * t + 0.6 * t**3)) + d * r))  # down, then curling up
         tube(pts, 0.12, "p")
         bpy.ops.mesh.primitive_uv_sphere_add(radius=0.08, location=pts[-1], segments=24, ring_count=12)
         finish(bpy.context.object, "g")
@@ -1858,8 +2097,21 @@ def icon_docker():
     rounded shipping containers that spell VIA over LINK, one letter each, rows exactly aligned."""
     # hull: a bulbous blunt head tapering to the tail (a smoothed lathe along x). The deck is flattened
     # with a smooth clamp on the vertices (no boolean: the cut left hard, angular rims), then subdivided
-    prof = [(0.0, 0.0), (0.36, 0.03), (0.6, 0.14), (0.76, 0.38), (0.84, 0.78), (0.83, 1.3), (0.75, 1.9),
-            (0.6, 2.5), (0.42, 3.0), (0.27, 3.32), (0.12, 3.47), (0.0, 3.5)]
+    prof = [
+        (0.0, 0.0),
+        (0.36, 0.03),
+        (0.6, 0.14),
+        (0.76, 0.38),
+        (0.84, 0.78),
+        (0.83, 1.3),
+        (0.75, 1.9),
+        (0.6, 2.5),
+        (0.42, 3.0),
+        (0.27, 3.32),
+        (0.12, 3.47),
+        (0.0, 3.5),
+    ]
+
     def catmull(pts, n=6):
         P = [pts[0]] + pts + [pts[-1]]
         out = []
@@ -1867,9 +2119,20 @@ def icon_docker():
             p0, p1, p2, p3 = P[i - 1], P[i], P[i + 1], P[i + 2]
             for k in range(n):
                 t = k / n
-                out.append(tuple(0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t * t
-                                       + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t ** 3) for j in (0, 1)))
+                out.append(
+                    tuple(
+                        0.5
+                        * (
+                            2 * p1[j]
+                            + (-p0[j] + p2[j]) * t
+                            + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t * t
+                            + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t**3
+                        )
+                        for j in (0, 1)
+                    )
+                )
         return [(max(0.0, r), z) for r, z in out] + [pts[-1]]
+
     prof = catmull(prof)
     prof[0] = (0.0, prof[0][1])
     hull = lathe(prof, "p", segs=128)
@@ -1899,7 +2162,7 @@ def icon_docker():
     sp.order_u = 3
     sp.use_endpoint_u = True
     cu.bevel_depth = 0.2
-    cu.bevel_resolution = 14
+    cu.bevel_resolution = SHAPE["tubeResolution"]
     cu.use_fill_caps = True
     tail = bpy.data.objects.new("tail", cu)
     bpy.context.collection.objects.link(tail)
@@ -1912,6 +2175,7 @@ def icon_docker():
     # the joints of the bottom row
     W, H, D, gap = 0.6, 0.5, 0.52, 0.035
     sans = bpy.data.fonts.load(SANS_FONT, check_existing=True)
+
     def container(cx, cz, ch):
         box((W, D, H), (cx, 0, cz), "s", 0.09)
         for dx in (-0.2, 0.2):  # two soft corrugation ribs, either side of the letter
@@ -1920,13 +2184,13 @@ def icon_docker():
         t.data.font = sans
         t.data.align_x = "CENTER"
         t.data.align_y = "CENTER"
+
     z1 = DECK + H / 2 + 0.005
     X0 = -0.3  # owner: the stack sat too far right; over the middle of the back, toward the head
     for i, ch in enumerate("LINK"):
         container(X0 + (i - 1.5) * (W + gap), z1, ch)
     for i, ch in enumerate("VIA"):
         container(X0 + (i - 1) * (W + gap), z1 + H + gap, ch)
-
 
 
 def icon_nas():
@@ -1937,9 +2201,7 @@ def icon_nas():
     face = -D / 2
     box((W, D, H), (0, 0, H / 2), "p", 0.18)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, 0.91), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, 0.91), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, 0.91)
     plate(rr_profile(1.6, 1.62, 0.12), 0.05, (0, face + 0.02, H / 2 + 0.06), "r", rot=FACE, edge=0.015)
     bw = 0.34
     for i in range(4):
@@ -1973,6 +2235,7 @@ def icon_raspberrypi():
 # ---------------------------------------------------------------- ecosystem gaps (009)
 def _clean_logo(width, loc, role="g", depth=0.04, rot=FACE):
     import bmesh
+
     m = logo(width, loc, role, depth, rot=rot, soft=False)
     bpy.ops.object.select_all(action="DESELECT")
     m.select_set(True)
@@ -2079,7 +2342,7 @@ def icon_calendar():
     # 3x2 grid of days: 5 navy (r) cells and 1 red (p) day cell
     for r_idx, dz in enumerate((0.26, -0.24)):
         for c_idx, dx in enumerate((-0.48, 0.0, 0.48)):
-            is_red = (r_idx == 0 and c_idx == 1)
+            is_red = r_idx == 0 and c_idx == 1
             role = "p" if is_red else "r"
             plate(rr_profile(0.34, 0.30, 0.07), 0.05, (dx, pf + 0.01, pz + dz), role, rot=FACE, edge=0.015, clean=True)
     # two chunky red binding rings on top with a cream collar where they enter
@@ -2119,23 +2382,27 @@ def icon_qr_pair():
 def icon_bluetooth():
     """The Bluetooth rune itself as a thick red solid with a rounded rim, standing, no disc."""
     import bmesh
+
     D, cz = 0.38, 1.22
-    outer_pts = round_corners([
-        (-0.58, -0.66, 0.09),
-        (-0.15, -0.26, 0.05),
-        (-0.15, -1.06, 0.09),
-        (0.06, -1.14, 0.10),
-        (0.84, -0.51, 0.11),
-        (0.18, 0.0, 0.06),
-        (0.84, 0.51, 0.11),
-        (0.06, 1.14, 0.10),
-        (-0.15, 1.06, 0.09),
-        (-0.15, 0.26, 0.05),
-        (-0.58, 0.66, 0.09),
-        (-0.76, 0.46, 0.09),
-        (-0.22, 0.0, 0.06),
-        (-0.76, -0.46, 0.09),
-    ], 16)
+    outer_pts = round_corners(
+        [
+            (-0.58, -0.66, 0.09),
+            (-0.15, -0.26, 0.05),
+            (-0.15, -1.06, 0.09),
+            (0.06, -1.14, 0.10),
+            (0.84, -0.51, 0.11),
+            (0.18, 0.0, 0.06),
+            (0.84, 0.51, 0.11),
+            (0.06, 1.14, 0.10),
+            (-0.15, 1.06, 0.09),
+            (-0.15, 0.26, 0.05),
+            (-0.58, 0.66, 0.09),
+            (-0.76, 0.46, 0.09),
+            (-0.22, 0.0, 0.06),
+            (-0.76, -0.46, 0.09),
+        ],
+        16,
+    )
     cu = bpy.data.curves.new("bt", "CURVE")
     cu.dimensions = "2D"
     cu.fill_mode = "BOTH"
@@ -2188,10 +2455,28 @@ def icon_wifi():
     a0, a1, h = D2R(42), D2R(138), 0.14
     n_arc, n_cap = 32, 16
     for r in (0.66, 1.16, 1.66):
-        outer = [((r + h) * math.cos(a0 + (a1 - a0) * k / n_arc), (r + h) * math.sin(a0 + (a1 - a0) * k / n_arc)) for k in range(n_arc + 1)]
-        cap1 = [(r * math.cos(a1) + h * math.cos(a1 + math.pi * k / n_cap), r * math.sin(a1) + h * math.sin(a1 + math.pi * k / n_cap)) for k in range(1, n_cap)]
-        inner = [((r - h) * math.cos(a1 - (a1 - a0) * k / n_arc), (r - h) * math.sin(a1 - (a1 - a0) * k / n_arc)) for k in range(n_arc + 1)]
-        cap0 = [(r * math.cos(a0) + h * math.cos(a0 - math.pi + math.pi * k / n_cap), r * math.sin(a0) + h * math.sin(a0 - math.pi + math.pi * k / n_cap)) for k in range(1, n_cap)]
+        outer = [
+            ((r + h) * math.cos(a0 + (a1 - a0) * k / n_arc), (r + h) * math.sin(a0 + (a1 - a0) * k / n_arc))
+            for k in range(n_arc + 1)
+        ]
+        cap1 = [
+            (
+                r * math.cos(a1) + h * math.cos(a1 + math.pi * k / n_cap),
+                r * math.sin(a1) + h * math.sin(a1 + math.pi * k / n_cap),
+            )
+            for k in range(1, n_cap)
+        ]
+        inner = [
+            ((r - h) * math.cos(a1 - (a1 - a0) * k / n_arc), (r - h) * math.sin(a1 - (a1 - a0) * k / n_arc))
+            for k in range(n_arc + 1)
+        ]
+        cap0 = [
+            (
+                r * math.cos(a0) + h * math.cos(a0 - math.pi + math.pi * k / n_cap),
+                r * math.sin(a0) + h * math.sin(a0 - math.pi + math.pi * k / n_cap),
+            )
+            for k in range(1, n_cap)
+        ]
         plate(outer + cap1 + inner + cap0, D, (0, D / 2, bz), "p", rot=FACE, edge=0.065, clean=True)
 
 
@@ -2203,6 +2488,7 @@ def icon_license():
         box((w, 0.08, 0.13), (0.22 - (1.05 - w) / 2, -0.01, 1.05 + dz), "r", 0.05)
     # key lying diagonally in front of the card as a single smooth profile for shaft + bit
     from mathutils import Matrix
+
     kc = Vector((-0.15, -0.22, 0.88))
     bit_pts = [
         (-0.20, 0.11, 0.04),
@@ -2269,10 +2555,22 @@ def _curved_arrow_profile(R, a0_deg, a1_deg, w, head_len=0.36, head_hw=0.28, n=2
     # arc shaft stops slightly before a1_deg so the triangular head sits at a1_deg
     da_head = sgn * math.degrees(head_len / R) * 0.45
     a_shaft_end = a1_deg - da_head
-    outer = [(ro * math.cos(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)),
-              ro * math.sin(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)), 0.0) for k in range(n + 1)]
-    inner = [(ri * math.cos(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)),
-              ri * math.sin(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)), 0.0) for k in range(n, -1, -1)]
+    outer = [
+        (
+            ro * math.cos(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)),
+            ro * math.sin(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)),
+            0.0,
+        )
+        for k in range(n + 1)
+    ]
+    inner = [
+        (
+            ri * math.cos(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)),
+            ri * math.sin(D2R(a0_deg + (a_shaft_end - a0_deg) * k / n)),
+            0.0,
+        )
+        for k in range(n, -1, -1)
+    ]
     ar = D2R(a_shaft_end)
     er = Vector((math.cos(ar), math.sin(ar)))
     et = Vector((-sgn * math.sin(ar), sgn * math.cos(ar)))
@@ -2310,6 +2608,7 @@ def icon_backup():
     """Database-like 3-tier cylinder with two clear disk seams (like icon_database) and a large
     central cream circular restore arrow wrapped onto the front face."""
     import bmesh
+
     R = 1.12
     for i in range(3):
         cz = 0.36 + i * 0.74
@@ -2362,12 +2661,15 @@ def icon_video():
     plate(rr_profile(0.78, 0.68, 0.16), 0.05, (-0.42, face + 0.02, cz - 0.06), "r", rot=FACE, edge=0.015)
     cyl(0.12, 0.08, (0.24, face - 0.02, cz + 0.36), "c", 0.03, rot=FACE)
     # side lens hood on the right (+X) with navy lens interior
-    hood = round_corners([
-        (0.52, cz - 0.32, 0.08),
-        (1.22, cz - 0.56, 0.12),
-        (1.22, cz + 0.56, 0.12),
-        (0.52, cz + 0.32, 0.08),
-    ], 12)
+    hood = round_corners(
+        [
+            (0.52, cz - 0.32, 0.08),
+            (1.22, cz - 0.56, 0.12),
+            (1.22, cz + 0.56, 0.12),
+            (0.52, cz + 0.32, 0.08),
+        ],
+        12,
+    )
     plate(hood, 0.68, (0, 0.34, 0), "p", rot=FACE, edge=0.09, clean=True)
     plate(rr_profile(0.18, 0.68, 0.06), 0.06, (1.06, -0.34 + 0.02, cz), "r", rot=FACE, edge=0.015)
 
@@ -2382,9 +2684,7 @@ def icon_router():
     cz = H / 2
     box((W, D, H), (0, y_body, cz), "p", 0.18)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), y_body, cz), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), y_body, cz), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, cz, y=y_body)
     face = y_body - D / 2
     # dark recessed LED window along the front edge with 4 glowing status LEDs
     plate(rr_profile(1.72, 0.32, 0.15), 0.04, (0, face + 0.015, cz), "r", rot=FACE, edge=0.012)
@@ -2397,12 +2697,19 @@ def icon_router():
         bx = sx * 0.72
         cyl(0.19, 0.14, (bx, y_ant, H + 0.03), "s", 0.04)
         L = 1.34
-        box((0.25, 0.22, L), (bx + sx * (L / 2) * math.sin(tilt), y_ant, H + (L / 2) * math.cos(tilt)), "s", 0.105, rot=(0, sx * tilt, 0))
+        box(
+            (0.25, 0.22, L),
+            (bx + sx * (L / 2) * math.sin(tilt), y_ant, H + (L / 2) * math.cos(tilt)),
+            "s",
+            0.105,
+            rot=(0, sx * tilt, 0),
+        )
 
 
 def _globe_emblem(R, loc, depth=0.055, role="c"):
     """Seamless 3D globe wireframe emblem (outer circle + curved meridian ellipse + equator)."""
     import bmesh
+
     r_in = R * 0.77
     b = R * 0.095  # half equator thickness
     a_in, z_in = R * 0.31, R * 0.74
@@ -2473,9 +2780,7 @@ def icon_modem():
     cz = z0 + H / 2
     box((W, D, H), (0, 0, cz), "p", 0.18)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, 0.91), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, 0.91), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, 0.91)
     face = -D / 2
     # small cream round globe/line emblem near the top of the front face
     gz = z0 + H - 0.47
@@ -2492,9 +2797,7 @@ def icon_caddy():
     W, D, H = 1.92, 1.45, 1.82
     dev = Device(W, H, D, "p", screen=(0.20, 0.20, 0.16, 0.40), bevel=0.18)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, H / 2), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, H / 2), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, H / 2)
     o = brand_mark("caddy-mark", 1.18, (dev.cx, dev.floor - 0.025, dev.cz), 0.056, "c", bevel=0.0055)
     for f in o.data.polygons:
         f.use_smooth = abs(f.normal.z) < 0.99
@@ -2553,17 +2856,20 @@ def icon_certstore():
     box((1.16, 0.16, 1.12), (0, yc, card_z), "c:dim", 0.09)
     cf = yc - 0.08
     sx_s, sz_s = -0.20, 2.05
-    rib = round_corners([
-        (-0.13, 0.02, 0.02),
-        (-0.25, -0.37, 0.022),
-        (-0.14, -0.30, 0.0),
-        (-0.07, -0.39, 0.022),
-        (0.0, -0.18, 0.0),
-        (0.07, -0.39, 0.022),
-        (0.14, -0.30, 0.0),
-        (0.25, -0.37, 0.022),
-        (0.13, 0.02, 0.02),
-    ], 8)
+    rib = round_corners(
+        [
+            (-0.13, 0.02, 0.02),
+            (-0.25, -0.37, 0.022),
+            (-0.14, -0.30, 0.0),
+            (-0.07, -0.39, 0.022),
+            (0.0, -0.18, 0.0),
+            (0.07, -0.39, 0.022),
+            (0.14, -0.30, 0.0),
+            (0.25, -0.37, 0.022),
+            (0.13, 0.02, 0.02),
+        ],
+        8,
+    )
     plate(rib, 0.065, (sx_s, cf + 0.015, sz_s), "p", rot=FACE, edge=0.016, clean=True)
     n_lobes = 12
     seal_pts = []
@@ -2575,7 +2881,15 @@ def icon_certstore():
     torus(0.148, 0.026, (sx_s, cf - 0.068, sz_s), "p", rot=FACE)
     cyl(0.085, 0.07, (sx_s, cf - 0.048, sz_s), "p", 0.03, rot=FACE)
     for lz, x1 in ((2.16, 0.45), (1.98, 0.45), (1.80, 0.35)):
-        plate(stroke_outline([(0.14, lz), (x1, lz)], 0.09), 0.055, (0, cf + 0.02, 0), "c:dim", rot=FACE, edge=0.02, clean=True)
+        plate(
+            stroke_outline([(0.14, lz), (x1, lz)], 0.09),
+            0.055,
+            (0, cf + 0.02, 0),
+            "c:dim",
+            rot=FACE,
+            edge=0.02,
+            clean=True,
+        )
 
 
 def icon_dns():
@@ -2583,12 +2897,11 @@ def icon_dns():
     top (post + two arrow-shaped boards pointing in different directions); front face (-Y) has a
     navy recess with three short cream lines (an address list) and three small glowing dots."""
     from mathutils import Matrix
+
     W, D, H = 2.12, 1.58, 1.38
     dev = Device(W, H, D, "p", screen=(0.22, 0.22, 0.18, 0.36), bevel=0.20)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, H / 2), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, H / 2), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, H / 2)
     for v, u1 in ((0.27, 0.34), (0.0, 0.12), (-0.27, 0.25)):
         bar(dev, -0.35, u1, v, 0.046, role="c")
     for lx in (-0.28, 0.0, 0.28):
@@ -2599,13 +2912,16 @@ def icon_dns():
     capsule((px, py, H + 0.02), (px, py, H + post_h), 0.135, "s")
     bt = 0.16
     for sgn, bz, ang in ((1, H + 0.98, 22), (-1, H + 0.50, -12)):
-        pts = round_corners([
-            (-0.03 * sgn, -0.175, 0.04),
-            (0.70 * sgn, -0.175, 0.05),
-            (1.00 * sgn, 0.0, 0.05),
-            (0.70 * sgn, 0.175, 0.05),
-            (-0.03 * sgn, 0.175, 0.04),
-        ], 12)
+        pts = round_corners(
+            [
+                (-0.03 * sgn, -0.175, 0.04),
+                (0.70 * sgn, -0.175, 0.05),
+                (1.00 * sgn, 0.0, 0.05),
+                (0.70 * sgn, 0.175, 0.05),
+                (-0.03 * sgn, 0.175, 0.04),
+            ],
+            12,
+        )
         b_obj = plate(pts, bt, (px, py + bt / 2, bz), "s", rot=FACE, edge=0.05, clean=True)
         bpy.context.view_layer.update()
         M = Matrix.Translation((px, py, bz)) @ Matrix.Rotation(D2R(ang), 4, "Z") @ Matrix.Translation((-px, -py, -bz))
@@ -2616,6 +2932,7 @@ def icon_dns():
 def _quad_ring_solid(outer_pts, inner_pts, loc, depth, role, bev=0.03, rot=FACE):
     """Extrude a clean 1-to-1 quad-ring annulus between two matching CCW 2D loops."""
     import bmesh
+
     n = len(outer_pts)
     verts = (
         [(x, y, 0.0) for x, y in outer_pts]
@@ -2653,12 +2970,20 @@ def icon_user():
     rc = 0.22
     n_arc, n_dome = 12, 48
     right_arc = [
-        (w - rc + rc * math.cos(-math.pi / 2 + math.pi / 2 * k / n_arc), rc + rc * math.sin(-math.pi / 2 + math.pi / 2 * k / n_arc))
+        (
+            w - rc + rc * math.cos(-math.pi / 2 + math.pi / 2 * k / n_arc),
+            rc + rc * math.sin(-math.pi / 2 + math.pi / 2 * k / n_arc),
+        )
         for k in range(n_arc)
     ]
-    dome = [(w * math.cos(math.pi * k / n_dome), rc + (h - rc) * math.sin(math.pi * k / n_dome)) for k in range(n_dome + 1)]
+    dome = [
+        (w * math.cos(math.pi * k / n_dome), rc + (h - rc) * math.sin(math.pi * k / n_dome)) for k in range(n_dome + 1)
+    ]
     left_arc = [
-        (-w + rc + rc * math.cos(math.pi + math.pi / 2 * k / n_arc), rc + rc * math.sin(math.pi + math.pi / 2 * k / n_arc))
+        (
+            -w + rc + rc * math.cos(math.pi + math.pi / 2 * k / n_arc),
+            rc + rc * math.sin(math.pi + math.pi / 2 * k / n_arc),
+        )
         for k in range(1, n_arc + 1)
     ]
     plate(right_arc + dome + left_arc, D, (0, D / 2, 0.0), "p", rot=FACE, edge=0.16, clean=True)
@@ -2673,8 +2998,14 @@ def icon_key():
     a_top = math.pi - math.asin(v_sh / R_bow)
     a_bot = -a_top
     n_bow = 56
-    bow_pts = [(R_bow * math.cos(a_bot + (a_top - a_bot) * k / n_bow),
-                R_bow * math.sin(a_bot + (a_top - a_bot) * k / n_bow), 0.0) for k in range(n_bow + 1)]
+    bow_pts = [
+        (
+            R_bow * math.cos(a_bot + (a_top - a_bot) * k / n_bow),
+            R_bow * math.sin(a_bot + (a_top - a_bot) * k / n_bow),
+            0.0,
+        )
+        for k in range(n_bow + 1)
+    ]
     shaft_pts = [
         (-1.86, v_sh, 0.11),
         (-1.86, -0.56, 0.09),
@@ -2705,18 +3036,22 @@ def icon_key():
     smooth(tag)
     plate(rr_profile(0.42, 0.34, 0.07), 0.04, (tx, ty - 0.13 + 0.015, tz - 0.10), "r", rot=FACE, edge=0.01)
     # cream jump-ring threading through the bow hole and tag hole
-    ring_pts = [(bx + 0.02, -0.03 + 0.18 * math.cos(2 * math.pi * k / 40), 1.07 + 0.28 * math.sin(2 * math.pi * k / 40)) for k in range(40)]
+    ring_pts = [
+        (bx + 0.02, -0.03 + 0.18 * math.cos(2 * math.pi * k / 40), 1.07 + 0.28 * math.sin(2 * math.pi * k / 40))
+        for k in range(40)
+    ]
     ring(ring_pts, 0.072, "s")
 
 
 def _shield_outline(w, zt, zsh, zb, rs=0.22, rt=0.16):
     """Smooth G1-continuous convex symmetric shield contour centred around (0, 0), CCW."""
+
     def bez3(p0, p1, p2, p3, m, include_end=False):
         rng = range(m + 1) if include_end else range(m)
         return [
             (
-                (1 - t) ** 3 * p0[0] + 3 * (1 - t) ** 2 * t * p1[0] + 3 * (1 - t) * t ** 2 * p2[0] + t ** 3 * p3[0],
-                (1 - t) ** 3 * p0[1] + 3 * (1 - t) ** 2 * t * p1[1] + 3 * (1 - t) * t ** 2 * p2[1] + t ** 3 * p3[1],
+                (1 - t) ** 3 * p0[0] + 3 * (1 - t) ** 2 * t * p1[0] + 3 * (1 - t) * t**2 * p2[0] + t**3 * p3[0],
+                (1 - t) ** 3 * p0[1] + 3 * (1 - t) ** 2 * t * p1[1] + 3 * (1 - t) * t**2 * p2[1] + t**3 * p3[1],
             )
             for t in [k / m for k in rng]
         ]
@@ -2734,7 +3069,9 @@ def _shield_outline(w, zt, zsh, zb, rs=0.22, rt=0.16):
     p2_flank = (tx + span * 0.45, ty + span * 0.38)
 
     crown = bez3((0.0, zt), (xs * 0.42, zt), p2_crown, p_top, 16)
-    shoulder = bez3(p_top, (p_top[0] + t_in.x * rs * 0.52, p_top[1] + t_in.y * rs * 0.52), (w, zsh - rs * 0.45), p_side, 12)
+    shoulder = bez3(
+        p_top, (p_top[0] + t_in.x * rs * 0.52, p_top[1] + t_in.y * rs * 0.52), (w, zsh - rs * 0.45), p_side, 12
+    )
     flank = bez3(p_side, (w, zsh - rs - 0.42 * (zsh - rs + zb)), p2_flank, p_tip_r, 28)
     half_tip = bez3(p_tip_r, (tx * 0.55, -zb), (tx * 0.25, -zb), (0.0, -zb), 8, include_end=True)
 
@@ -2762,9 +3099,7 @@ def icon_firewall():
     W, D, H = 1.94, 1.45, 1.86
     box((W, D, H), (0, 0, H / 2), "p", 0.18)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, 0.91), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, 0.91), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, 0.91)
     face = -D / 2
     cz = H / 2
     # cream mortar plate on -Y with staggered courses of rounded red bricks standing proud
@@ -2792,10 +3127,13 @@ def icon_cloud():
     L_base, W_base, H_base = 2.52, 0.96, 0.34
     r_end = W_base / 2
     hx = (L_base - W_base) / 2
-    base_prof = (
-        [(hx + r_end * math.cos(-math.pi / 2 + math.pi * k / 24), r_end * math.sin(-math.pi / 2 + math.pi * k / 24)) for k in range(25)]
-        + [(-hx + r_end * math.cos(math.pi / 2 + math.pi * k / 24), r_end * math.sin(math.pi / 2 + math.pi * k / 24)) for k in range(25)]
-    )
+    base_prof = [
+        (hx + r_end * math.cos(-math.pi / 2 + math.pi * k / 24), r_end * math.sin(-math.pi / 2 + math.pi * k / 24))
+        for k in range(25)
+    ] + [
+        (-hx + r_end * math.cos(math.pi / 2 + math.pi * k / 24), r_end * math.sin(math.pi / 2 + math.pi * k / 24))
+        for k in range(25)
+    ]
     plate(base_prof, H_base, (0.02, 0.0, 0.0), "s", edge=0.12, clean=True)
     # 4 puffy round red lobes + plump belly core meeting the cream underside flush at z_cut
     lobes = [
@@ -2895,9 +3233,7 @@ def icon_vm():
     W, D, H = 1.92, 1.45, 1.82
     dev = Device(W, H, D, "p", screen=(0.20, 0.20, 0.20, 0.20), bevel=0.18)
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, H / 2), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, H / 2), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, H / 2)
     # small cream box inside the navy screen (machine in a machine)
     mx, my, mz = dev.cx, dev.floor - 0.08, dev.cz - 0.02
     box((0.92, 0.28, 0.84), (mx, my, mz), "s", 0.13)
@@ -2911,20 +3247,24 @@ def icon_vm():
 def icon_cache():
     """Short database cylinder (like icon_database, 2 disks) with a big cream lightning bolt on its front."""
     import bmesh
+
     R = 1.12
     for i, cz in enumerate((0.40, 1.24)):
         cyl(R, 0.64, (0, 0, cz), "p", 0.13)
         if i == 0:
             cyl(0.96, 0.24, (0, 0, 0.82), "s", 0.04)
     # big cream lightning bolt sliced along vertical cylinder rulings before wrapping (creases eliminated)
-    bolt_pts = round_corners([
-        (0.21, 0.66, 0.042),
-        (-0.50, -0.05, 0.048),
-        (-0.04, -0.05, 0.028),
-        (-0.22, -0.66, 0.042),
-        (0.50, 0.05, 0.048),
-        (0.04, 0.05, 0.028),
-    ], 12)
+    bolt_pts = round_corners(
+        [
+            (0.21, 0.66, 0.042),
+            (-0.50, -0.05, 0.048),
+            (-0.04, -0.05, 0.028),
+            (-0.22, -0.66, 0.042),
+            (0.50, 0.05, 0.048),
+            (0.04, 0.05, 0.028),
+        ],
+        12,
+    )
     bolt = plate(bolt_pts, 0.28, (0, 0, 0), "c", edge=0.042, clean=True)
     bm = bmesh.new()
     bm.from_mesh(bolt.data)
@@ -2974,10 +3314,17 @@ def icon_queue():
 def icon_bucket():
     """Red pail with cream rim and handle, two cream sheets sticking up out of it."""
     from mathutils import Matrix
+
     # tapered round red pail body (lathe) with dark interior floor
     prof = [
-        (0.0, 0.0), (0.58, 0.0), (0.72, 0.02), (0.78, 0.12),
-        (0.98, 1.40), (0.88, 1.40), (0.70, 0.90), (0.0, 0.90),
+        (0.0, 0.0),
+        (0.58, 0.0),
+        (0.72, 0.02),
+        (0.78, 0.12),
+        (0.98, 1.40),
+        (0.88, 1.40),
+        (0.70, 0.90),
+        (0.0, 0.90),
     ]
     pail = lathe(prof, "p", segs=96)
     smooth(pail, 65)
@@ -3025,9 +3372,7 @@ def icon_bucket():
 def _caddy_ports(W, z_port):
     """Left and right cream bored pipe ports (±X), identical to icon_caddy."""
     for sx in (-1, 1):
-        p_cyl = cyl(0.39, 0.88, (sx * (W / 2 + 0.20), 0.0, z_port), "s", 0.08, rot=(0, D2R(90), 0))
-        cut(p_cyl, cyl(0.21, 0.80, (sx * (W / 2 + 0.46), 0.0, z_port), "s", 0, rot=(0, D2R(90), 0)))
-        smooth(p_cyl)
+        side_port(sx, W, z_port)
 
 
 def icon_api():
@@ -3049,12 +3394,16 @@ def icon_api():
     ]
     for sgn in (-1, 1):
         pts = [(sgn * x, z) for x, z in right_brace]
-        plate(stroke_outline(pts, 0.145), 0.10, (dev.cx, dev.floor + 0.02, dev.cz), "g", rot=FACE, edge=0.032, clean=True)
+        plate(
+            stroke_outline(pts, 0.145), 0.10, (dev.cx, dev.floor + 0.02, dev.cz), "g", rot=FACE, edge=0.032, clean=True
+        )
 
 
 def icon_webhook():
-    """Webhook: chunky upright red J-hook (with its eyelet) catching a navy globe with cream continents and meridians."""
+    """Webhook: chunky upright red J-hook (with its eyelet) catching a navy globe with cream continents and
+    meridians."""
     from mathutils import Matrix
+
     R_eye, hw, r_f = 0.42, 0.19, 0.12
     x_sh, z_eye = -0.52, 1.94
     R_b = 0.74
@@ -3063,28 +3412,40 @@ def icon_webhook():
     alpha = math.asin((hw + r_f) / (R_eye + r_f))
     # G1-smooth CCW contour: right neck fillet -> top eye arc -> left neck fillet -> outer J-bend -> tip -> inner J-bend
     r_neck = [
-        (x_sh + (hw + r_f) + r_f * math.cos(math.pi - (math.pi / 2 - alpha) * k / 10),
-         z_eye - dz_f + r_f * math.sin(math.pi - (math.pi / 2 - alpha) * k / 10))
+        (
+            x_sh + (hw + r_f) + r_f * math.cos(math.pi - (math.pi / 2 - alpha) * k / 10),
+            z_eye - dz_f + r_f * math.sin(math.pi - (math.pi / 2 - alpha) * k / 10),
+        )
         for k in range(11)
     ]
     a0, a1 = -math.pi / 2 + alpha, 1.5 * math.pi - alpha
     eye_arc = [
-        (x_sh + R_eye * math.cos(a0 + (a1 - a0) * k / 44),
-         z_eye + R_eye * math.sin(a0 + (a1 - a0) * k / 44))
+        (x_sh + R_eye * math.cos(a0 + (a1 - a0) * k / 44), z_eye + R_eye * math.sin(a0 + (a1 - a0) * k / 44))
         for k in range(1, 44)
     ]
     l_neck = [
-        (x_sh - (hw + r_f) + r_f * math.cos((math.pi / 2 - alpha) * (1 - k / 10)),
-         z_eye - dz_f + r_f * math.sin((math.pi / 2 - alpha) * (1 - k / 10)))
+        (
+            x_sh - (hw + r_f) + r_f * math.cos((math.pi / 2 - alpha) * (1 - k / 10)),
+            z_eye - dz_f + r_f * math.sin((math.pi / 2 - alpha) * (1 - k / 10)),
+        )
         for k in range(11)
     ]
     n_b, n_cap = 48, 16
     b0, b1 = D2R(180), D2R(378)
     ro, ri = R_b + hw, R_b - hw
-    outer_bend = [(cx_b + ro * math.cos(b0 + (b1 - b0) * k / n_b), cz_b + ro * math.sin(b0 + (b1 - b0) * k / n_b)) for k in range(n_b + 1)]
+    outer_bend = [
+        (cx_b + ro * math.cos(b0 + (b1 - b0) * k / n_b), cz_b + ro * math.sin(b0 + (b1 - b0) * k / n_b))
+        for k in range(n_b + 1)
+    ]
     tip_c = (cx_b + R_b * math.cos(b1), cz_b + R_b * math.sin(b1))
-    tip_cap = [(tip_c[0] + hw * math.cos(b1 + math.pi * k / n_cap), tip_c[1] + hw * math.sin(b1 + math.pi * k / n_cap)) for k in range(1, n_cap)]
-    inner_bend = [(cx_b + ri * math.cos(b1 - (b1 - b0) * k / n_b), cz_b + ri * math.sin(b1 - (b1 - b0) * k / n_b)) for k in range(n_b + 1)]
+    tip_cap = [
+        (tip_c[0] + hw * math.cos(b1 + math.pi * k / n_cap), tip_c[1] + hw * math.sin(b1 + math.pi * k / n_cap))
+        for k in range(1, n_cap)
+    ]
+    inner_bend = [
+        (cx_b + ri * math.cos(b1 - (b1 - b0) * k / n_b), cz_b + ri * math.sin(b1 - (b1 - b0) * k / n_b))
+        for k in range(n_b + 1)
+    ]
     prof = r_neck + eye_arc + l_neck + outer_bend + tip_cap + inner_bend
     D = 0.46
     hook = plate(prof, D, (0, D / 2, 0), "p", rot=FACE, edge=0.08, clean=True)
@@ -3102,7 +3463,7 @@ def icon_webhook():
         torus(R - 0.007, 0.026, tuple(c), "c:dim", rot=(D2R(90), 0, D2R(30))),
     ]
     az = D2R(ICON_AZIMUTH.get(CURRENT or "webhook", AZIMUTH))
-    cam = Matrix.Rotation(az, 3, "Z") @ Matrix.Rotation(D2R(60), 3, "X")
+    cam = Matrix.Rotation(az, 3, "Z") @ Matrix.Rotation(D2R(PITCH), 3, "X")
     to_cam = -(cam @ Vector((0, 0, -1)))
     up = cam @ Vector((0, 1, 0))
     aim = geo(-8, 28)
@@ -3124,9 +3485,7 @@ def icon_loadbalancer():
     cz = H / 2
     dev = Device(W, H, D, "p", screen=(0.20, 0.20, 0.20, 0.20), bevel=0.18)
     # ONE cream port on the left (-X), same construction as icon_caddy
-    p_left = cyl(0.39, 0.88, (-W / 2 - 0.20, 0.0, cz), "s", 0.08, rot=(0, D2R(90), 0))
-    cut(p_left, cyl(0.21, 0.80, (-W / 2 - 0.46, 0.0, cz), "s", 0, rot=(0, D2R(90), 0)))
-    smooth(p_left)
+    side_port(-1, W, cz)
     # THREE cream ports fanning out on the right (+X)
     for dz0, tilt_deg in ((0.33, -31), (0.0, 0), (-0.33, 31)):
         ang = D2R(90 + tilt_deg)
@@ -3250,7 +3609,7 @@ def icon_cicd():
             T1, T2 = B + u1 * d, B + u2 * d
             for k in range(n + 1):
                 t = k / n
-                p = T1 * ((1 - t) ** 2) + B * (2 * (1 - t) * t) + T2 * (t ** 2)
+                p = T1 * ((1 - t) ** 2) + B * (2 * (1 - t) * t) + T2 * (t**2)
                 out.append((p.x, p.y))
         return out
 
@@ -3289,8 +3648,15 @@ def icon_logs():
     cyl(R_roll, W_s + 0.06, (0, yc, zc), "c:dim", 0.04, rot=(0, D2R(90), 0))
     curl = [(-0.42 + 0.30 * math.cos(D2R(a)), 0.58 + 0.30 * math.sin(D2R(a))) for a in range(0, -116, -8)]
     sheet_yz = [(0.04, 1.90), (-0.12, zc), (-0.12, 0.58), *curl[1:]]
-    plate(stroke_outline(sheet_yz, 0.20, n=16), W_s, (-W_s / 2, 0.0, 0.0), "c:dim",
-          rot=(D2R(90), 0, D2R(90)), edge=0.055, clean=True)
+    plate(
+        stroke_outline(sheet_yz, 0.20, n=16),
+        W_s,
+        (-W_s / 2, 0.0, 0.0),
+        "c:dim",
+        rot=(D2R(90), 0, D2R(90)),
+        edge=0.055,
+        clean=True,
+    )
     # chunky red roll ends on left and right of top scroll
     for sx in (-1, 1):
         rcap = cyl(0.47, 0.34, (sx * (W_s / 2 + 0.13), yc, zc), "p", 0.09, rot=(0, D2R(90), 0))
@@ -3299,8 +3665,24 @@ def icon_logs():
     # short navy log lines on the upright front face (y = -0.22)
     y_face = -0.22
     for rz, x_end in ((1.40, 0.50), (1.14, 0.32), (0.88, 0.46), (0.62, 0.18)):
-        plate(stroke_outline([(-0.50, rz), (-0.28, rz)], 0.115), 0.055, (0, y_face + 0.02, 0), "r", rot=FACE, edge=0.018, clean=True)
-        plate(stroke_outline([(-0.12, rz), (x_end, rz)], 0.115), 0.055, (0, y_face + 0.02, 0), "r", rot=FACE, edge=0.018, clean=True)
+        plate(
+            stroke_outline([(-0.50, rz), (-0.28, rz)], 0.115),
+            0.055,
+            (0, y_face + 0.02, 0),
+            "r",
+            rot=FACE,
+            edge=0.018,
+            clean=True,
+        )
+        plate(
+            stroke_outline([(-0.12, rz), (x_end, rz)], 0.115),
+            0.055,
+            (0, y_face + 0.02, 0),
+            "r",
+            rot=FACE,
+            edge=0.018,
+            clean=True,
+        )
 
 
 def icon_bell():
@@ -3326,8 +3708,18 @@ def icon_bell():
         p0, p1, p2, p3 = P[i - 1], P[i], P[i + 1], P[i + 2]
         for k in range(8):
             t = k / 8
-            r = 0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t * t + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t ** 3)
-            z = 0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t * t + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t ** 3)
+            r = 0.5 * (
+                2 * p1[0]
+                + (-p0[0] + p2[0]) * t
+                + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t * t
+                + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t**3
+            )
+            z = 0.5 * (
+                2 * p1[1]
+                + (-p0[1] + p2[1]) * t
+                + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t * t
+                + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t**3
+            )
             prof.append((max(0.0, r), z))
     prof.append((0.0, ctrl[-1][1]))
     prof[0] = (0.0, prof[0][1])
@@ -3363,16 +3755,26 @@ def icon_search():
 def icon_trash():
     """Trash: red rounded bin, cream lid, three vertical cream grooves."""
     from mathutils import Matrix
+
     prof = [
-        (0.0, 0.0), (0.60, 0.0), (0.74, 0.03), (0.79, 0.16),
-        (0.89, 1.54), (0.80, 1.58), (0.0, 1.58),
+        (0.0, 0.0),
+        (0.60, 0.0),
+        (0.74, 0.03),
+        (0.79, 0.16),
+        (0.89, 1.54),
+        (0.80, 1.58),
+        (0.0, 1.58),
     ]
     bin_body = lathe(prof, "p", segs=96)
     smooth(bin_body, 65)
     cyl(0.84, 0.10, (0, 0, 1.58), "r", 0.02)
     # overhanging chunky cream lid + top handle loop
     cyl(1.03, 0.28, (0, 0, 1.74), "c:dim", 0.11)
-    h_pts = [(-0.27, 0, 1.82), (-0.27, 0, 1.97)] + [(-0.27 * math.cos(math.pi * k / 16), 0, 1.97 + 0.12 * math.sin(math.pi * k / 16)) for k in range(1, 16)] + [(0.27, 0, 1.97), (0.27, 0, 1.82)]
+    h_pts = (
+        [(-0.27, 0, 1.82), (-0.27, 0, 1.97)]
+        + [(-0.27 * math.cos(math.pi * k / 16), 0, 1.97 + 0.12 * math.sin(math.pi * k / 16)) for k in range(1, 16)]
+        + [(0.27, 0, 1.97), (0.27, 0, 1.82)]
+    )
     tube(h_pts, 0.085, "s")
     # three vertical cream grooves along the -Y front of the tapered bin
     taper = math.atan2(0.89 - 0.79, 1.54 - 0.16)
@@ -3380,7 +3782,11 @@ def icon_trash():
     for a_deg in (-26, 0, 26):
         g = box((0.185, 0.11, 0.92), (0, 0, 0), "c", 0.08)
         bpy.context.view_layer.update()
-        g.matrix_world = Matrix.Rotation(D2R(a_deg), 4, "Z") @ Matrix.Translation((0, -(r_mid + 0.01), cz_g)) @ Matrix.Rotation(taper, 4, "X")
+        g.matrix_world = (
+            Matrix.Rotation(D2R(a_deg), 4, "Z")
+            @ Matrix.Translation((0, -(r_mid + 0.01), cz_g))
+            @ Matrix.Rotation(taper, 4, "X")
+        )
 
 
 ICONS = {
@@ -3492,16 +3898,17 @@ def reset():
         except TypeError:
             continue
     s.cycles.samples = SAMPLES
-    s.cycles.use_denoising = True
-    s.cycles.seed = 7
+    s.cycles.use_denoising = RENDER["denoise"]
+    s.cycles.seed = RENDER["seed"]
     s.render.film_transparent = True
-    s.render.resolution_x = s.render.resolution_y = 2048  # supersampled; normalize scales to 1024 (sharp edges)
-    s.view_settings.view_transform = "Standard"  # brand hex in, brand hex out
-    s.view_settings.look = "None"
-    s.view_settings.exposure = -0.15  # headroom; cream gets its own albedo calibration (CREAM_ALBEDO)
+    s.render.resolution_x = s.render.resolution_y = RENDER["resolution"]  # supersampled; normalize scales to 1024
+    s.view_settings.view_transform = RENDER["viewTransform"]  # "Standard": brand hex in, brand hex out
+    s.view_settings.look = RENDER["look"]
+    s.view_settings.exposure = RENDER["exposure"]  # headroom; cream gets its own albedo calibration (CREAM_ALBEDO)
     w = bpy.data.worlds.new("w")
     w.use_nodes = True
-    w.node_tree.nodes["Background"].inputs["Color"].default_value = (0.9, 0.88, 0.85, 1)  # near-neutral fill: cream stays cream, no pink cast
+    # near-neutral fill: cream stays cream, no pink cast
+    w.node_tree.nodes["Background"].inputs["Color"].default_value = (*RENDER["world"]["color"], 1)
     w.node_tree.nodes["Background"].inputs["Strength"].default_value = WORLD
     s.world = w
 
@@ -3509,28 +3916,26 @@ def reset():
 def light_and_camera():
     s = bpy.context.scene
     from mathutils import Matrix
+
     cam_az = ICON_AZIMUTH.get(CURRENT, AZIMUTH)
     # the light rig turns with the camera (same look for every icon), plus a per-icon turn
     # when the approved pose puts the hero face on the usual shadow side (relay: screen right)
-    rig = Matrix.Rotation(D2R(cam_az - 35 + ICON_KEY_TURN.get(CURRENT, 0)), 3, "Z")
+    rig = Matrix.Rotation(D2R(cam_az - CAMERA["azimuth"] + ICON_KEY_TURN.get(CURRENT, 0)), 3, "Z")
+    target = Vector(LIGHTS["target"])
     # key: big soft area from the top-left of the frame
     # lower and more frontal than before: top ≈ brand hex, front ≈ 85%, right side ≈ 55%
-    bpy.ops.object.light_add(type="AREA", location=rig @ Vector((-2.5, -5.5, 6.0)))
-    key = bpy.context.object
-    key.data.energy = KEY
-    key.data.color = (1.0, 0.95, 0.88)
-    key.data.size = 4.5
-    key.rotation_euler = (Vector((0, 0, 0.8)) - key.location).to_track_quat("-Z", "Y").to_euler()
-    # rim from the back right so cream edges separate from navy
-    bpy.ops.object.light_add(type="AREA", location=rig @ Vector((-3, 5, 4)))  # behind-left: lifts top edges
-    rim = bpy.context.object
-    rim.data.energy = 65
-    rim.data.size = 3.5
-    rim.data.color = (1.0, 0.88, 0.78)
-    rim.rotation_euler = (Vector((0, 0, 0.8)) - rim.location).to_track_quat("-Z", "Y").to_euler()
+    # rim: behind-left, lifts top edges so cream edges separate from navy
+    for name, energy in (("key", KEY), ("rim", LIGHTS["rim"]["energy"])):
+        spec = LIGHTS[name]
+        bpy.ops.object.light_add(type="AREA", location=rig @ Vector(spec["location"]))
+        light = bpy.context.object
+        light.data.energy = energy
+        light.data.color = spec["color"]
+        light.data.size = spec["size"]
+        light.rotation_euler = (target - light.location).to_track_quat("-Z", "Y").to_euler()
     # strict orthographic isometric: 30° above horizontal, front face to the bottom-left
     # 30° above horizontal; turned 30° (not 45°) so the front face leads, like the approved AI set
-    bpy.ops.object.camera_add(rotation=(D2R(60), 0, D2R(ICON_AZIMUTH.get(CURRENT, AZIMUTH))))
+    bpy.ops.object.camera_add(rotation=(D2R(PITCH), 0, D2R(ICON_AZIMUTH.get(CURRENT, AZIMUTH))))
     cam = bpy.context.object
     cam.data.type = "ORTHO"
     s.camera = cam
@@ -3538,16 +3943,15 @@ def light_and_camera():
     bpy.ops.object.select_all(action="DESELECT")
     for o in objs:
         o.select_set(True)
-    bpy.ops.view3d.camera_to_view_selected() if False else None
     # frame: bounding box centre, generous margin (normalize recentres anyway)
     pts = [o.matrix_world @ Vector(c) for o in objs for c in o.bound_box]
     centre = sum(pts, Vector()) / len(pts)
     d = cam.matrix_world.to_3x3() @ Vector((0, 0, 1))
-    cam.location = centre + d * 20
+    cam.location = centre + d * CAMERA["distance"]
     right = cam.matrix_world.to_3x3() @ Vector((1, 0, 0))
     up = cam.matrix_world.to_3x3() @ Vector((0, 1, 0))
     ext = max(max(abs((p - centre).dot(right)), abs((p - centre).dot(up))) for p in pts)
-    cam.data.ortho_scale = ext * 2 * 1.25
+    cam.data.ortho_scale = ext * 2 * CAMERA["orthoMargin"]
 
 
 def main():
