@@ -10,7 +10,7 @@ ARG JETBRAINS_MONO=2.304
 ENV DEBIAN_FRONTEND=noninteractive \
     BUN_INSTALL=/opt/bun \
     PATH=/opt/blender:/opt/bun/bin:$PATH \
-    VIA_ICON_FONT=/usr/share/fonts/truetype/jetbrains/JetBrainsMono-Bold.ttf
+    VIA_ICON_FONT=/work/scripts/icons/fonts/IBMPlexMono-Bold.ttf
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl xz-utils unzip zip git ffmpeg fonts-dejavu-core \

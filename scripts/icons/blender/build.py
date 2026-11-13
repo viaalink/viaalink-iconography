@@ -43,8 +43,11 @@ ICON_AZIMUTH = {}
 ICON_KEY_TURN = {}
 CURRENT = ""
 FROZEN: set = set()  # object names turn() must not move (diagram.py fills this per node)
-# JetBrains Mono Bold (OFL) for the `> via` prompts; --font or VIA_ICON_FONT points elsewhere
-FONT = opt("font", os.environ.get("VIA_ICON_FONT", os.path.expanduser("~/.local/share/fonts/JetBrainsMono-Bold.ttf")))
+# Brand fonts (viaalink.com/brand), shipped with the pipeline (OFL, scripts/icons/fonts): IBM Plex Mono for
+# the `> via` prompts and other mono text, Space Grotesk for letters (owner 2026-11-13: use the brand fonts)
+FONTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fonts")
+FONT = opt("font", os.environ.get("VIA_ICON_FONT", os.path.join(FONTS, "IBMPlexMono-Bold.ttf")))
+SANS_FONT = os.path.join(FONTS, "SpaceGrotesk-Bold.ttf")
 NAMES = [a for a in argv if not a.startswith("--")]
 
 # ---------------------------------------------------------------- palette
@@ -1908,7 +1911,7 @@ def icon_docker():
     # containers: shipping proportions, generous rounding, tight even gaps, top row centred over
     # the joints of the bottom row
     W, H, D, gap = 0.6, 0.5, 0.52, 0.035
-    sans = bpy.data.fonts.load("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", check_existing=True)
+    sans = bpy.data.fonts.load(SANS_FONT, check_existing=True)
     def container(cx, cz, ch):
         box((W, D, H), (cx, 0, cz), "s", 0.09)
         for dx in (-0.2, 0.2):  # two soft corrugation ribs, either side of the letter

@@ -48,6 +48,20 @@ export const ROLES = {
 } as const
 type Role = keyof (typeof ROLES)["light"]
 
+/** Brand letters as shapes (Space Grotesk Bold, scripts/icons/fonts/space-grotesk-caps.json, made by glyphs.py
+ *  in Blender): a flat SVG then looks the same without the font installed. Centred on x, baseline at y,
+ *  cap height `cap` grid units, red fill with a cream outline (painted first). */
+const CAPS = JSON.parse(await Bun.file(new URL("./fonts/space-grotesk-caps.json", import.meta.url)).text()).glyphs as Record<
+  string,
+  { d: string; x0: number; x1: number }
+>
+const letter = (ch: string, x: number, y: number, cap: number) => {
+  const g = CAPS[ch]
+  const k = cap / 0.49 // the json's cap height in em
+  const tx = x - ((g.x0 + g.x1) / 2) * k
+  return `<path d="${g.d}" transform="translate(${tx.toFixed(3)} ${y}) scale(${k.toFixed(3)})" fill="{p}" stroke="{c}" stroke-width="${(0.35 / k).toFixed(3)}" stroke-linejoin="round" paint-order="stroke"/>`
+}
+
 /** `{p}` etc. in the shape strings become fill/stroke values. */
 const LIP = 1.1 // depth of the lip, in grid units
 
@@ -606,7 +620,7 @@ export const FLAT: Record<string, string> = {
       .map(
         ([x, y, ch]) =>
           part(rrect(x, y, 3.7, 3.7, 0.5), "n", "m") +
-          `<text x="${x + 1.85}" y="${y + 2.85}" text-anchor="middle" font-family="DejaVu Sans Mono" font-weight="bold" font-size="2.9" fill="{p}" stroke="{c}" stroke-width=".35" paint-order="stroke">${ch}</text>`,
+          letter(ch, x + 1.85, y + 2.85, 2.2),
       ),
     part("M1.6 12h17.6c.8-1.6 2.2-2.4 3.6-2.2-.2 1.4-.9 2.4-2 2.9C19.6 18 15 21.4 9.6 21.4 4.6 21.4 1.6 17.4 1.6 12z", "p", "s"),
     `<circle cx="5.6" cy="14.6" r=".8" fill="{c}"/>`,

@@ -352,7 +352,7 @@ def label(text, at_ground, size=0.3):
     bpy.ops.object.text_add(location=(at_ground.x, at_ground.y, 0.005), rotation=(0, 0, AZ))
     t = bpy.context.object
     t.data.body = text
-    t.data.font = bpy.data.fonts.load("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", check_existing=True)
+    t.data.font = bpy.data.fonts.load(B["SANS_FONT"], check_existing=True)
     t.data.size = size
     t.data.extrude = 0.012
     t.data.align_x = "CENTER"
