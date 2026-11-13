@@ -29,6 +29,27 @@ ideas in text, render rough AI sketches with the existing Blender icons attached
 picks one, and it is then built in Blender. The Caddy, Let's Encrypt, DNS and IT-diagram icons were made this
 way.
 
+## 1b. The loop: from shared images to 3D, and from 3D to flat
+
+Every round of images goes through the same loop, which Kelvin designed:
+
+1. **Generate** a round of candidates (`just icons-render`).
+2. **Share** it: the gallery (`tools/icon-gallery`) runs on Viaalink's own machine and is published through
+   Viaalink's own Relay at a shared URL, so colleagues, testers and outside reviewers can look.
+3. **Judge**: on `/approve` every image gets approved, needs work, rejected or regenerate, with a note
+   (`local/icons/reviews.json`). Kelvin's verdict counts.
+4. **Feed back**: `just icons-regen` renders the queue again with the notes as feedback, so a rejection
+   becomes the brief for the next attempt.
+5. **Build in 3D**: an approved image is the target for a Blender model (`build.py`).
+6. **Back to 2D**: from that 3D object the flat twin is drawn as code (`flat.ts`): the same parts, the same
+   colour roles (cream becomes sand, navy and red stay accents), checked side by side on one contact sheet.
+7. **Judge again**: the colour gate, a look at every render, an independent review, and the shared gallery.
+
+**Reproducible.** Both the 3D model and the flat twin are code, so the same commands rebuild every icon
+exactly, in light and dark. The step from 3D to flat is a design step today: the twin is drawn from the
+model, not computed from it. Computing it (an orthographic front render turned into SVG paths per colour
+role) is a possible next step.
+
 ## 2. Agents with a gate, not a promise
 
 The Blender work was done by an executor agent (Google's Antigravity CLI, `agy`) from short task files. Real
