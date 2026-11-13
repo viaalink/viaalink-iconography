@@ -1278,6 +1278,27 @@ export const FLAT: Record<string, string> = {
     rect(11.2, 9.8, 1.6, 9.0, 0.8, "c"),
     rect(14.4, 9.8, 1.6, 9.0, 0.8, "c"),
   ].join(""),
+
+  // laptop: generic open clamshell notebook — red lid + trapezoid base with central hinge,
+  // navy screen with two cream app-window shapes (header strip + body), sand keyboard panel + trackpad
+  laptop: [
+    rect(8.6, 14.7, 6.8, 1.15, 0.35, "s"),
+    part(
+      "M3.1 15.6h17.8a1 1 0 0 1 .9.55l1.45 3.65a1.1 1.1 0 0 1-1.02 1.5H1.77a1.1 1.1 0 0 1-1.02-1.5l1.45-3.65a1 1 0 0 1 .9-.55z",
+      "p",
+      "s",
+    ),
+    `<path d="M5.26 16.25H18.74Q19.12 16.25 19.25 16.61L19.72 17.96Q20.0 18.7 19.21 18.7H4.79Q4.0 18.7 4.28 17.96L4.75 16.61Q4.88 16.25 5.26 16.25Z" fill="{m}"/>`,
+    `<path d="M5.10 16.68H18.90Q19.28 16.68 19.40 17.02L19.72 17.96Q20.0 18.7 19.21 18.7H4.79Q4.0 18.7 4.28 17.96L4.60 17.02Q4.72 16.68 5.10 16.68Z" fill="{n}"/>`,
+    rect(9.5, 19.38, 5.0, 1.2, 0.52, "m"),
+    rect(9.5, 19.72, 5.0, 0.86, 0.42, "n"),
+    part(rrect(3.0, 1.8, 18.0, 12.0, 2.2), "p", "s"),
+    rect(4.6, 3.3, 14.8, 9.0, 1.2, "r"),
+    rect(5.8, 4.5, 6.2, 6.6, 1.05, "c"),
+    rect(5.7, 6.3, 6.4, 0.85, 0, "r"),
+    rect(13.2, 5.3, 5.0, 5.8, 1.0, "c"),
+    rect(13.1, 7.0, 5.2, 0.85, 0, "r"),
+  ].join(""),
 }
 
 const VAR = Object.fromEntries(Object.keys(ROLES.light).map((k) => [k, cssVar(k)])) as Record<Role, string>
@@ -1483,6 +1504,7 @@ const STAMP_KNOCKOUT: Record<string, (svg: string) => string> = {
       .replace('<circle cx="10.2" cy="9.8" r="4.6" fill="{s}"/>', "")
       .replace('<circle cx="10.2" cy="10.1" r="4.45" fill="{c}"/>', '<circle cx="10.2" cy="9.8" r="4.5" fill="{r}"/>'),
   trash: (svg) => svg.replaceAll('height="9" rx="0.8" fill="{c}"', 'height="9" rx="0.8" fill="{r}"'),
+  laptop: (svg) => svg.replaceAll('fill="{m}"', 'fill="{r}"').replaceAll('fill="{n}"', 'fill="{r}"'),
 }
 
 export function stampSvg(name: string, badge = false) {

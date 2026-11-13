@@ -3789,6 +3789,82 @@ def icon_trash():
         )
 
 
+def icon_laptop():
+    """Generic open clamshell notebook (distinct from cli, desktop, vscode): red lid (~105° open)
+    and base with rounded bevels, thin central hinge, recessed navy screen with two simple cream
+    app-window shapes (rounded rectangles with a header strip), and a single rounded cream keyboard
+    inset + small cream trackpad on the base."""
+    from mathutils import Euler
+
+    W, D_base, H_base = 2.68, 2.00, 0.32
+    base = box((W, D_base, H_base), (0, -0.68, H_base / 2), "p", 0.11)
+    # Recessed pockets on the base for a single keyboard panel and small trackpad below it
+    cut(base, plate(rr_profile(2.20, 0.80, 0.14), 0.25, (0, -0.49, 0.28), "p"))
+    cut(base, plate(rr_profile(0.84, 0.40, 0.10), 0.25, (0, -1.27, 0.28), "p"))
+    smooth(base)
+    plate(rr_profile(2.14, 0.74, 0.12), 0.062, (0, -0.49, 0.278), "c", edge=0.022, clean=True)
+    plate(rr_profile(0.78, 0.34, 0.08), 0.058, (0, -1.27, 0.278), "c", edge=0.018, clean=True)
+
+    # Thin central hinge joining base and lid (~105° open = tilted 15° back from vertical)
+    tilt = D2R(-15)
+    hinge = Vector((0, 0.17, 0.35))
+    cyl(0.09, 1.34, (0, 0.17, 0.355), "p", 0.035, rot=(0, D2R(90), 0))
+    R = Euler((tilt, 0, 0)).to_matrix()
+
+    def on_lid(x, y, z):
+        return hinge + R @ Vector((x, y, z))
+
+    rot = (D2R(90) + tilt, 0, 0)
+    D_lid, H_lid = 0.28, 1.86
+    cz_lid = 0.06 + H_lid / 2
+    lid = box((W, D_lid, H_lid), on_lid(0, 0, cz_lid), "p", 0.11, rot=(tilt, 0, 0))
+    sw, sh = 2.30, 1.48
+    y_floor = -D_lid / 2 + 0.045
+    scr_prof = rr_profile(sw, sh, 0.14)
+    cut(lid, plate(scr_prof, 0.50, on_lid(0, y_floor, cz_lid), "r", rot=rot))
+    smooth(lid)
+    plate(scr_prof, 0.02, on_lid(0, y_floor + 0.002, cz_lid), "r", rot=rot)
+
+    def _rr_tb(w, h, rt, rb, n=10):
+        pts = []
+        for cx, cy, r, a0 in (
+            (w / 2 - rt, h / 2 - rt, rt, 0),
+            (-w / 2 + rt, h / 2 - rt, rt, 90),
+            (-w / 2 + rb, -h / 2 + rb, rb, 180),
+            (w / 2 - rb, -h / 2 + rb, rb, 270),
+        ):
+            for k in range(n + 1):
+                a = D2R(a0 + 90 * k / n)
+                pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+        return pts
+
+    # Two simple cream app-window shapes (rounded rectangle + header strip, no text/prompt)
+    z_bot = cz_lid - 0.54
+    for wx, ww, wh, hh in ((-0.49, 0.96, 1.08, 0.27), (0.57, 0.80, 0.94, 0.25)):
+        gap = 0.11
+        bh = wh - hh - gap
+        zh = z_bot + wh - hh / 2
+        zb = z_bot + bh / 2
+        plate(
+            _rr_tb(ww, hh, 0.12, 0.025),
+            0.062,
+            on_lid(wx, y_floor + 0.004, zh),
+            "c",
+            rot=rot,
+            edge=0.018,
+            clean=True,
+        )
+        plate(
+            _rr_tb(ww, bh, 0.025, 0.12),
+            0.062,
+            on_lid(wx, y_floor + 0.004, zb),
+            "c",
+            rot=rot,
+            edge=0.018,
+            clean=True,
+        )
+
+
 ICONS = {
     "calib": icon_calib,
     "notetaker": icon_notetaker,
@@ -3876,6 +3952,7 @@ ICONS = {
     "bell": icon_bell,
     "search": icon_search,
     "trash": icon_trash,
+    "laptop": icon_laptop,
 }
 
 
