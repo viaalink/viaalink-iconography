@@ -9,7 +9,8 @@ depends on a single provider.
 
 In November 2026 that code became the starting point for Viaalink's own set. Kelvin set the direction and
 approved every icon. AI agents did the work with him: one as product owner and QA, one building in Blender,
-and independent reviewers who judged the results by looking at them.
+and independent reviewers who judged the results by looking at them. What came from Kelvin, decision by
+decision, is in [HUMAN-DIRECTION.md](HUMAN-DIRECTION.md).
 
 ## 1. From AI pictures to Blender
 

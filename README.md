@@ -56,24 +56,61 @@ Icons: `ai-a` · `api` · `backup` · `bell` · `browser-ext` · `browser` · `b
 
 ## Make them yourself
 
-Requirements: [Blender](https://www.blender.org) 4.x or 5.x, [Bun](https://bun.sh), [just](https://just.systems), ffmpeg,
-and the fonts DejaVu Sans Bold and JetBrains Mono Bold (`VIA_ICON_FONT` points to the latter if it is not in
-`~/.local/share/fonts`).
+### System requirements
+
+| | Minimum | Used to make this set |
+|---|---|---|
+| OS | Linux x64 (Ubuntu/Debian 24.04+); macOS and Windows via Docker | Ubuntu 24.04 |
+| Blender | 4.2 LTS or newer, headless | 5.3 |
+| Bun | 1.1+ | 1.4 |
+| just, ffmpeg, zip | any recent | just 1.46, ffmpeg 6.1 |
+| Fonts (render only, see [Brand](#brand)) | DejaVu Sans Bold, JetBrains Mono Bold (OFL) | |
+| GPU | optional: NVIDIA (OptiX/CUDA). Without one Blender renders on the CPU: same result, slower | RTX 5070 Ti |
+| Disk / RAM | ~2 GB for the tools, 8 GB RAM | |
+
+### Setup
+
+**Docker (any OS):**
 
 ```sh
-bun install
+docker build -t viaalink-icons .
+docker run --rm -v "$PWD":/work --user "$(id -u):$(id -g)" -e HOME=/tmp viaalink-icons \
+  just icons-blender local/icons/rounds/25d-b7 --samples 48 relay
+# NVIDIA GPU: add --gpus all. The first run installs the Bun dependencies into the repo (node_modules).
+```
+
+**Linux, without Docker:** `scripts/setup-linux.sh` installs ffmpeg, just and the fonts via apt, Blender from
+blender.org into `~/.local/opt`, Bun, and runs `bun install`.
+
+**By hand:** install the tools in the table, put JetBrains Mono Bold in `~/.local/share/fonts` (or point
+`VIA_ICON_FONT` at it), then `bun install`.
+
+### Run
+
+```sh
 just icons-blender local/icons/rounds/25d-b7 --samples 48   # every 2.5D icon, light + dark (or name a few: ... relay lock)
 just icons-flat local/icons/rounds/flat-r9                   # the flat twins
 just icons-blender-gate                                      # no clipped white, both editions, nothing cropped
 just icons-pack                                              # SVG/PNG/Mermaid/draw.io → local/icons/pack
 just icons-diagram relay-ha                                  # a flow diagram (scripts/icons/blender/diagrams/relay-ha.json)
 just icons-story relay-ha                                    # its story animation: nodes pop in, pipes draw, a Relay fails
+just icons-gallery                                           # the gallery on http://127.0.0.1:5330 (needs the via CLI)
 ```
+
+AI concept sketches (`just icons-render`) need an `OPENROUTER_API_KEY` in your environment. The rest runs
+offline.
 
 ![story](docs/examples/relay-ha-story.gif)
 
 How the set was made, with AI agents as executor and art director: [docs/HOW-WE-MADE-IT.md](docs/HOW-WE-MADE-IT.md).
+Which ideas, choices and rejections came from the human: [docs/HUMAN-DIRECTION.md](docs/HUMAN-DIRECTION.md).
 The working rules the agents follow: [docs/skill/SKILL.md](docs/skill/SKILL.md); real task files: [docs/tasks](docs/tasks).
+
+## Brand
+
+Colours, typography (Space Grotesk, IBM Plex Mono) and logo use: **[viaalink.com/brand](https://viaalink.com/brand)**.
+The icon palette follows it: Viaalink Red `#F73F3F`, navy, paper `#F6F3EE`. The fonts in the requirements table
+are only what the renderer needs for the few letters inside icons (the `> via` prompt, the Docker containers).
 
 ## Licence
 

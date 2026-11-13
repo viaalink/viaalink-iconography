@@ -68,7 +68,7 @@ def socket_for(node, end, out):
     if flat.length < 1e-6 or abs(flat.normalized().dot(axis)) > 0.5:
         return None  # the pipe runs along the device's own ports: those already take it
     k = node.get("scale", 1.0)
-    c = B["cyl"](PIPE_R * 1.7 * k, 0.22 * k, tuple(end - out * 0.05), "s", 0.04, verts=48)
+    c = B["cyl"](PIPE_R * 1.8 * k, 0.26 * k, tuple(end + out * 0.08 * k), "s", 0.04, verts=48)
     c.rotation_euler = out.to_track_quat("Z", "Y").to_euler()
     return c
 # Layout frame: "iso" (default) runs columns along world +X (down-right on screen) and rows along
@@ -241,9 +241,11 @@ def waves(at, d, role="c", z=1.15, radii=(0.22, 0.38, 0.54), clear=None):
         B["tube"](arc, 0.05 - i * 0.006, role)
 
 
-def collars(pts, inset, r):
-    """A cream socket ring where the pipe meets each node's surface."""
-    for p, q in ((pts[0], pts[1]), (pts[-1], pts[-2])):
+def collars(pts, inset, r, skip=(False, False)):
+    """A cream socket ring where the pipe meets each node's surface (not at a device: its port is the ring)."""
+    for (p, q), bare in zip(((pts[0], pts[1]), (pts[-1], pts[-2])), skip):
+        if bare:
+            continue
         d = (q - p).normalized()
         c = B["cyl"](r * 1.7, 0.12, tuple(p + d * (inset + 0.04)), "s", 0.03, verts=48)
         c.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
@@ -251,7 +253,7 @@ def collars(pts, inset, r):
 
 def pipe(ext_a, ext_b, centre_a, centre_b, cable=False, speech=False, wireless=False, height=1.4,
          target_height=1.0, body=1.0, offset=1.0, packet=0.45, arrow=0.78, route=None, nwaves=2,
-         hub_a=False, hub_b=False, wave_at=0.42):
+         hub_a=False, hub_b=False, wave_at=0.42, bare_a=False, bare_b=False, port_a=None, port_b=None):
     """Route a pipe between two nodes on the screen-aligned grid."""
     ua, wa = centre_a.dot(U), centre_a.dot(V)
     ub, wb = centre_b.dot(U), centre_b.dot(V)
@@ -304,11 +306,32 @@ def pipe(ext_a, ext_b, centre_a, centre_b, cable=False, speech=False, wireless=F
         cone.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
         B["finish"](cone, "s")
         return pts
-    pts = fillet(pts)
+    # a pipe running along a device's own ports enters the port at the port's height: the last stretch
+    # ramps from the pipe height to it (owner: "perfect the connection logic"); port_* = (axis, z)
+    def ramp(pts, port):
+        if port is None or len(pts) < 2:
+            return pts
+        axis, z = port
+        d = pts[1] - pts[0]
+        flat = Vector((d.x, d.y, 0))
+        if flat.length < 1e-6 or abs(flat.normalized().dot(axis)) < 0.5 or abs(z - PIPE_Z) < 0.02:
+            return pts
+        run = min(0.55, flat.length * 0.45)
+        p0 = pts[0].copy(); p0.z = z
+        mid = pts[0] + flat.normalized() * run
+        p1 = mid.copy(); p1.z = z
+        p2 = pts[0] + flat.normalized() * (run * 1.8); p2.z = PIPE_Z
+        return [p0, p1, p2] + pts[1:]
+    pts = ramp(pts, port_a)
+    pts = list(reversed(ramp(list(reversed(pts)), port_b)))
+    pts = fillet(pts, rad=0.22)
     B["tube"]([tuple(p) for p in pts], PIPE_R, "p")
-    ends = [e for e, hub in (((pts[0], pts[1] - pts[0]), hub_a), ((pts[-1], pts[-2] - pts[-1]), hub_b)) if not hub]
+    # owner 2026-11-13 "perfect the connection logic": a pipe into a device ends IN its port (or the socket the
+    # diagram adds), so no extra collar or cuff at that end; other ends keep their cream ring
+    ends = [e for e, hub, bare in (((pts[0], pts[1] - pts[0]), hub_a, bare_a), ((pts[-1], pts[-2] - pts[-1]), hub_b, bare_b))
+            if not hub and not bare]
     if not (hub_a or hub_b):
-        collars(pts, 0.05, PIPE_R)
+        collars(pts, 0.05, PIPE_R, skip=(bare_a, bare_b))
     for p, d in ends:  # collars at the ports (none into a junction: agy r6, they clipped the tee)
         c = B["cyl"](PIPE_R * 1.6, 0.1, tuple(p), "s", 0.03)
         c.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
@@ -674,6 +697,20 @@ def main():
         centres[n["id"]] = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, 0))
     everything = [o for objs in nodes.values() for o in objs]
     heights = {k: bounds(v)[1].z for k, v in nodes.items()}
+    ports = {}  # device id -> (port axis, port centre z): the outermost parts along the model's own X
+    for n in spec["nodes"]:
+        if n.get("icon") not in DEVICE_PORTS:
+            continue
+        turn = math.radians(n.get("turn", NODE_TURN.get(n.get("icon", ""), 0)))
+        axis = Vector((math.cos(turn), math.sin(turn), 0))
+        meshes = [o for o in renderable(nodes[n["id"]]) if o.type == "MESH"]
+        if not meshes:
+            continue
+        def reach(o):
+            return max(abs((o.matrix_world @ Vector(c) - centres[n["id"]]).dot(axis)) for c in o.bound_box)
+        far = max(meshes, key=reach)
+        lo, hi = bounds([far])
+        ports[n["id"]] = (axis, (lo.z + hi.z) / 2)
     if scene:  # every person in a scene faces the recorder (agy r8), speakers or not
         rec = next((n["id"] for n in spec["nodes"] if n.get("icon") == "record"), None)
         talk = {e[0] for e in spec.get("edges", []) if len(e) > 2 and e[2].get("style") == "speech"}
@@ -704,7 +741,10 @@ def main():
                    body=spec_by_id[a].get("scale", 1.0), offset=meta.get("offset", 1.0),
                    packet=meta.get("packet", 0.45), arrow=meta.get("arrow", 0.78), route=meta.get("route"),
                    nwaves=meta.get("waves", 2), hub_a=bool(spec_by_id[a].get("hub")), hub_b=bool(spec_by_id[b].get("hub")),
-                   wave_at=meta.get("waveAt", 0.42))
+                   wave_at=meta.get("waveAt", 0.42),
+                   bare_a=not scene and spec_by_id[a].get("icon") in DEVICE_PORTS,
+                   bare_b=not scene and spec_by_id[b].get("icon") in DEVICE_PORTS,
+                   port_a=None if scene else ports.get(a), port_b=None if scene else ports.get(b))
         if not scene and len(pts) > 1:  # sockets where a pipe meets a device from a portless side
             socket_for(spec_by_id[a], pts[0], (pts[1] - pts[0]).normalized())
             socket_for(spec_by_id[b], pts[-1], (pts[-2] - pts[-1]).normalized())
