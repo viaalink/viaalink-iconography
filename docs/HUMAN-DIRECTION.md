@@ -30,8 +30,11 @@ From this follow the house rules:
   needs one.
 - **Flat and depth are one design.** The flat twin is the same object pressed flat, in the same colour
   logic: sand where the 2.5D has cream, navy and red as accents.
-- **Brand typography everywhere,** down to the letters on a container: Space Grotesk and IBM Plex Mono, from
-  the brand itself.
+- **The brand imprinted on the objects.** Kelvin's idea, from the start: icons carry Viaalink's own signs
+  the way a product carries its maker's stamp. The Viaalink mark is imprinted on the relay, the phone, the
+  desktop and the plug; screens show the CLI prompt `> via`; and the containers on the Docker whale spell
+  VIA and LINK, one letter each. The letters use the brand's own typography, Space Grotesk and IBM Plex
+  Mono, so even the smallest sign belongs to Viaalink.
 
 ### 2. Pictures that explain the product
 
