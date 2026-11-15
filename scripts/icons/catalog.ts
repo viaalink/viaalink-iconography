@@ -268,6 +268,26 @@ export const CONCEPTS: IconSubject[] = [
     name: "dns",
     subject: `DNS provider: a compact box with a cream signpost standing on top, the signpost has two arrow-shaped boards pointing in different directions; the front face of the box has a navy recess with three short cream lines like an address list. Same family as the attached reference renders (Viaalink Relay, modem and server): a chunky rounded device box in the primary colour with big soft bevels, cream secondary parts, dark navy only inside recesses, small glowing status lights; strict isometric view, front face toward bottom-left. One object, no tile, no platform, no text other than what is asked.`,
   },
+  {
+    name: "scene-finance",
+    subject: `ONE chunky isometric desk-scene diorama matching the attached desk scenes exactly in camera, island-shaped cream board with a thick primary-colour underside, figure style and material: friendly faceless rounded toy figures (pill-shaped body, round head with no face, no hands), a chunky upright smartphone in the middle with a navy screen showing the Viaalink mark, a record dot and cream text bars, and a thick cream-and-red cable from the phone to an upright card on a small stand on the right. On the left two figures talk: one wears a primary-colour tie, the other round glasses. The card shows a cream bar chart and one chunky euro coin. One small chunky calculator lies on the board. No letters, no numbers, no real logos; keep each object separate.`,
+  },
+  {
+    name: "scene-consult",
+    subject: `ONE chunky isometric desk-scene diorama matching the attached desk scenes exactly in camera, island-shaped cream board with a thick primary-colour underside, figure style and material: friendly faceless rounded toy figures (pill-shaped body, round head with no face, no hands), a chunky upright smartphone in the middle with a navy screen showing the Viaalink mark, a record dot and cream text bars, and a thick cream-and-red cable from the phone to an upright card on a small stand on the right. On the left two figures in primary-colour blazer collars talk. The card shows three square sticky notes in a grid. A small flip-chart easel stands at the back of the board. No letters, no numbers, no real logos; keep each object separate.`,
+  },
+  {
+    name: "scene-interview",
+    subject: `ONE chunky isometric desk-scene diorama matching the attached desk scenes exactly in camera, island-shaped cream board with a thick primary-colour underside, figure style and material: friendly faceless rounded toy figures (pill-shaped body, round head with no face, no hands), a chunky upright smartphone in the middle with a navy screen showing the Viaalink mark, a record dot and cream text bars, and a thick cream-and-red cable from the phone to an upright card on a small stand on the right. On the left an interviewer figure holding a chunky clipboard and a respondent figure holding a cup. The card shows a speech bubble with two bold quote marks. No other props. No letters, no numbers, no real logos; keep each object separate.`,
+  },
+  {
+    name: "scene-coach",
+    subject: `ONE chunky isometric desk-scene diorama matching the attached desk scenes exactly in camera, island-shaped cream board with a thick primary-colour underside, figure style and material: friendly faceless rounded toy figures (pill-shaped body, round head with no face, no hands), a chunky upright smartphone in the middle with a navy screen showing the Viaalink mark, a record dot and cream text bars, and a thick cream-and-red cable from the phone to an upright card on a small stand on the right. Two figures sit on chunky rounded stools, facing each other at an angle. The card shows a target with an arrow in its centre. A small potted plant stands at the back of the board. No letters, no numbers, no real logos; keep each object separate.`,
+  },
+  {
+    name: "scene-board",
+    subject: `ONE chunky isometric desk-scene diorama matching the attached desk scenes exactly in camera, island-shaped cream board with a thick primary-colour underside, figure style and material: friendly faceless rounded toy figures (pill-shaped body, round head with no face, no hands), a chunky upright smartphone in the middle with a navy screen showing the Viaalink mark, a record dot and cream text bars, and a thick cream-and-red cable from the phone to an upright card on a small stand on the right. Three figures stand around a small round table; one, the chair, holds a chunky gavel. The card shows a list with three check marks (the minutes). No letters, no numbers, no real logos; keep each object separate.`,
+  },
 ]
 
 export const PROBE = ICONS.filter((i) => i.probe)
