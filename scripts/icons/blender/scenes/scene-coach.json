@@ -1,0 +1,83 @@
+{
+ "kind": "scene",
+ "grid": 1.75,
+ "foot": 1.7,
+ "boardPad": 0.35,
+ "nodes": [
+  {
+   "id": "a",
+   "doll": "coachee",
+   "at": [
+    0,
+    1.3
+   ],
+   "scale": 1.55,
+   "turn": 28,
+   "label": "1 Session",
+   "short": "1"
+  },
+  {
+   "id": "b",
+   "doll": "coach",
+   "at": [
+    0.05,
+    -0.1
+   ],
+   "scale": 1.55,
+   "turn": -28
+  },
+  {
+   "id": "plant",
+   "doll": "plant",
+   "at": [
+    1.08,
+    -0.44
+   ],
+   "scale": 0.85,
+   "turn": 0
+  },
+  {
+   "id": "rec",
+   "icon": "record",
+   "at": [
+    1.2,
+    0.55
+   ],
+   "scale": 1.05,
+   "label": "2 Phone records",
+   "short": "2"
+  },
+  {
+   "id": "con",
+   "doll": "target",
+   "at": [
+    2.4,
+    -0.35
+   ],
+   "scale": 0.98,
+   "turn": 0,
+   "label": "3 Goals",
+   "short": "3"
+  }
+ ],
+ "edges": [
+  [
+   "a",
+   "rec",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "b",
+   "rec",
+   {
+    "style": "speech"
+   }
+  ],
+  [
+   "rec",
+   "con"
+  ]
+ ]
+}

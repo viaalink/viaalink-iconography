@@ -486,6 +486,160 @@ def o_person(role="c"):
     return base(role)[1]
 
 
+def o_accountant():
+    """Accountant: cream body with a bold red tie down the front."""
+    body, objs = base("c")
+    H = body.H
+    tie = [
+        (0.0, H - 0.03),
+        (0.075, H - 0.11),
+        (0.048, H - 0.18),
+        (0.082, 0.48),
+        (0.0, 0.36),
+        (-0.082, 0.48),
+        (-0.048, H - 0.18),
+        (-0.075, H - 0.11),
+    ]
+    objs.append(inlay(body, tie, "p", 0.026))
+    return objs
+
+
+def o_glasses():
+    """Finance client/analyst: red body, round cream glasses on the head (dark seat ring behind
+    each cream rim so cream frames contrast cleanly on the cream head)."""
+    body, objs = base("p")
+    hz = body.H + HEAD_R - 0.035
+    ez = hz + 0.015
+    for sx in (-1, 1):
+        objs.append(torus(0.096, 0.033, (sx * 0.118, -0.244, ez), "r", rot=FACE))
+        objs.append(torus(0.096, 0.03, (sx * 0.118, -0.268, ez), "c", rot=FACE))
+        objs.append(
+            tube(
+                [(sx * 0.205, -0.255, ez + 0.01), (sx * 0.275, -0.14, ez + 0.01), (sx * 0.285, 0.02, ez + 0.01)],
+                0.024,
+                "c",
+            )
+        )
+    objs.append(tube([(-0.03, -0.276, ez + 0.015), (0.0, -0.286, ez + 0.022), (0.03, -0.276, ez + 0.015)], 0.024, "c"))
+    return objs
+
+
+def _blazer(body_role, lapel_role):
+    body, objs = base(body_role)
+    H = body.H
+    for sx in (-1, 1):
+        lapel = [
+            (sx * 0.02, 0.44),
+            (sx * 0.11, H - 0.02),
+            (sx * 0.23, H - 0.04),
+            (sx * 0.185, 0.78),
+            (sx * 0.215, 0.74),
+            (sx * 0.055, 0.44),
+        ]
+        objs.append(inlay(body, lapel, lapel_role, 0.024))
+    return objs
+
+
+def o_consultant():
+    """Consultant: cream body with red notched blazer lapels."""
+    return _blazer("c", "p")
+
+
+def o_consultant_red():
+    """Consultant counterpart: red body with cream notched blazer lapels."""
+    return _blazer("p", "c")
+
+
+def o_interviewer():
+    """Research interviewer: cream body holding a chunky clipboard in front (like o_client)."""
+    body, objs = base("c")
+    y = -body.R * body.sy - 0.13
+    parts = [
+        box((0.48, 0.07, 0.62), (0.0, y, 0.6), "p", 0.05),
+        box((0.36, 0.03, 0.46), (0.0, y - 0.035, 0.58), "c", 0.025),
+        box((0.22, 0.1, 0.09), (0.0, y - 0.025, 0.9), "s", 0.03),
+        box((0.16, 0.04, 0.045), (0.0, y - 0.06, 0.87), "r", 0.015),
+        box((0.24, 0.02, 0.045), (0.0, y - 0.052, 0.68), "r", 0.015),
+        box((0.18, 0.02, 0.045), (-0.03, y - 0.052, 0.57), "r", 0.015),
+    ]
+    bpy.context.view_layer.update()
+    c = Vector((0.0, y, 0.6))
+    M = Matrix.Translation(c) @ Matrix.Rotation(D2R(-18), 4, "X") @ Matrix.Translation(-c)
+    for o in parts:
+        o.matrix_world = M @ o.matrix_world
+    return objs + parts
+
+
+def o_respondent():
+    """Interview respondent: red body holding a chunky cream mug (handle angled into silhouette)."""
+    body, objs = base("p")
+    cx, cy, cz = -0.1, -body.R * body.sy - 0.15, 0.58
+    objs.append(cyl(0.15, 0.3, (cx, cy, cz), "s", 0.035))
+    objs.append(cyl(0.118, 0.04, (cx, cy, cz + 0.135), "r", 0.01))
+    # Angle handle along -Y so when respondent faces the recorder it silhouettes cleanly in screen plane
+    handle = [
+        (cx, cy - 0.13 - 0.095 * math.sin(math.pi * k / 12), cz + 0.085 * math.cos(math.pi * k / 12)) for k in range(13)
+    ]
+    objs.append(tube(handle, 0.034, "s"))
+    return objs
+
+
+def o_coach():
+    """Coach: cream body wearing an open red cardigan jacket (wide sides, cream shirt front)."""
+    body, objs = base("c")
+    H = body.H
+    for sx in (-1, 1):
+        cardigan = [
+            (sx * 0.085, 0.08),
+            (sx * 0.095, H - 0.02),
+            (sx * 0.32, H - 0.02),
+            (sx * 0.34, 0.08),
+        ]
+        objs.append(inlay(body, cardigan, "p", 0.02))
+    return objs
+
+
+def o_coachee():
+    """Coachee: red body with cream sweater collar and neat red hair cap."""
+    body, objs = base("p")
+    objs.append(neck_ring(body, body.H - 0.03, 0.055, "c", 0.035))
+    hr = HEAD_R
+    hz = body.H + hr - 0.035
+    cap = [(0.0, hz + hr + 0.02)]
+    for k in range(16, -1, -1):
+        a = D2R(12 + 78 * k / 16)
+        cap.append(((hr + 0.02) * math.cos(a), hz + (hr + 0.02) * math.sin(a)))
+    cap.append((0.0, hz + (hr + 0.02) * math.sin(D2R(12))))
+    hair = lathe(cap[::-1], "p")
+    B["cut"](hair, box((1.0, 0.5, 0.42), (0, -0.34, hz - 0.06), "p", 0.0))
+    objs.append(hair)
+    return objs
+
+
+def o_chair():
+    """Board chair: formal red body with cream V-collar, holding a chunky gavel low over the table
+    so speech waves clear the gavel head and the barrel reads in profile."""
+    body, objs = base("p")
+    H = body.H
+    objs.append(inlay(body, [(-0.22, H + 0.08), (0.22, H + 0.08), (0.0, 0.6)], "c"))
+    y = -body.R * body.sy - 0.16
+    p0, p1 = Vector((-0.14, y + 0.04, 0.4)), Vector((-0.1, y - 0.2, 0.62))
+    objs.append(tube([tuple(p0), tuple(p1)], 0.045, "s"))
+    head_parts = [
+        cyl(0.115, 0.38, (0, 0, 0), "p", 0.032),
+        cyl(0.15, 0.08, (0, 0, 0.16), "p", 0.028),
+        cyl(0.15, 0.08, (0, 0, -0.16), "p", 0.028),
+        cyl(0.132, 0.08, (0, 0, 0), "s", 0.022),
+    ]
+    bpy.context.view_layer.update()
+    d = (p1 - p0).normalized()
+    barrel = d.cross(Vector((-1, 0, 0))).normalized()
+    M = Matrix.Translation(p1) @ barrel.to_track_quat("Z", "Y").to_matrix().to_4x4()
+    for o in head_parts:
+        o.matrix_world = M @ o.matrix_world
+    return objs + head_parts
+
+
 # ---------------------------------------------------------------- scene props
 # Desk-scene props that have no icon in build.py (that file belongs to the icons lane). They live
 # here because diagram.py places any name doll() knows; a scene node uses {"doll": "contract",
@@ -674,11 +828,157 @@ def p_chalkboard():
     box((0.5, 0.12, 0.06), (0.35, dev.face - 0.04, 0.72), "c", 0.02)  # chalk ledge
 
 
+def _card(w=1.9, h=2.4, d=0.24, z0=0.16):
+    """Upright card on a cream stand: red frame, sunk navy (r) face."""
+    box((w * 0.62, 0.9, 0.2), (0, 0.18, 0.1), "s", 0.08)
+    return B["Device"](w, h, d, "p", screen=(0.16, 0.16, 0.16, 0.16), z0=z0, y=-0.02)
+
+
+def p_chart_euro():
+    """Finance result: bar-chart card with a chunky euro coin standing at its foot (no font text)."""
+    dev = _sheet(1.9, 2.4, 0.24, 0.16)
+    for u, vtop in ((-0.3, 0.15), (-0.1, 0.24), (0.1, 0.33), (0.3, 0.43)):
+        x0, y0, z0 = dev.at(u, 0.02)
+        _, _, z1 = dev.at(u, vtop)
+        box((0.2, 0.06, z1 - z0), (x0, y0 - 0.025, (z0 + z1) / 2), "r", 0.045)
+    B["emboss"](dev, [(-0.35, -0.04), (0.35, -0.04)], 0.07, "r", 0.05)
+    B["emboss"](dev, [(-0.34, -0.2), (-0.12, -0.2)], 0.09, "r", 0.05)
+    B["emboss"](dev, [(-0.34, -0.33), (-0.16, -0.33)], 0.09, "r", 0.05)
+    cx, cy, cz = 0.3, -0.26, 0.5
+    cyl(0.5, 0.2, (cx, cy, cz), "p", 0.05, rot=FACE)
+    torus(0.42, 0.038, (cx, cy - 0.095, cz), "c", rot=FACE)
+    c_arc = [(0.04 + 0.21 * math.cos(D2R(a)), 0.21 * math.sin(D2R(a))) for a in range(42, 319, 8)]
+    plate(B["stroke_outline"](c_arc, 0.082), 0.055, (cx, cy - 0.09, cz), "c", rot=FACE, edge=0.015, clean=True)
+    for dz, x1 in ((0.072, 0.09), (-0.072, 0.06)):
+        bar_pts = [(-0.25, dz), (x1, dz)]
+        plate(B["stroke_outline"](bar_pts, 0.058), 0.055, (cx, cy - 0.09, cz), "c", rot=FACE, edge=0.012, clean=True)
+
+
+def p_calculator():
+    """Small chunky desk calculator lying on the board."""
+    box((1.05, 1.32, 0.24), (0, 0, 0.12), "p", 0.09)
+    box((0.78, 0.3, 0.06), (0, 0.34, 0.225), "r", 0.025)
+    for ix, dx in enumerate((-0.26, 0.0, 0.26)):
+        for iy, dy in enumerate((0.02, -0.21, -0.44)):
+            if ix == 2 and iy == 1:
+                box((0.2, 0.4, 0.08), (dx, -0.325, 0.24), "c:dim", 0.035)
+            elif not (ix == 2 and iy == 2):
+                box((0.2, 0.17, 0.08), (dx, dy, 0.24), "c:dim", 0.035)
+
+
+def p_stickies():
+    """Consultancy result: three square sticky notes in a 2x2 grid (two red, one cream on navy)."""
+    dev = _card(1.9, 2.4, 0.24, 0.16)
+    notes = (
+        (-0.35, 0.38, "p", -3),
+        (0.35, 0.38, "c", 4),
+        (-0.35, -0.34, "p", 2),
+    )
+    for dx, dz, role, tilt in notes:
+        box((0.58, 0.08, 0.58), (dev.cx + dx, dev.floor - 0.05, dev.cz + dz), role, 0.045, rot=(D2R(-6), D2R(tilt), 0))
+
+
+def p_flipchart():
+    """Workshop flipchart: small easel with a cream sheet at the back."""
+    for sx in (-1, 1):
+        box((0.1, 0.1, 1.95), (sx * 0.5, 0.06, 0.96), "s", 0.04, rot=(D2R(-7), 0, 0))
+    box((0.1, 0.1, 1.86), (0, 0.38, 0.9), "s", 0.04, rot=(D2R(13), 0, 0))
+    box((1.36, 0.12, 1.48), (0, 0.02, 1.36), "p", 0.06, rot=(D2R(-7), 0, 0))
+    cyl(0.12, 1.42, (0, -0.09, 2.09), "p", 0.045, rot=(0, D2R(90), 0))
+    box((1.16, 0.06, 1.24), (0, -0.055, 1.33), "c:dim", 0.035, rot=(D2R(-7), 0, 0))
+    box((0.72, 0.04, 0.09), (-0.08, -0.095, 1.58), "r", 0.02, rot=(D2R(-7), 0, 0))
+    box((0.52, 0.04, 0.09), (-0.18, -0.08, 1.34), "r", 0.02, rot=(D2R(-7), 0, 0))
+
+
+def p_quote():
+    """Interview result: navy card with a cream speech bubble and two sculpted quote marks."""
+    dev = _card(1.9, 2.4, 0.24, 0.16)
+    bub = B["bubble_profile"](1.24, 1.06, 0.34, -0.38, -0.04, -0.46, -0.76)
+    plate(bub, 0.09, (dev.cx, dev.floor - 0.005, dev.cz + 0.08), "c", rot=FACE, edge=0.028, clean=True)
+    qmark = B["round_corners"](
+        [
+            (-0.105, 0.2, 0.065),
+            (0.105, 0.2, 0.065),
+            (0.115, -0.01, 0.095),
+            (-0.035, -0.19, 0.035),
+            (-0.095, -0.145, 0.03),
+            (-0.01, -0.01, 0.025),
+            (-0.105, -0.01, 0.065),
+        ],
+        14,
+    )
+    for dx in (-0.17, 0.17):
+        plate(qmark, 0.06, (dev.cx + dx, dev.floor - 0.09, dev.cz + 0.09), "r", rot=FACE, edge=0.015, clean=True)
+
+
+def p_target():
+    """Coaching result: card with concentric target rings and an arrow in the bullseye."""
+    dev = _sheet(1.9, 2.4, 0.24, 0.16)
+    x, y, z = dev.at(0.0, -0.03, 0.0)
+    cyl(0.58, 0.06, (x, y - 0.02, z), "p", 0.02, rot=FACE)
+    cyl(0.4, 0.08, (x, y - 0.03, z), "c", 0.02, rot=FACE)
+    cyl(0.21, 0.1, (x, y - 0.04, z), "p", 0.02, rot=FACE)
+    # Aim across the screen plane (up-right, slight -Y) so the shaft and flights read in profile, not end-on
+    hit = Vector((x, y - 0.08, z))
+    u_arr = Vector((0.72, -0.24, 0.65)).normalized()
+    tail = hit + u_arr * 0.82
+    bpy.ops.mesh.primitive_cone_add(radius1=0.1, radius2=0, depth=0.24, location=tuple(hit + u_arr * 0.09), vertices=32)
+    cone = bpy.context.view_layer.objects.active
+    cone.rotation_euler = (-u_arr).to_track_quat("Z", "Y").to_euler()
+    finish(cone, "r")
+    tube([tuple(hit + u_arr * 0.14), tuple(tail)], 0.045, "r")
+    f1 = box((0.24, 0.042, 0.2), (0, 0, 0), "r", 0.016)
+    f2 = box((0.042, 0.24, 0.2), (0, 0, 0), "r", 0.016)
+    bpy.context.view_layer.update()
+    M = Matrix.Translation(tail - u_arr * 0.09) @ u_arr.to_track_quat("Z", "Y").to_matrix().to_4x4()
+    for o in (f1, f2):
+        o.matrix_world = M @ o.matrix_world
+
+
+def p_plant():
+    """Potted plant with plump rounded leaves."""
+    cyl(0.38, 0.07, (0, 0, 0.035), "p", 0.03)
+    lathe([(0.0, 0.05), (0.31, 0.05), (0.42, 0.62), (0.0, 0.62)], "s")
+    torus(0.4, 0.055, (0, 0, 0.6), "p")
+    cyl(0.37, 0.05, (0, 0, 0.61), "r", 0.015)
+    tube([(0, 0, 0.6), (0, 0, 1.48)], 0.05, "r")
+    leaves = (
+        ((0, 0, 1.66), 0.22, 0, 0),
+        ((-0.24, -0.04, 1.34), 0.22, -46, 15),
+        ((0.24, 0.04, 1.34), 0.22, 46, 15),
+        ((-0.28, 0.05, 0.98), 0.24, -54, -15),
+        ((0.28, -0.05, 0.98), 0.24, 54, -15),
+    )
+    for loc, r, ry, rz in leaves:
+        lf = sphere(r, (0, 0, 0), "p")
+        lf.scale = (0.72, 0.36, 1.18)
+        bpy.ops.object.transform_apply(scale=True)
+        bpy.context.view_layer.update()
+        M = Matrix.Translation(Vector(loc)) @ Matrix.Rotation(D2R(rz), 4, "Z") @ Matrix.Rotation(D2R(ry), 4, "Y")
+        lf.matrix_world = M @ lf.matrix_world
+
+
+def p_table():
+    """Small round meeting table for board scenes."""
+    cyl(0.42, 0.09, (0, 0, 0.045), "p", 0.035)
+    cyl(0.18, 0.52, (0, 0, 0.3), "p", 0.03)
+    cyl(0.68, 0.1, (0, 0, 0.56), "p", 0.04)
+    cyl(0.72, 0.13, (0, 0, 0.64), "c:dim", 0.055)
+
+
 PROPS = {
     "contract": p_contract,
     "contract-lock": lambda: p_contract("lock"),
     "contract-law": lambda: p_contract("check", True),
     "chart": p_chart,
+    "chart-euro": p_chart_euro,
+    "calculator": p_calculator,
+    "stickies": p_stickies,
+    "flipchart": p_flipchart,
+    "quote": p_quote,
+    "target": p_target,
+    "plant": p_plant,
+    "table": p_table,
     "checklist": p_checklist,
     "camera": p_camera,
     "audiofolder": p_audiofolder,
@@ -704,6 +1004,15 @@ OUTFITS = {
     "child-b": o_child_b,
     "developer": o_developer,
     "client": o_client,
+    "accountant": o_accountant,
+    "glasses": o_glasses,
+    "consultant": o_consultant,
+    "consultant-red": o_consultant_red,
+    "interviewer": o_interviewer,
+    "respondent": o_respondent,
+    "coach": o_coach,
+    "coachee": o_coachee,
+    "chair": o_chair,
 }
 OUTFIT_SCALE = {"child": 0.75, "child-b": 0.75}
 
