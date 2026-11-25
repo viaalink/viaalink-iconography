@@ -1,0 +1,27 @@
+{
+ "title": "Viaalink Notetaker: the phone does the work, your computer can help, viaalink.com only sees the licence",
+ "grid": 3.2,
+ "board": "fit",
+ "nodes": [
+  {"id": "you", "doll": "parent", "scale": 1.2, "at": [0, 0.3], "label": "You talk", "side": "out"},
+  {"id": "ph", "icon": "phone", "at": [1, 0], "scale": 0.85, "label": "Phone records", "side": "out"},
+  {"id": "tr", "icon": "transcribe", "at": [2, 0], "label": "Transcribes", "side": "out"},
+  {"id": "rep", "icon": "report", "at": [3, 0], "label": "Writes report", "side": "out"},
+  {"id": "web", "icon": "globe", "at": [0, 1.7], "label": "viaalink.com", "side": "in"},
+  {"id": "desk", "icon": "desktop", "at": [1.6, 1.7], "label": "Your computer", "side": "in"},
+  {"id": "min", "icon": "minutes", "at": [3, 1.7], "label": "Transcript, voices", "side": "in"}
+ ],
+ "edges": [
+  ["you", "ph", {"style": "speech"}],
+  ["ph", "tr"],
+  ["tr", "rep"],
+  ["ph", "desk", {"style": "wireless", "waves": 1, "waveAt": 0.3, "label": "same Wi-Fi", "tile": "need", "side": "out"}],
+  ["desk", "min"],
+  ["ph", "web", {"label": "licence only", "tile": "need"}],
+  ["desk", "web", {"label": "licence, updates"}]
+ ],
+ "groups": [
+  {"nodes": ["ph", "tr", "rep"], "label": "On your phone"},
+  {"nodes": ["desk", "min"], "label": "On your computer"}
+ ]
+}

@@ -1,0 +1,30 @@
+{
+ "title": "Who spoke: the phone checks the owner and numbers the other voices; the computer groups voices and names them from profiles",
+ "grid": 3.2,
+ "board": "fit",
+ "nodes": [
+  {"id": "you", "doll": "parent", "scale": 1.2, "at": [0, 0], "label": "You", "side": "out"},
+  {"id": "guest", "doll": "person-red", "scale": 1.2, "at": [0, 1.2], "label": "Guest", "side": "in"},
+  {"id": "ph", "icon": "phone", "at": [1, 0.6], "scale": 0.85, "label": "Phone hears", "side": "out"},
+  {"id": "gate", "icon": "shield", "at": [2.2, 0], "label": "Owner check", "side": "out"},
+  {"id": "vp", "icon": "voice-profile", "at": [3.4, 0], "label": "Your voice profile", "side": "out"},
+  {"id": "roll", "icon": "team", "at": [2.2, 1.2], "label": "Stem 1, Stem 2", "side": "in"},
+  {"id": "desk", "icon": "desktop", "at": [1, 2.6], "label": "Your computer", "side": "in"},
+  {"id": "grp", "icon": "search", "at": [2.2, 2.6], "label": "Groups voices", "side": "in"},
+  {"id": "vp2", "icon": "voice-profile", "at": [3.4, 2.6], "label": "Names from profiles", "side": "in"}
+ ],
+ "edges": [
+  ["you", "ph", {"style": "speech"}],
+  ["guest", "ph", {"style": "speech"}],
+  ["ph", "gate"],
+  ["vp", "gate"],
+  ["ph", "roll", {"label": "one number per row", "short": "per row"}],
+  ["ph", "desk", {"style": "wireless", "waves": 1, "waveAt": 0.3, "label": "sent session"}],
+  ["desk", "grp"],
+  ["vp2", "grp"]
+ ],
+ "groups": [
+  {"nodes": ["ph", "gate", "vp", "roll"], "label": "On your phone"},
+  {"nodes": ["desk", "grp", "vp2"], "label": "On your computer"}
+ ]
+}

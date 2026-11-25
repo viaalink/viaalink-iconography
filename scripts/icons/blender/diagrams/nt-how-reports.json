@@ -1,0 +1,26 @@
+{
+ "title": "Reports: the phone runs the schema-first flow with a local model; the desktop report run and offload are planned",
+ "grid": 3.2,
+ "board": "fit",
+ "nodes": [
+  {"id": "min", "icon": "minutes", "at": [0, 0], "label": "Transcript", "side": "out"},
+  {"id": "flow", "icon": "files", "at": [1, 0], "label": "Schema-first flow", "side": "out"},
+  {"id": "ai", "icon": "ai-a", "at": [2, 0], "label": "Model on phone", "side": "out"},
+  {"id": "rep", "icon": "report", "at": [3, 0], "label": "Report", "side": "out"},
+  {"id": "desk", "icon": "desktop", "at": [1, 1.6], "label": "Computer", "side": "in"},
+  {"id": "ai2", "icon": "ai-a", "at": [2, 1.6], "label": "Planned model", "side": "in"},
+  {"id": "rep2", "icon": "report", "at": [3, 1.6], "label": "Report", "side": "in"}
+ ],
+ "edges": [
+  ["min", "flow"],
+  ["flow", "ai"],
+  ["ai", "rep"],
+  ["min", "desk", {"label": "offload, planned", "tile": "need"}],
+  ["desk", "ai2"],
+  ["ai2", "rep2"]
+ ],
+ "groups": [
+  {"nodes": ["flow", "ai", "rep"], "label": "On your phone, built"},
+  {"nodes": ["desk", "ai2", "rep2"], "label": "Planned"}
+ ]
+}

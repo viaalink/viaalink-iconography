@@ -1,0 +1,29 @@
+{
+ "title": "Phone and desktop together: the phone opens every connection, directly on your own network; version 1 is not encrypted",
+ "grid": 3.2,
+ "board": "fit",
+ "nodes": [
+  {"id": "web", "icon": "globe", "at": [0, 1.5], "label": "viaalink.com", "side": "in"},
+  {"id": "ph", "icon": "phone", "at": [1, 1.5], "scale": 0.85, "label": "Your phone", "side": "out"},
+  {"id": "qr", "icon": "qr-pair", "at": [2, 0], "label": "1 Pair by QR", "side": "out"},
+  {"id": "lic", "icon": "license", "at": [2, 1], "label": "2 Licence push", "side": "out"},
+  {"id": "sess", "icon": "upload", "at": [2, 2], "label": "3 Send session", "side": "in"},
+  {"id": "live", "icon": "wifi", "at": [2, 3], "label": "4 Live channel", "side": "out"},
+  {"id": "desk", "icon": "desktop", "at": [3.2, 1.5], "label": "Your computer", "side": "out"},
+  {"id": "warn", "icon": "warning", "at": [3.2, 2.8], "scale": 0.6, "label": "v1 not encrypted", "side": "in"}
+ ],
+ "edges": [
+  ["web", "ph", {"label": "sign in"}],
+  ["ph", "qr"],
+  ["ph", "lic"],
+  ["ph", "sess"],
+  ["ph", "live"],
+  ["qr", "desk", {"route": "rows"}],
+  ["lic", "desk", {"route": "rows"}],
+  ["sess", "desk", {"route": "rows"}],
+  ["live", "desk", {"route": "rows"}]
+ ],
+ "groups": [
+  {"nodes": ["qr", "lic", "sess", "live"], "label": "Same Wi-Fi, phone opens"}
+ ]
+}

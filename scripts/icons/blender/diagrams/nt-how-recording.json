@@ -1,0 +1,30 @@
+{
+ "title": "Recording and transcription: clips wait on the phone, Whisper reads 60 s windows and writes 30 s rows; the computer runs Whisper Large-v3-Turbo",
+ "grid": 3.2,
+ "board": "fit",
+ "nodes": [
+  {"id": "you", "doll": "parent", "scale": 1.2, "at": [0, 0.8], "label": "You talk", "side": "out"},
+  {"id": "rec", "icon": "record", "at": [1, 0], "scale": 0.8, "label": "Records clips", "side": "out"},
+  {"id": "wait", "icon": "pending", "at": [2, 0], "label": "Waits (deferred)", "side": "out"},
+  {"id": "tr", "icon": "transcribe", "at": [3, 0], "label": "60 s window", "side": "out"},
+  {"id": "rows", "icon": "minutes", "at": [4, 0], "label": "30 s rows", "side": "out"},
+  {"id": "desk", "icon": "desktop", "at": [1, 1.7], "label": "Your computer", "side": "in"},
+  {"id": "tr2", "icon": "transcribe", "at": [2.5, 1.7], "label": "Large-v3-Turbo", "side": "in"},
+  {"id": "rows2", "icon": "minutes", "at": [4, 1.7], "label": "Transcript", "side": "in"},
+  {"id": "dl", "icon": "download", "at": [2.5, 2.8], "scale": 0.7, "label": "Model, once", "side": "in"}
+ ],
+ "edges": [
+  ["you", "rec", {"style": "speech"}],
+  ["rec", "wait"],
+  ["wait", "tr", {"label": "on unlock", "short": "later"}],
+  ["tr", "rows"],
+  ["you", "desk", {"style": "speech"}],
+  ["desk", "tr2"],
+  ["tr2", "rows2"],
+  ["dl", "tr2", {"label": "SHA-256 checked"}]
+ ],
+ "groups": [
+  {"nodes": ["rec", "wait", "tr", "rows"], "label": "On your phone"},
+  {"nodes": ["desk", "tr2", "rows2", "dl"], "label": "On your computer"}
+ ]
+}
