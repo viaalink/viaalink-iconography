@@ -30,7 +30,7 @@ The system is built in layers, each with one job, each reproducible from code:
 | Layer | What it does | Where |
 |---|---|---|
 | **Theme** | One source of truth for the look: brand, colours, fonts, logo, camera, light, materials, canvas, diagram style. Swap it and the same system builds another brand | `theme/brand.json` |
-| **Generator** | Explores ideas as images in the house style. Kelvin built it in 2025 at ASD Engineering on OpenAI, and ported it to OpenRouter when access was blocked, so it depends on no single provider | `scripts/icons/render.ts`, `openrouter.ts` |
+| **Generator** | Explores ideas as images in the house style. Kelvin built it in 2025 at ASD Engineering on OpenAI, and later ported it to OpenRouter, so it depends on no single provider | `scripts/icons/render.ts`, `openrouter.ts` |
 | **3D models** | Every approved idea becomes a real Blender model, built from parts with colour roles; light and dark are a palette swap | `scripts/icons/blender/build.py` |
 | **Flat twins** | The same object drawn flat as SVG, part by part, with the same roles | `scripts/icons/flat.ts` |
 | **Gate** | Measures every render: no clipped white, both editions present, nothing cropped | `scripts/icons/blender/gate.ts` |
@@ -60,7 +60,7 @@ open, until it earns its place.
 6. **Judge again**: the gate, a look at every render, an independent review, the shared gallery.
 
 Between 9 and 13 November 2026 this loop ran twelve AI rounds, eight Blender rounds, nine rounds of flat twins
-and three concept rounds, in 144 commits. Next, the same loop opens up: signed-in users on viaalink.com will
+and three concept rounds, in 144 commits in its first home. Next, the same loop opens up: signed-in users on viaalink.com will
 vote on icons, comment and request new ones, and their input becomes the next round.
 
 ## 5. Agentic logic: many agents, clear roles

@@ -32,4 +32,4 @@ Use `viaalink:<name>-mono` for the one-colour version.
 
 `bluetooth` · `caddy` · `docker` · `github` · `os-android` · `os-ios` · `os-linux` · `os-macos` · `os-windows` · `raspberrypi`
 
-Platform marks (GitHub, Apple, Windows, Linux, Android, Docker, Raspberry Pi) are trademarks of their owners; use them only to say where Viaalink runs.
+Platform marks (GitHub, Apple, Windows, Linux, Android, Docker, Raspberry Pi, Bluetooth, Caddy) are trademarks of their owners; use them only to say where Viaalink runs.

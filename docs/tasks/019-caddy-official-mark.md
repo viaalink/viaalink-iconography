@@ -8,7 +8,7 @@ in scripts/icons/flat.ts. You may add a cleaned icon-only SVG at scripts/icons/b
 Do not change palette, lighting, camera, gate or other icons. Do not commit.
 Read docs/skill/SKILL.md first.
 
-Source: scripts/icons/brands/caddy-logo-official.svg (Caddy's official logo-dark.svg; reference render:
+Source: Caddy's official logo-dark.svg from caddyserver.com (not kept in this repository; reference render:
 local/icons/loop/caddy-logo-reference.png). Only the ICON part on the left is used, never the "caddy" wordmark:
 - an OPEN padlock: the shackle (path id "Shackle") and the lock body with its key-shaped cut-out (path id
   "Lock-body");

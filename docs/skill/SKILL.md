@@ -8,7 +8,7 @@ description: Build or change Viaalink 2.5D icons and desk scenes in Blender (det
 The 2.5D set used to come from an image model (scripts/icons/render.ts). Each render
 re-draws the object, so shapes drift between rounds and between light and dark. The
 Blender pipeline fixes that: one model per icon, one camera, one light, colours by role.
-AI stays for **concepts**; Blender makes the **final** icon. See docs/adr/0001-viaalink-iconography.md.
+AI stays for **concepts**; Blender makes the **final** icon.
 
 ## Commands
 
@@ -20,8 +20,8 @@ just icons-blender <dir> --samples 32                                 # fast pre
 
 The recipe runs `blender -b --factory-startup -P scripts/icons/blender/build.py`, then
 `scripts/icons/normalize.ts`, which puts the icon on the square canvas with the same margin
-as the AI rounds. Blender 5.2 is the snap at /snap/bin/blender. Cycles uses OptiX on the
-RTX 5070 Ti. The "HIPEW initialization failed" warning is harmless.
+as the AI rounds.
+With an NVIDIA GPU, Cycles uses OptiX. The "HIPEW initialization failed" warning is harmless.
 
 Name Blender rounds `25d-b<N>-…`. Rounds sort newest-first by label, and `b` sorts before `r`,
 so a Blender round never silently replaces an AI main on the site. It shows up as history on
@@ -49,7 +49,7 @@ so a Blender round never silently replaces an AI main on the site. It shows up a
   - `plate(profile, depth)`, which extrudes a 2D outline (`rr_profile`, `keyhole_profile`);
   - `tube(points, r)`, a seamless round tube for shackles and cables (better than
     torus + cylinders, which leaves shading seams);
-  - `text` (DejaVu Sans Mono Bold);
+  - `text` (the theme's mono font, IBM Plex Mono Bold);
   - `cut(target, cutter)`, an exact boolean after the bevel;
   - `smooth(o)`, smooth-by-angle after a cut, which avoids the shading smudge.
 - **Recesses:** cut the body with the outline, put an `r` floor plate inside, and add a thin
@@ -59,7 +59,7 @@ so a Blender round never silently replaces an AI main on the site. It shows up a
 - The framing reads the bounding boxes of MESH, FONT and CURVE objects. Any new object
   type has to be added there, or parts get cropped.
 - Work from the approved AI render as the target. Make a side-by-side strip
-  (`bun local/icons/trio.ts out.png a.png b.png c.png`) and compare after every change.
+  (the target and your renders next to each other in one image) and compare after every change.
   Stop after 3 passes and show the owner rather than polishing endlessly.
 
 ## The icon IS the object (owner, 2026-11-11)
@@ -158,7 +158,7 @@ assets is only worth it for shapes that are easier to sculpt by hand. If so, loa
 
 | Use | Tool | Final? |
 |---|---|---|
-| Explore a new icon or scene idea | Gemini via render.ts (`just icons-render`) | no: concept |
+| Explore a new icon or scene idea | render.ts via OpenRouter (`just icons-render`) | no: concept |
 | Write or extend a bpy part function | Claude, reviewed and committed | yes, after review |
 | Rough mesh for an odd organic prop | TRELLIS.2 (MIT, local) or Tripo API | no: rebuild clean |
 | Final icon / scene pixels | Blender only | yes |
@@ -172,9 +172,9 @@ modelling, but never inside the render pipeline.
 - Blender renders are free and repeatable: about 5–15 s per icon at 64 samples.
 - Modelling a new icon takes about 20–40 min, once.
 - A new scene from the kit means writing a YAML file plus any missing prop.
-- Re-render only when the owner names a defect (memory: icon-rerender-budget).
+- Re-render only when the owner names a defect.
 
-## Roadmap (owner, 2026-11-11, from the W-140 session)
+## Roadmap (owner, 2026-11-11)
 
 1. **Everything in Blender.** Every icon (also globe, browser, config, check, meet, chat, call,
    files, page) and every desk scene (doctor, lawyer, student, school board, kids, contract,
@@ -187,7 +187,7 @@ modelling, but never inside the render pipeline.
    in the desk scenes and like the Mermaid flowcharts, but in our 2.5D style.
 4. **Animated, scene by scene (later).** The same diagram data drives a short film: nodes
    appear one by one, packets flow through the pipes, and a caption names each actor's role.
-   This is for explainers and the product films (see the product-video skill). Blender scenes
+   This is for explainers and the product films. Blender scenes
    are animation-ready, so it's a keyframe pass on the same objects, not a new pipeline.
 
 ## Working loop (how this got to 8/10)

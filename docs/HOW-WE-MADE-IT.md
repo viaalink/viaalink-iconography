@@ -3,7 +3,7 @@
 ## 0. Where it started
 
 The icon generator behind this set was designed last year by Kelvin Wuite at ASD Engineering, for the icons of
-the ASD Manager. It generated icons with OpenAI's image API, until OpenAI blocked his access. He then ported the
+the ASD Manager. It first generated icons with OpenAI's image API. He then ported the
 code to OpenRouter (`scripts/icons/openrouter.ts`, `render.ts`, `style.ts`, `catalog.ts`), so it no longer
 depends on a single provider.
 

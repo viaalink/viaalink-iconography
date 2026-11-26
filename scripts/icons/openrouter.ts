@@ -34,7 +34,7 @@ export async function generateImage(req: ImageRequest): Promise<Buffer> {
     headers: {
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
-      "X-Title": `${THEME.brand.slug}-website icons`,
+      "X-Title": `${THEME.brand.slug}-iconography`,
     },
     body: JSON.stringify({
       model: req.model ?? DEFAULT_IMAGE_MODEL,

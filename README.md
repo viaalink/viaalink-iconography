@@ -1,6 +1,6 @@
 # Viaalink iconography
 
-The iconography of [Viaalink](https://viaalink.com), and the system that builds it: **71 icons**, each as a **2.5D render made in Blender**
+The iconography of [Viaalink](https://viaalink.com), and the system that builds it: **72 icons**, each as a **2.5D render made in Blender**
 and a **flat SVG twin**, in a **light** and a **dark** edition. Plus the Blender pipeline that makes them,
 flow diagrams with pipes between the icons, and story animations.
 
@@ -59,7 +59,7 @@ architecture-beta
 show as "?" there. Serve `icons/mermaid/viaalink.json` from your own site and register it as above.
 Source: [docs/examples/mermaid-architecture.mmd](docs/examples/mermaid-architecture.mmd).)
 
-Icons: `ai-a` · `api` · `backup` · `bell` · `browser-ext` · `browser` · `bucket` · `cache` · `calendar` · `call` · `certstore` · `chat` · `check` · `cicd` · `cli` · `cloud` · `cluster` · `config` · `container` · `database` · `desktop` · `dns` · `download` · `error` · `files` · `firewall` · `globe` · `info` · `key` · `license` · `link` · `loadbalancer` · `lock` · `logs` · `mail` · `mcp-a` · `meet` · `minutes` · `modem` · `monitoring` · `nas` · `notetaker` · `page` · `payment` · `pending` · `phone` · `qr-pair` · `queue` · `record` · `relay` · `report` · `router` · `search` · `server` · `shield` · `social` · `switch` · `sync` · `tablet` · `team` · `transcribe` · `trash` · `upload` · `user` · `video` · `vm` · `voice-profile` · `vscode` · `warning` · `webhook` · `wifi`
+Icons: `ai-a` · `api` · `backup` · `bell` · `browser-ext` · `browser` · `bucket` · `cache` · `calendar` · `call` · `certstore` · `chat` · `check` · `cicd` · `cli` · `cloud` · `cluster` · `config` · `container` · `database` · `desktop` · `dns` · `download` · `error` · `files` · `firewall` · `globe` · `info` · `key` · `laptop` · `license` · `link` · `loadbalancer` · `lock` · `logs` · `mail` · `mcp-a` · `meet` · `minutes` · `modem` · `monitoring` · `nas` · `notetaker` · `page` · `payment` · `pending` · `phone` · `qr-pair` · `queue` · `record` · `relay` · `report` · `router` · `search` · `server` · `shield` · `social` · `switch` · `sync` · `tablet` · `team` · `transcribe` · `trash` · `upload` · `user` · `video` · `vm` · `voice-profile` · `vscode` · `warning` · `webhook` · `wifi`
 
 ## Make them yourself
 
